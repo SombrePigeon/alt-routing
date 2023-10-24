@@ -6,9 +6,11 @@ services:
             context: .
             target: dev
         volumes:
-            - ./html/:/usr/local/apache2/htdocs/:ro
+            - ./html:/html:ro
+            - ./server.js:/server.js:ro
         networks:
             - nginxproxygitdeploy_net-proxy
+        command: node server.js
 
 networks:
     nginxproxygitdeploy_net-proxy:

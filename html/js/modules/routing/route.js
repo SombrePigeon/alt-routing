@@ -25,16 +25,51 @@ export default class Route extends HTMLElement
     connectedCallback()
     {
         this.path = this.getAttribute(namings.attributePath);
+        if(!this.path)
+        {
+            console.error("path absent");
+        }
         console.log("new route connected : " + this.getAttribute(namings.attributePath));
-        //send event to notify parent routes
-        this.dispatchEvent(
-            new CustomEvent(namings.newRouteEvent,
+        //
+        if(this.path === "/")
+        {
+            window.addEventListener("popstate",
+            (e)=>
+            {
+                this.navigate(document.location.pathname)
+            });
+            this.addEventListener(namings.navigateEvent,
+                (e)=>
                 {
-                    bubbles:true,
-                    composed: true
+                    console.log("custom navigation");
+                    const routesNode = e.composedPath().filter(node => node.localName == namings.routeComponent).reverse();
+                    const routesPath = routesNode.map( node => node.getAttribute(namings.attributePath));
+                    const routesPathTarget = [...routesPath,e.target.getAttribute("href")]
+                    let path = routesPathTarget.reduce(
+                        (a,b)=>
+                            {
+                                return a + "/" + b;
+                            },
+                            ""
+                        );
+                        //toDo : check with fragment url ans querries and absulute path
+                        history.pushState({},null, path);
+                        this.navigate(path);
                 }
-            )
-        );
+            );
+        }
+        else
+        {
+            //send event to notify parent routes
+            this.dispatchEvent(
+                new CustomEvent(namings.newRouteEvent,
+                    {
+                        bubbles:true,
+                        composed: true
+                    }
+                )
+            );
+        }
         //catch new child route element added
         this.addEventListener(namings.newRouteEvent,
             (e)=>{

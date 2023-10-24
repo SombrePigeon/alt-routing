@@ -13,28 +13,7 @@ export default class Router extends HTMLBodyElement
         shadow.appendChild(slot);
 
 
-        window.addEventListener("popstate",
-        (e)=>{
-            this.navigate(document.location.pathname)
-        });
-        this.addEventListener(namings.navigateEvent,
-            (e)=>
-            {
-                console.log("custom navigation");
-                const routesNode = e.composedPath().filter(node => node.localName == namings.routeComponent).reverse();
-                const routesPath = routesNode.map( node => node.getAttribute(namings.attributePath));
-                const routesPathTarget = [...routesPath,e.target.getAttribute("href")]
-                let path = routesPathTarget.reduce(
-                    (a,b)=>
-                        {
-                            return a + "/" + b;
-                        },
-                        ""
-                    );
-                    //toDo : check with fragment url ans querries and absulute path
-                    history.pushState({},null, path);
-                    this.navigate(path);
-            });
+        
     }
 
 

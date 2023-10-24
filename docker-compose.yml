@@ -6,7 +6,8 @@ services:
             context: .
             target: prod
         volumes:
-            - ./html/:/usr/local/apache2/htdocs/:ro
+            - ./html:/html:ro
+            - ./server.js:/server.js:ro
         networks:
             - nginxproxygitdeploy_net-proxy
 

@@ -1,4 +1,4 @@
-FROM httpd as base
+FROM node as base
 EXPOSE 80
 
 #DEV-----------
