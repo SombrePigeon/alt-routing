@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="fr" is="alt-app">
+  <head>
+    <meta charset="utf-8">
+    <title>Services</title>
+    <link rel="stylesheet" href="css/style.css">
+  </head>
+  <body is="alt-router">
+    <header>COUCOU7 o/</header>
+    <nav>
+      <a href="test" is="alt-a"> test  </a>
+      <a href="/" > root </a>
+    </nav>
+    <main>
+      <alt-route path="test">
+      </alt-route>
+    </main>
+    <footer>made by : SombrePigeon</footer>
+  </body>
+  <script type="importmap">
+    {
+      "imports":
+        {
+          "/": "/js/modules/",
+          "app": "/js/modules/app.js",
+          "dev": "/js/modules/dev.js"
+        }
+    }
+  </script>
+  <script type="module" src="main.js"></script>
+</html>
