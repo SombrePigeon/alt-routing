@@ -30,7 +30,7 @@ export default class Route extends HTMLElement
             console.error("path absent");
         }
         console.log("new route connected : " + this.getAttribute(namings.attributePath));
-        //
+        //if baseroute
         if(this.path === "/")
         {
             window.addEventListener("popstate",
@@ -57,6 +57,7 @@ export default class Route extends HTMLElement
                         this.navigate(path);
                 }
             );
+            this.setAttribute(namings.attributeConsumablePath, this.consumablePath);
         }
         else
         {
