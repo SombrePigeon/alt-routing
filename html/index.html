@@ -1,12 +1,21 @@
-<div>
-  <header>COUCOU7 o/</header>
-  <nav>
-    <a href="test" is="alt-a"> test  </a>
-    <a href="/" > restart </a>
-  </nav>
-  <main>
-    <alt-route path="test">
-    </alt-route>
-  </main>
-  <footer>made by : SombrePigeon</footer>
-</div>
+<!DOCTYPE html>
+<html lang="fr" is="alt-app">
+  <head>
+    <meta charset="utf-8">
+    <title>Services</title>
+    <link rel="stylesheet" href="/css/style.css"/>
+    <script type="importmap">
+      {
+        "imports":
+          {
+            "/": "/js/modules/",
+            "app": "/js/modules/app.js",
+            "dev": "/js/modules/dev.js"
+          }
+      }
+    </script>
+    <script type="module" src="/js/main.js"></script>
+  </head>
+  <body is="alt-router">
+  </body>
+</html>
