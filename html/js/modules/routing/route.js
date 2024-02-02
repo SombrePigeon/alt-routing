@@ -1,6 +1,6 @@
 import { getDirectRoutesElements } from "/routing/functions.js";
 import * as namings from "/routing/namings.js"
-console.log("route");
+console.log("route module");
 
 //toDo
 //rework to react to event and propagate to subroutes and load if match only v0
@@ -10,8 +10,8 @@ console.log("route");
 export default class Route extends HTMLElement
 {
     path;
-    consumedPath = "";
-    consumablePath = "";
+    rendered = false;
+    eventListener = null;
 
     constructor()
     {
@@ -19,45 +19,76 @@ export default class Route extends HTMLElement
         const shadow = this.attachShadow({mode: "open"});
         const child = document.createElement("slot");
         shadow.appendChild(child);
-        
+        this.addEventListener(namings.connectedRoutingComponentEvent, 
+            (e) => 
+            {
+                //set absolute path
+                console.log("route connected !");
+                this.path = e.detail.path;
+                //remove last / if not just /
+                if(this.path != "/" && this.path.endsWith("/"))
+                {
+                    this.path = this.path.substring(0,this.path.length - 1);
+                }
+                this.updateRouteState();
+                //listen to route change
+                this.eventListener = window.addEventListener(namings.routeChangeEvent,
+                    e =>
+                    {
+                        this.updateRouteState();
+                    });
+                //disconnect this event
+            });
     }
 
     connectedCallback()
     {
         this.path = this.getAttribute(namings.attributePath);
-        if(!this.path)
-        {
-            console.error("path absent");
-        }
-        console.log("new route connected : " + this.getAttribute(namings.attributePath));
+        console.log("route is connecting")
+        this.dispatchEvent(
+            new CustomEvent(namings.connectingRoutingComponentEvent,
+                {
+                    bubbles:true,
+                    composed: true,
+                    detail:
+                    {
+                        src: this
+                    }
+                }
+            )
+        );
         //if baseroute
-        if(this.path === "/")
+        /*if(this.path === "/")
         {
             window.addEventListener("popstate",
             (e)=>
             {
                 this.navigate(document.location.pathname)
             });
+            //react to navigation
             this.addEventListener(namings.navigateEvent,
                 (e)=>
                 {
+                    let path = "";
                     console.log("custom navigation");
-                    const routesNode = e.composedPath().filter(node => node.localName == namings.routeComponent).reverse();
-                    const routesPath = routesNode.map( node => node.getAttribute(namings.attributePath));
-                    const routesPathTarget = [...routesPath,e.target.getAttribute("href")]
-                    let path = routesPathTarget.reduce(
-                        (a,b)=>
-                            {
-                                return a + "/" + b;
-                            },
-                            ""
-                        );
-                        //toDo : check with fragment url ans querries and absulute path
-                        history.pushState({},null, path);
-                        this.navigate(path);
+                    const routesNode = e.composedPath()
+                        .filter(node => node.localName == namings.routeComponent).reverse();
+                    let routesPath = routesNode.map( node => node.getAttribute(namings.attributePath));
+                    routesPath.filter(route => route != "/")
+                    for(const x of routesPath)
+                    {
+                        path += (x + "/");
+                    }
+                    path += e.target.getAttribute("href");
+                    
+                    
+                    //toDo : check with fragment url ans querries and absulute path
+                    console.log(" to path : " + path);
+                    history.pushState({},null, path);
+                    this.propagate();
                 }
             );
-            this.setAttribute(namings.attributeConsumablePath, this.consumablePath);
+            this.setAttribute(namings.attributeConsumablePath, document.location.pathname);
         }
         else
         {
@@ -79,63 +110,41 @@ export default class Route extends HTMLElement
             }      
         );
 
-        
+        */
     }
 
     disconnectedCallback()
     {
-        console.log("disconect" + path)
-        //send disconnect event ?
-    }
-
-
-    static observedAttributes = [namings.attributeConsumablePath];
-
-    attributeChangedCallback(name, oldValue, newValue)
-    {
-        if(name == namings.attributeConsumablePath
-            && oldValue != newValue)
+        console.log("disconnect" + this.path)
+        //disconnect eventListenner
+        if(this.eventListener)
         {
-            this.consumablePath = this.getAttribute(namings.attributeConsumablePath);
-            if(newValue.startsWith(this.path))
-            {
-                console.log("match");
-                this.loadRoute().then(
-                    ()=>
-                    {
-                        console.log("subnavigate from : " + this.consumedPath);
-                        console.log("subnavigate to : " + this.path);
-                        console.log("subnavigate can match : " + this.consumablePath);
-                        this.propagate();
-                    }
-                );
-            }
-            else
-            {
-                console.log("unmatch");
-                this.unloadRoute();
-            }
+            window.removeEventListener(namings.routeChangeEvent,this.eventListener);
         }
     }
 
-
-    propagate()
+    updateRouteState()
     {
-        const directRoutes = Array.from(getDirectRoutesElements(this));
-        for(let route of directRoutes)
+        if(!this.rendered && document.location.pathname.startsWith(this.path))
         {
-            route.setAttribute(namings.attributeConsumedPath, this.consumedPath + "/" + this.path);
-            route.setAttribute(namings.attributeConsumablePath, this.consumablePath.substring(this.path.length + 1));
+            this.loadRoute();
+            this.rendered=true;
+        }
+        else if(this.rendered && !document.location.pathname.startsWith(this.path)) 
+        {
+            this.unloadRoute();
+            this.rendered=false;
         }
     }
-
 
     async loadRoute()
     {
-        const componentAbsolutePath = this.getAttribute(namings.attributeConsumedPath)
-            + "/"
-            + this.getAttribute(namings.attributePath);
-
+        let componentAbsolutePath = "/content.html";
+        if(this.path != "/")
+        {
+            componentAbsolutePath = this.path + "/" + "content.html";
+        }
+        console.log("path is " + componentAbsolutePath)
         await fetch(componentAbsolutePath).then((response) =>
              {
                 return response.text();
