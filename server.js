@@ -32,26 +32,31 @@ const requestListener = function (req, res) {
     let log = "load app"
     let contentType = "text/html"
     console.log("\nurl: " + req.url);
-    if(req.url.startsWith("/js/"))
+    if(req.url === "/hash.txt")
+    {
+        contentType = "text/plain";
+        log = "load file : " + req.url;
+        body =  fs.readFileSync("html" + req.url, 'utf8');
+    }
+    else if(req.url.startsWith("/js/"))
     {
         contentType = "text/javascript";
-        log = "load file : " + req.url;
+        log = "load script : " + req.url;
         body =  fs.readFileSync("html" + req.url, 'utf8');
     }
-    else if(req.url.startsWith("/css/")
-    )
+    else if(req.url.startsWith("/css/"))
     {
         contentType = "text/css";
-        log = "load file : " + req.url;
+        log = "load css : " + req.url;
         body =  fs.readFileSync("html" + req.url, 'utf8');
     }
-    else if(req.headers["alt-component"] == true)
+    else if(req.headers["alt-component"] == "true")
     {
         contentType = "text/html";
-        log = "load file : " + req.url;
+        log = "load component : " + req.url;
         body =  fs.readFileSync("html" + req.url, 'utf8');
     }
-    console.log(log);
+    console.log(log + " ; headers : " + req.headers["alt-component"]);
     console.log(body);
     res.writeHead(200, {"Content-Type": `${contentType}`});
     res.end(body);
