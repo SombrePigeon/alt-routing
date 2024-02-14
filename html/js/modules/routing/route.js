@@ -11,14 +11,19 @@ export default class Route extends HTMLElement
 {
     path;
     rendered = false;
-    eventListener = null;
+    shadow;
+    routeChangeEventListener = e =>
+    {
+        this.updateRouteState();
+    };
 
     constructor()
     {
         super();
-        const shadow = this.attachShadow({mode: "open"});
+        //loading default shadow
+        this.shadow = this.attachShadow({mode: "open"});
         const child = document.createElement("slot");
-        shadow.appendChild(child);
+        //shadow.appendChild(child);
         this.addEventListener(namings.connectedRoutingComponentEvent, 
             (e) => 
             {
@@ -33,11 +38,9 @@ export default class Route extends HTMLElement
                 this.updateRouteState();
                 //listen to route change
                 this.eventListener = window.addEventListener(namings.routeChangeEvent,
-                    e =>
-                    {
-                        this.updateRouteState();
-                    });
+                    this.routeChangeEventListener);
                 //disconnect this event
+                this.removeEventListener(namings.routeChangeEvent, this.routeChangeEventListener);
             });
     }
 
@@ -128,11 +131,13 @@ export default class Route extends HTMLElement
         if(!this.rendered && document.location.pathname.startsWith(this.path))
         {
             this.loadRoute();
+            this.loadTemplate();
             this.rendered=true;
         }
         else if(this.rendered && !document.location.pathname.startsWith(this.path)) 
         {
             this.unloadRoute();
+            this.unloadTemplate();
             this.rendered=false;
         }
     }
@@ -157,7 +162,30 @@ export default class Route extends HTMLElement
 
     unloadRoute()
     {
-        this.innerHTML="";
+        this.innerHTML="";//meh moryleak ?
+    }
+
+    async loadTemplate()
+    {
+        let componentAbsoluteTemplatePath = "/template.html";
+        if(this.path != "/")
+        {
+            componentAbsoluteTemplatePath = this.path + "/" + "template.html";
+        }
+        console.log("path is " + componentAbsoluteTemplatePath)
+        await fetch(componentAbsoluteTemplatePath).then((response) =>
+             {
+                return response.text();
+             }).then((html) =>
+             {
+                this.shadow.innerHTML = html;
+             });
+        
+    }
+
+    unloadTemplate()
+    {
+        this.shadow.innerHTML="";
     }
 
 }
