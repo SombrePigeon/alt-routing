@@ -185,7 +185,7 @@ export default class Route extends HTMLElement
 
     unloadTemplate()
     {
-        this.shadow.innerHTML="";
+        this.shadow.innerHTML="";//meh moryleak ?
     }
 
 }
