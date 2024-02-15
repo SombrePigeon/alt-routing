@@ -60,60 +60,6 @@ export default class Route extends HTMLElement
                 }
             )
         );
-        //if baseroute
-        /*if(this.path === "/")
-        {
-            window.addEventListener("popstate",
-            (e)=>
-            {
-                this.navigate(document.location.pathname)
-            });
-            //react to navigation
-            this.addEventListener(namings.navigateEvent,
-                (e)=>
-                {
-                    let path = "";
-                    console.log("custom navigation");
-                    const routesNode = e.composedPath()
-                        .filter(node => node.localName == namings.routeComponent).reverse();
-                    let routesPath = routesNode.map( node => node.getAttribute(namings.attributePath));
-                    routesPath.filter(route => route != "/")
-                    for(const x of routesPath)
-                    {
-                        path += (x + "/");
-                    }
-                    path += e.target.getAttribute("href");
-                    
-                    
-                    //toDo : check with fragment url ans querries and absulute path
-                    console.log(" to path : " + path);
-                    history.pushState({},null, path);
-                    this.propagate();
-                }
-            );
-            this.setAttribute(namings.attributeConsumablePath, document.location.pathname);
-        }
-        else
-        {
-            //send event to notify parent routes
-            this.dispatchEvent(
-                new CustomEvent(namings.newRouteEvent,
-                    {
-                        bubbles:true,
-                        composed: true
-                    }
-                )
-            );
-        }
-        //catch new child route element added
-        this.addEventListener(namings.newRouteEvent,
-            (e)=>{
-                console.log("route " + this.getAttribute(namings.attributePath) + " catch event from route " + e.target.getAttribute(namings.attributePath))
-                this.propagate()
-            }      
-        );
-
-        */
     }
 
     disconnectedCallback()
