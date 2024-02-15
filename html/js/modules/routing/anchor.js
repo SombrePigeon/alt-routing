@@ -6,7 +6,7 @@ export default class Anchor extends HTMLAnchorElement
     connectionEventListener = (e) => 
     {
         //set new href(absolute)
-        this.href = e.detail.path + this.getAttribute("href");
+        this.href = e.detail.path + '/' + this.getAttribute("href");
         console.log("anchor is connected ");
         this.addEventListener("click", 
         (e) => 
