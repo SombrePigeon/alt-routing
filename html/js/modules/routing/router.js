@@ -16,10 +16,7 @@ export default class Router extends HTMLBodyElement
                 const routesNode = e.composedPath()
                     .filter(node => node.localName == namings.routeComponent).reverse();
                 let routesPath = routesNode.map( node => node.getAttribute(namings.attributePath));
-                for(const x of routesPath)
-                {
-                    path += (x + "/");
-                }
+                path = routesPath.join('/');
                 console.log("dispatch event to target route : " + path);
                 console.log(e);
                 e.detail.src.dispatchEvent(
