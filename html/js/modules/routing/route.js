@@ -11,7 +11,8 @@ export default class Route extends HTMLElement
 {
     path;
     rendered = false;
-    shadow;
+    useShadow;
+    shadow = null;
     routeChangeEventListener = e =>
     {
         this.updateRouteState();
@@ -20,21 +21,12 @@ export default class Route extends HTMLElement
     constructor()
     {
         super();
-        //loading default shadow
-        this.shadow = this.attachShadow({mode: "open"});
-        const child = document.createElement("slot");
-        //shadow.appendChild(child);
         this.addEventListener(namings.connectedRoutingComponentEvent, 
             (e) => 
             {
                 //set absolute path
                 console.log("route connected !");
                 this.path = e.detail.path;
-                //remove last / if not just /
-                if(this.path != "/" && this.path.endsWith("/"))
-                {
-                    this.path = this.path.substring(0,this.path.length - 1);
-                }
                 this.updateRouteState();
                 //listen to route change
                 this.eventListener = window.addEventListener(namings.routeChangeEvent,
@@ -46,6 +38,8 @@ export default class Route extends HTMLElement
 
     connectedCallback()
     {
+        
+        this.useShadow = !(this.getAttribute(namings.attributeUseShadow) === "false");
         this.path = this.getAttribute(namings.attributePath);
         console.log("route is connecting")
         this.dispatchEvent(
@@ -113,25 +107,37 @@ export default class Route extends HTMLElement
 
     async loadTemplate()
     {
-        let componentAbsoluteTemplatePath = "/template.html";
-        if(this.path != "/")
+        if(this.useShadow)
         {
-            componentAbsoluteTemplatePath = this.path + "/" + "template.html";
+            if(this.shadow == null)
+            {
+                this.shadow = this.attachShadow({mode: "open"});
+            }
+            let componentAbsoluteTemplatePath = "/template.html";
+            if(this.path != "/")
+            {
+                componentAbsoluteTemplatePath = this.path + "/" + "template.html";
+            }
+            console.log("path is " + componentAbsoluteTemplatePath)
+            await fetch(componentAbsoluteTemplatePath).then((response) =>
+                {
+                    return response.text();
+                }).then((html) =>
+                {
+                    this.shadow.innerHTML = html;
+                });
         }
-        console.log("path is " + componentAbsoluteTemplatePath)
-        await fetch(componentAbsoluteTemplatePath).then((response) =>
-             {
-                return response.text();
-             }).then((html) =>
-             {
-                this.shadow.innerHTML = html;
-             });
+        
         
     }
 
     unloadTemplate()
     {
-        this.shadow.innerHTML="";//meh moryleak ?
+        if(this.useShadow && this.shadow != null)
+        {
+            this.shadow.innerHTML="";//meh moryleak ?
+        }
+        
     }
 
 }
