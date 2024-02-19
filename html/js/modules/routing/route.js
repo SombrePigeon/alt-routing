@@ -37,7 +37,7 @@ export default class Route extends HTMLElement
     connectedCallback()
     {
         
-        this.useShadow = !(this.getAttribute(namings.attributeUseShadow) === "false");
+        this.useShadow = !this.getAttributeNode(namings.attributeUseShadow);
         this.path = this.getAttribute(namings.attributePath);
         console.log("route is connecting");
         this.dispatchEvent(
