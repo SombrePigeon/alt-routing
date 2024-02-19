@@ -1,4 +1,3 @@
-import { getDirectRoutesElements } from "/routing/functions.js";
 import * as namings from "/routing/namings.js"
 
 console.log("router module");
@@ -12,11 +11,15 @@ export default class Router extends HTMLBodyElement
             (e)=>
             {
                 console.log("routeur connectig route");
-                let path = "";
+                let path = "/";
                 const routesNode = e.composedPath()
                     .filter(node => node.localName == namings.routeComponent).reverse();
                 let routesPath = routesNode.map( node => node.getAttribute(namings.attributePath));
                 path = routesPath.join('/');
+                if(!path.startsWith('/'))
+                {
+                    
+                }
                 console.log("dispatch event to target route : " + path);
                 console.log(e);
                 e.detail.src.dispatchEvent(
@@ -45,13 +48,33 @@ export default class Router extends HTMLBodyElement
         this.addEventListener(namings.navigateEvent,
             (e)=>
             {
-                let path = e.detail.href;
-                this.navigate(path);
+                let newState = e.detail.state;
+                let newLocation = new URL(location.origin);
+                newLocation.pathname = e.detail.pathname;
+                if(newLocation.pathname !== '/')
+                {
+                    newLocation.pathname += '/';
+                }
+                newLocation.hash = e.detail.hash;
+                newLocation.search = e.detail.search;
+                let newHref = newLocation.href;
+                console.log(newHref);
+
+                if(location.href != newHref)
+                {
+                    console.log("navigate")
+                    history.pushState(newState,null,newHref);
+                }
+                else
+                {
+                    console.log("refresh")
+                    //just reload
+                    history.go()
+                }
                 this.updateRoutes();
             }
         );
     }
-
 
     connectedCallback()
     {
@@ -60,13 +83,6 @@ export default class Router extends HTMLBodyElement
         const baseRoute = document.createElement("alt-route");
         baseRoute.setAttribute(namings.attributePath, "");
         shadow.appendChild(baseRoute);
-    }
-
-    navigate(path)
-    {
-        console.log("navigate to : " + path);
-        history.pushState(null,null,path);
-        //toDo emit routechage event
     }
 
     updateRoutes()
