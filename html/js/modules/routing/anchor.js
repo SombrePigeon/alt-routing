@@ -3,14 +3,17 @@ console.log("anchor module");
 
 export default class Anchor extends HTMLAnchorElement
 {
+    appNavigation=false;
     connectionEventListener = (e) => 
     {
         //set new href(absolute) 
         let href = this.getAttribute("href");
-        this.href = e.detail.path + '/' + href;
-        if(!this.href.endsWith('/'))
+        this.href = location.origin;
+        this.pathname = e.detail.path + '/';
+        this.href += href;
+        if(!this.pathname.endsWith('/'))
         {
-            this.href += '/';
+            this.pathname += '/';
         }
         console.log("anchor is connected ");
         this.initNavigationEvent();
@@ -20,8 +23,10 @@ export default class Anchor extends HTMLAnchorElement
     constructor() 
     {
         super();
-        //when initialisez : 
-        if(this.getAttribute("href").startsWith('/'))
+        //when initialisez :
+        this.appNavigation = this.origin == location.origin
+        && !this.getAttribute("href").startsWith('/');
+        if(!this.appNavigation)
         {
             this.initNavigationEvent();
         }
@@ -34,19 +39,22 @@ export default class Anchor extends HTMLAnchorElement
 
     connectedCallback()
     {
-        console.log("anchor is connecting " );
-        this.dispatchEvent(
-            new CustomEvent(namings.connectingRoutingComponentEvent,
-                {
-                    bubbles:true,
-                    composed: true,
-                    detail:
+        if(this.appNavigation)
+        {
+            console.log("anchor is connecting " );
+            this.dispatchEvent(
+                new CustomEvent(namings.connectingRoutingComponentEvent,
                     {
-                        src: this
+                        bubbles:true,
+                        composed: true,
+                        detail:
+                        {
+                            src: this
+                        }
                     }
-                }
-            )
-        );
+                )
+            );
+        }
     }
 
     initNavigationEvent()

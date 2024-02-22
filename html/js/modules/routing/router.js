@@ -51,10 +51,6 @@ export default class Router extends HTMLBodyElement
                 let newState = e.detail.state;
                 let newLocation = new URL(location.origin);
                 newLocation.pathname = e.detail.pathname;
-                if(newLocation.pathname !== '/')
-                {
-                    newLocation.pathname += '/';
-                }
                 newLocation.hash = e.detail.hash;
                 newLocation.search = e.detail.search;
                 let newHref = newLocation.href;
