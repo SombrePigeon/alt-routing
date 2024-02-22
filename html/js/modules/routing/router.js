@@ -16,10 +16,6 @@ export default class Router extends HTMLBodyElement
                     .filter(node => node.localName == namings.routeComponent).reverse();
                 let routesPath = routesNode.map( node => node.getAttribute(namings.attributePath));
                 path = routesPath.join('/');
-                if(!path.startsWith('/'))
-                {
-                    
-                }
                 console.log("dispatch event to target route : " + path);
                 console.log(e);
                 e.detail.src.dispatchEvent(
@@ -51,16 +47,12 @@ export default class Router extends HTMLBodyElement
                 let newState = e.detail.state;
                 let newLocation = new URL(location.origin);
                 newLocation.pathname = e.detail.pathname;
-                if(newLocation.pathname !== '/')
-                {
-                    newLocation.pathname += '/';
-                }
                 newLocation.hash = e.detail.hash;
                 newLocation.search = e.detail.search;
                 let newHref = newLocation.href;
                 console.log(newHref);
 
-                if(location.href != newHref)
+                if(location.href !== newHref)
                 {
                     console.log("navigate")
                     history.pushState(newState,null,newHref);
