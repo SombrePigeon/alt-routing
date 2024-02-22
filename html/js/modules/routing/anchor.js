@@ -8,6 +8,10 @@ export default class Anchor extends HTMLAnchorElement
         //set new href(absolute) 
         let href = this.getAttribute("href");
         this.href = e.detail.path + '/' + href;
+        if(!this.href.endsWith('/'))
+        {
+            this.href += '/';
+        }
         console.log("anchor is connected ");
         this.initNavigationEvent();
         this.removeEventListener(namings.connectedRoutingComponentEvent, this.connectionEventListener);
