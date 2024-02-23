@@ -9,12 +9,26 @@ export default class Route extends HTMLElement
     useShadow;
     shadow = null;
 
+    static observedAttributes = [namings.attributeMachedRoute];
+
+    attributeChangedCallback(name, oldValue, newValue)
+    {
+        if(oldValue !== newValue)
+        {
+            this.updateRouteState();
+        }
+    }
+
     connectionEventListener = (e) => 
     {
         //set absolute path
         console.log("route connected !");
         this.path = e.detail.path;
-        this.updateRouteState();
+        if(!this.path.endsWith('/'))
+        {
+            this.path += '/';
+        }
+        this.setMatching();
         //listen to route change
         this.eventListener = window.addEventListener(namings.routeChangeEvent,
             this.routeChangeEventListener);
@@ -24,7 +38,7 @@ export default class Route extends HTMLElement
 
     routeChangeEventListener = e =>
     {
-        this.updateRouteState();
+        this.setMatching();
     };
 
     constructor()
@@ -64,6 +78,25 @@ export default class Route extends HTMLElement
         }
     }
 
+    setMatching()
+    {
+        //match match-exact no
+        let match = "no";
+        if(location.pathname.startsWith(this.path))
+        {
+            if(location.pathname === this.path)
+            {
+                match = "match-exact";
+            }
+            else
+            {
+                match = "match";
+            }
+        }
+
+        this.setAttribute(namings.attributeMachedRoute,match);
+    }
+
     updateRouteState()
     {
         if(!this.rendered && document.location.pathname.startsWith(this.path))
@@ -85,7 +118,7 @@ export default class Route extends HTMLElement
         let componentAbsolutePath = "/content.html";
         if(this.path != "/")
         {
-            componentAbsolutePath = this.path + "/content.html";
+            componentAbsolutePath = this.path + "content.html";
         }
         console.log("path is " + componentAbsolutePath);
         await fetch(componentAbsolutePath)
@@ -116,7 +149,7 @@ export default class Route extends HTMLElement
             let componentAbsoluteTemplatePath = "/template.html";
             if(this.path != "/")
             {
-                componentAbsoluteTemplatePath = this.path + "/template.html";
+                componentAbsoluteTemplatePath = this.path + "template.html";
             }
             console.log("path is " + componentAbsoluteTemplatePath)
             await fetch(componentAbsoluteTemplatePath)
