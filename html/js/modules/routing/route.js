@@ -9,6 +9,16 @@ export default class Route extends HTMLElement
     useShadow;
     shadow = null;
 
+    static observedAttributes = [namings.attributeMachedRoute];
+
+    attributeChangedCallback(name, oldValue, newValue)
+    {
+        if(oldValue !== newValue)
+        {
+            this.updateRouteState();
+        }
+    }
+
     connectionEventListener = (e) => 
     {
         //set absolute path
@@ -19,7 +29,6 @@ export default class Route extends HTMLElement
             this.path += '/';
         }
         this.setMatching();
-        this.updateRouteState();
         //listen to route change
         this.eventListener = window.addEventListener(namings.routeChangeEvent,
             this.routeChangeEventListener);
@@ -30,7 +39,6 @@ export default class Route extends HTMLElement
     routeChangeEventListener = e =>
     {
         this.setMatching();
-        this.updateRouteState();
     };
 
     constructor()
@@ -76,7 +84,6 @@ export default class Route extends HTMLElement
         let match = "no";
         if(location.pathname.startsWith(this.path))
         {
-            debugger
             if(location.pathname === this.path)
             {
                 match = "match-exact";
