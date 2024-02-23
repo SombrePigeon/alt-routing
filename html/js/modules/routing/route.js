@@ -14,6 +14,11 @@ export default class Route extends HTMLElement
         //set absolute path
         console.log("route connected !");
         this.path = e.detail.path;
+        if(!this.path.endsWith('/'))
+        {
+            this.path += '/';
+        }
+        this.setMatching();
         this.updateRouteState();
         //listen to route change
         this.eventListener = window.addEventListener(namings.routeChangeEvent,
@@ -24,6 +29,7 @@ export default class Route extends HTMLElement
 
     routeChangeEventListener = e =>
     {
+        this.setMatching();
         this.updateRouteState();
     };
 
@@ -64,6 +70,26 @@ export default class Route extends HTMLElement
         }
     }
 
+    setMatching()
+    {
+        //match match-exact no
+        let match = "no";
+        if(location.pathname.startsWith(this.path))
+        {
+            debugger
+            if(location.pathname === this.path)
+            {
+                match = "match-exact";
+            }
+            else
+            {
+                match = "match";
+            }
+        }
+
+        this.setAttribute(namings.attributeMachedRoute,match);
+    }
+
     updateRouteState()
     {
         if(!this.rendered && document.location.pathname.startsWith(this.path))
@@ -85,7 +111,7 @@ export default class Route extends HTMLElement
         let componentAbsolutePath = "/content.html";
         if(this.path != "/")
         {
-            componentAbsolutePath = this.path + "/content.html";
+            componentAbsolutePath = this.path + "content.html";
         }
         console.log("path is " + componentAbsolutePath);
         await fetch(componentAbsolutePath)
@@ -116,7 +142,7 @@ export default class Route extends HTMLElement
             let componentAbsoluteTemplatePath = "/template.html";
             if(this.path != "/")
             {
-                componentAbsoluteTemplatePath = this.path + "/template.html";
+                componentAbsoluteTemplatePath = this.path + "template.html";
             }
             console.log("path is " + componentAbsoluteTemplatePath)
             await fetch(componentAbsoluteTemplatePath)

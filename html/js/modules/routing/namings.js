@@ -4,6 +4,7 @@ export const attributeAbsolutePath = "abspath";
 export const attributeConsumablePath = "matchable";
 export const attributeConsumedPath = "matched";
 export const attributeUseShadow = "use-shadow";
+export const attributeMachedRoute = "match"
 //event
 export const navigateEvent = "alt-navigate";
 export const routeChangeEvent = "alt-route-change";
