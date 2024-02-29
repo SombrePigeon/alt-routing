@@ -1,4 +1,4 @@
-import * as namings from "/routing/namings.js"
+import * as namings from "./namings.js"
 
 console.log("router module");
 export default class Router extends HTMLBodyElement

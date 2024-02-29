@@ -1,5 +1,4 @@
-import { getDirectRoutesElements } from "/routing/functions.js";
-import * as namings from "/routing/namings.js"
+import * as namings from "./namings.js"
 console.log("route module");
 
 export default class Route extends HTMLElement

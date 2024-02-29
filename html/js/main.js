@@ -1,5 +1,5 @@
-import htmlApp from "app";
-import "/routing/alt-routing.js"
-import "dev";
+//import htmlApp from "app";
+import "./modules/routing/alt-routing.js"
+//import "dev";
 
 console.log("main");

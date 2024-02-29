@@ -1,7 +1,7 @@
-import * as namings from "/routing/namings.js";
-import Router from "/routing/router.js";
-import Route from "/routing/route.js";
-import Anchor from "/routing/anchor.js";
+import * as namings from "./namings.js";
+import Router from "./router.js";
+import Route from "./route.js";
+import Anchor from "./anchor.js";
 
 console.log("init routing elements !")
 

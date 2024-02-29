@@ -1,4 +1,4 @@
-import * as namings from "/routing/namings.js"
+import * as namings from "./namings.js"
 console.log("anchor module");
 
 export default class Anchor extends HTMLAnchorElement
