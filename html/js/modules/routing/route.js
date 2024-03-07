@@ -4,6 +4,8 @@ console.log("route module");
 export default class Route extends HTMLElement
 {
     path;
+    absolutePath;
+    isRouteur = false;
     rendered = false;
     useShadow;
     shadow = null;
@@ -22,10 +24,10 @@ export default class Route extends HTMLElement
     {
         //set absolute path
         console.log("route connected !");
-        this.path = e.detail.path;
-        if(!this.path.endsWith('/'))
+        this.absolutePath = e.detail.path;
+        if(!this.absolutePath.endsWith('/'))
         {
-            this.path += '/';
+            this.absolutePath += '/';
         }
         this.setMatching();
         //listen to route change
@@ -33,38 +35,108 @@ export default class Route extends HTMLElement
             this.routeChangeEventListener);
         //disconnect this event
         this.removeEventListener(namings.connectedRoutingComponentEvent, this.connectionEventListener);
-    }
+    };
 
     routeChangeEventListener = e =>
     {
         this.setMatching();
     };
 
-    constructor()
+    connectingRoutingComponentEventListener = (e)=>
     {
-        super();
-        this.addEventListener(namings.connectedRoutingComponentEvent, 
-            this.connectionEventListener);
-    }
-
-    connectedCallback()
-    {
-        
-        this.useShadow = !this.getAttributeNode(namings.attributeUseShadow);
-        this.path = this.getAttribute(namings.attributePath);
-        console.log("route is connecting");
-        this.dispatchEvent(
-            new CustomEvent(namings.connectingRoutingComponentEvent,
+        console.log("routeur connecting route");
+        let path = this.path;
+        const routesNode = e.composedPath()
+            .filter(node => node.localName == namings.routeComponent).reverse();
+        let routesPath = routesNode.map( node => node.getAttribute(namings.attributePath));
+        path = routesPath.join('/');
+        console.log("dispatch event to target route : " + path);
+        console.log(e);
+        e.detail.src.dispatchEvent(
+            new CustomEvent(namings.connectedRoutingComponentEvent,
                 {
-                    bubbles:true,
-                    composed: true,
-                    detail:
+                    detail: 
                     {
-                        src: this
+                        path: path
                     }
                 }
             )
         );
+    };
+
+    popstateEventListener = (e)=>
+    {
+        console.log("browser navigation");
+        //this.navigate(document.location.pathname)
+        this.updateRoutes();
+    };
+
+    navigateEventListener = (e)=>
+    {
+        let newState = e.detail.state;
+        let newLocation = new URL(location.origin);
+        newLocation.pathname = e.detail.pathname;
+        newLocation.hash = e.detail.hash;
+        newLocation.search = e.detail.search;
+        let newHref = newLocation.href;
+        console.log(newHref);
+
+        if(location.href !== newHref)
+        {
+            console.log("navigate")
+            history.pushState(newState,null,newHref);
+        }
+        else
+        {
+            console.log("refresh")
+            //just reload
+            history.go()
+        }
+        this.updateRoutes();
+    }
+
+    constructor()
+    {
+        super();
+    }
+
+    connectedCallback()
+    {
+        this.useShadow = !this.getAttributeNode(namings.attributeUseShadow);
+        this.path = this.getAttribute(namings.attributePath);
+        this.isRouteur = this.path.startsWith('/');
+        console.log("route is connecting");
+        if(!this.isRouteur)
+        {
+            this.addEventListener(namings.connectedRoutingComponentEvent, 
+                this.connectionEventListener);
+            this.dispatchEvent(
+                new CustomEvent(namings.connectingRoutingComponentEvent,
+                    {
+                        bubbles:true,
+                        composed: true,
+                        detail:
+                        {
+                            src: this
+                        }
+                    }
+                )
+            );
+        }
+        else
+        {
+            console.log("route is routeur");
+            this.addEventListener(namings.connectingRoutingComponentEvent,
+                this.connectingRoutingComponentEventListener);
+            //generate navigation event
+            ///when popstate event
+            window.addEventListener("popstate",
+            this.popstateEventListener);
+            ///when click internal navigation
+            this.addEventListener(namings.navigateEvent,
+                this.navigateEventListener);
+        }
+        
     }
 
     disconnectedCallback()
@@ -73,6 +145,7 @@ export default class Route extends HTMLElement
         //disconnect eventListenner
         if(this.eventListener)
         {
+            //toDo listen to routeur route instead
             window.removeEventListener(namings.routeChangeEvent,this.eventListener);
         }
     }
@@ -173,4 +246,15 @@ export default class Route extends HTMLElement
         
     }
 
+    updateRoutes()
+    {
+        this.dispatchEvent(
+            new CustomEvent(namings.routeChangeEvent,
+                {
+                    bubbles:true,
+                    composed: true
+                }
+            )
+        );
+    }
 }

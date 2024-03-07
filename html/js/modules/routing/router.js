@@ -71,10 +71,10 @@ export default class Router extends HTMLBodyElement
     connectedCallback()
     {
         console.log("routeur is connected");
-        const shadow = this.attachShadow({mode: "open"});
+        //const shadow = this.attachShadow({mode: "open"});
         const baseRoute = document.createElement("alt-route");
-        baseRoute.setAttribute(namings.attributePath, "");
-        shadow.appendChild(baseRoute);
+        baseRoute.setAttribute(namings.attributePath, "/trainingWebComponents/html");
+        this.appendChild(baseRoute);
     }
 
     updateRoutes()
