@@ -10,6 +10,10 @@ export default class Anchor extends HTMLAnchorElement
         let href = this.getAttribute("href");
         this.href = location.origin;
         this.pathname = e.detail.path;
+        if(!this.pathname.endsWith('/'))
+        {
+            this.pathname += '/';
+        }
         this.href += href;
         if(!this.pathname.endsWith('/'))
         {
