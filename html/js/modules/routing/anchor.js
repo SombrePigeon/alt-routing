@@ -9,7 +9,7 @@ export default class Anchor extends HTMLAnchorElement
         //set new href(absolute) 
         let href = this.getAttribute("href");
         this.href = location.origin;
-        this.pathname = e.detail.path + '/';
+        this.pathname = e.detail.path;
         this.href += href;
         if(!this.pathname.endsWith('/'))
         {
@@ -25,7 +25,7 @@ export default class Anchor extends HTMLAnchorElement
         super();
         //when initialisez :
         this.appNavigation = this.origin == location.origin
-        && !this.getAttribute("href").startsWith('/');
+        && !this.getAttribute("href").startsWith('/');//toDo remove if necessary
         if(!this.appNavigation)
         {
             this.initNavigationEvent();
@@ -63,6 +63,7 @@ export default class Anchor extends HTMLAnchorElement
         (e) => 
         {
             e.preventDefault();
+            //e.stopPropagation();
             console.log("cancel natural navigation, go to : " + this.href + " or "+ this.getAttribute("href"));
             this.dispatchEvent(
                 new CustomEvent(namings.navigateEvent,
