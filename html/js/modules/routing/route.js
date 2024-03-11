@@ -25,44 +25,13 @@ export default class Route extends HTMLElement
         //set absolute path
         console.log("route connected !");
         this.absolutePath = e.detail.path;
-        if(!this.absolutePath.endsWith('/'))
-        {
-            this.absolutePath += '/';
-        }
         this.setMatching();
         //listen to route change
         this.eventListener = window.addEventListener(namings.routeChangeEvent,
             this.routeChangeEventListener);
-        //disconnect this event
-        this.removeEventListener(namings.connectedRoutingComponentEvent, this.connectionEventListener);
     };
 
-    connectingRoutingComponentEventListener = (e)=>
-    {
-        console.log("routeur connecting route");
-        e.stopPropagation();
-        let path = this.path;
-        const routesNode = e.composedPath()
-            .filter(node => node.localName == namings.routeComponent).reverse();
-        let routesPath = routesNode.map( node => node.getAttribute(namings.attributePath));
-        path = routesPath.join('/');
-        if(path.startsWith("//"))
-        {
-            path = path.slice(1);
-        }
-        console.log("dispatch event to target route : " + path);
-        console.log(e);
-        e.detail.src.dispatchEvent(
-            new CustomEvent(namings.connectedRoutingComponentEvent,
-                {
-                    detail: 
-                    {
-                        path: path
-                    }
-                }
-            )
-        );
-    };
+
 
     routeChangeEventListener = (e) =>
     {
@@ -124,14 +93,21 @@ export default class Route extends HTMLElement
         {
             this.path += '/';
         }
-        
+
         this.isRouteur = this.path.startsWith('/');
 
         if(this.isRouteur)
         {
             console.log("route is routeur");
             this.addEventListener(namings.connectingRoutingComponentEvent,
-                this.connectingRoutingComponentEventListener);
+                e => 
+                {
+                    e.detail.path = "";
+                },
+                {
+                    capture: true
+                }
+            );
             //generate navigation event
             ///when popstate event
             window.addEventListener("popstate",
@@ -139,7 +115,24 @@ export default class Route extends HTMLElement
             ///when click internal navigation
             this.addEventListener(namings.navigateEvent,
                 this.navigateEventListener);
+
+            
         }
+        this.addEventListener(namings.connectingRoutingComponentEvent,
+            e => 
+            {
+                e.detail.path += this.path;
+            },
+            {
+                capture: true
+            }
+        );
+        this.addEventListener(namings.connectingRoutingComponentEvent,
+            this.connectionEventListener,
+            {
+                once: true
+            }   
+        )
     }
 
     connectedCallback()
@@ -150,7 +143,7 @@ export default class Route extends HTMLElement
         this.dispatchEvent(
             new CustomEvent(namings.connectingRoutingComponentEvent,
                 {
-                    bubbles:true,
+                    //bubbles:true,
                     composed: true,
                     detail:
                     {
@@ -275,3 +268,5 @@ export default class Route extends HTMLElement
         );
     }
 }
+
+customElements.define(namings.routeComponent, Route);

@@ -6,14 +6,10 @@ export default class Anchor extends HTMLAnchorElement
     appNavigation=false;
     connectionEventListener = (e) => 
     {
-        //set new href(absolute) 
+        //rewrite href(absolute) 
         let href = this.getAttribute("href");
         this.href = location.origin;
         this.pathname = e.detail.path;
-        if(!this.pathname.endsWith('/'))
-        {
-            this.pathname += '/';
-        }
         this.href += href;
         if(!this.pathname.endsWith('/'))
         {
@@ -21,7 +17,6 @@ export default class Anchor extends HTMLAnchorElement
         }
         console.log("anchor is connected ");
         this.initNavigationEvent();
-        this.removeEventListener(namings.connectedRoutingComponentEvent, this.connectionEventListener);
     };
 
     constructor() 
@@ -36,8 +31,11 @@ export default class Anchor extends HTMLAnchorElement
         }
         else
         {
-            this.addEventListener(namings.connectedRoutingComponentEvent, 
-                this.connectionEventListener);
+            this.addEventListener(namings.connectingRoutingComponentEvent, 
+                this.connectionEventListener,
+                {
+                    once: true
+                });
         }
     }
 
@@ -49,7 +47,6 @@ export default class Anchor extends HTMLAnchorElement
             this.dispatchEvent(
                 new CustomEvent(namings.connectingRoutingComponentEvent,
                     {
-                        bubbles:true,
                         composed: true,
                         detail:
                         {
@@ -67,7 +64,6 @@ export default class Anchor extends HTMLAnchorElement
         (e) => 
         {
             e.preventDefault();
-            //e.stopPropagation();
             console.log("cancel natural navigation, go to : " + this.href + " or "+ this.getAttribute("href"));
             this.dispatchEvent(
                 new CustomEvent(namings.navigateEvent,
@@ -87,3 +83,5 @@ export default class Anchor extends HTMLAnchorElement
         });
     }
 }
+
+customElements.define(namings.anchorComponent, Anchor, { extends: "a" });
