@@ -100,16 +100,33 @@ export default class Route extends HTMLElement
         this.updateRoutes();
     }
 
-    constructor()
+    constructor(path = null, useShadow = null)
     {
         super();
-    }
+        if(path != null)
+        {
+            this.path = path;
+        }
+        else
+        {
+            this.path = this.getAttribute(namings.attributePath);
+        }
+        if(useShadow != null)
+        {
+            this.useShadow = useShadow;
+        }
+        else
+        {
+            this.useShadow = this.getAttribute(namings.attributeUseShadow) !== "false";
+        }
 
-    connectedCallback()
-    {
-        this.useShadow = !this.getAttributeNode(namings.attributeUseShadow);
-        this.path = this.getAttribute(namings.attributePath);
+        if(!this.path.endsWith('/'))
+        {
+            this.path += '/';
+        }
+        
         this.isRouteur = this.path.startsWith('/');
+
         if(this.isRouteur)
         {
             console.log("route is routeur");
@@ -123,7 +140,10 @@ export default class Route extends HTMLElement
             this.addEventListener(namings.navigateEvent,
                 this.navigateEventListener);
         }
+    }
 
+    connectedCallback()
+    {
         console.log("route is connecting");
         this.addEventListener(namings.connectedRoutingComponentEvent, 
             this.connectionEventListener);
