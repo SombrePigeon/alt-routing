@@ -34,6 +34,7 @@ export default class Anchor extends HTMLAnchorElement
             this.addEventListener(namings.connectingRoutingComponentEvent, 
                 this.connectionEventListener,
                 {
+                    passive: true,
                     once: true
                 });
         }

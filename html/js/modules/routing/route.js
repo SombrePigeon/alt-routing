@@ -27,7 +27,7 @@ export default class Route extends HTMLElement
         this.absolutePath = e.detail.path;
         this.setMatching();
         //listen to route change
-        this.eventListener = window.addEventListener(namings.routeChangeEvent,
+        window.addEventListener(namings.routeChangeEvent,
             this.routeChangeEventListener);
     };
 
@@ -53,7 +53,6 @@ export default class Route extends HTMLElement
         newLocation.hash = e.detail.hash;
         newLocation.search = e.detail.search;
         let newHref = newLocation.href;
-        console.log(newHref);
 
         if(location.href !== newHref)
         {
@@ -105,6 +104,7 @@ export default class Route extends HTMLElement
                     e.detail.path = "";
                 },
                 {
+                    passive: true,
                     capture: true
                 }
             );
@@ -124,12 +124,14 @@ export default class Route extends HTMLElement
                 e.detail.path += this.path;
             },
             {
+                passive: true,
                 capture: true
             }
         );
         this.addEventListener(namings.connectingRoutingComponentEvent,
             this.connectionEventListener,
             {
+                passive: true,
                 once: true
             }   
         )
@@ -162,7 +164,6 @@ export default class Route extends HTMLElement
         //disconnect eventListenner
         if(this.eventListener)
         {
-            //toDo listen to routeur route instead
             window.removeEventListener(namings.routeChangeEvent,this.eventListener);
         }
     }
