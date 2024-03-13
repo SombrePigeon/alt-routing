@@ -1,12 +1,12 @@
-import * as namings from "./namings.js"
+import namings from "./namings.js"
 import Route from "./route.js";
 console.log("router module");
+
 export default class Router extends HTMLBodyElement
 {
     constructor()
     {
         super();
-        
     }
 
     connectedCallback()
@@ -16,4 +16,4 @@ export default class Router extends HTMLBodyElement
     }
 }
 
-customElements.define(namings.routerComponent, Router, { extends: "body" });
+customElements.define(namings.components.router, Router, { extends: "body" });

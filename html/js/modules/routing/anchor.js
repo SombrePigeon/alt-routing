@@ -1,4 +1,4 @@
-import * as namings from "./namings.js"
+import namings from "./namings.js"
 console.log("anchor module");
 
 export default class Anchor extends HTMLAnchorElement
@@ -31,7 +31,7 @@ export default class Anchor extends HTMLAnchorElement
         }
         else
         {
-            this.addEventListener(namings.connectingRoutingComponentEvent, 
+            this.addEventListener(namings.events.connectingRoutingComponent, 
                 this.connectionEventListener,
                 {
                     passive: true,
@@ -46,7 +46,7 @@ export default class Anchor extends HTMLAnchorElement
         {
             console.log("anchor is connecting " );
             this.dispatchEvent(
-                new CustomEvent(namings.connectingRoutingComponentEvent,
+                new CustomEvent(namings.events.connectingRoutingComponent,
                     {
                         composed: true,
                         detail:
@@ -67,7 +67,7 @@ export default class Anchor extends HTMLAnchorElement
             e.preventDefault();
             console.log("cancel natural navigation, go to : " + this.href + " or "+ this.getAttribute("href"));
             this.dispatchEvent(
-                new CustomEvent(namings.navigateEvent,
+                new CustomEvent(namings.events.navigate,
                     {
                         bubbles:true,
                         composed: true,
@@ -85,4 +85,4 @@ export default class Anchor extends HTMLAnchorElement
     }
 }
 
-customElements.define(namings.anchorComponent, Anchor, { extends: "a" });
+customElements.define(namings.components.anchor, Anchor, { extends: "a" });

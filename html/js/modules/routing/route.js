@@ -1,4 +1,4 @@
-import * as namings from "./namings.js"
+import namings from "./namings.js";
 console.log("route module");
 
 export default class Route extends HTMLElement
@@ -10,7 +10,7 @@ export default class Route extends HTMLElement
     useShadow;
     shadow = null;
 
-    static observedAttributes = [namings.attributeMachedRoute];
+    static observedAttributes = [namings.attributes.machedRoute];
 
     attributeChangedCallback(name, oldValue, newValue)
     {
@@ -27,11 +27,9 @@ export default class Route extends HTMLElement
         this.absolutePath = e.detail.path;
         this.setMatching();
         //listen to route change
-        window.addEventListener(namings.routeChangeEvent,
+        window.addEventListener(namings.events.routeChange,
             this.routeChangeEventListener);
     };
-
-
 
     routeChangeEventListener = (e) =>
     {
@@ -77,7 +75,7 @@ export default class Route extends HTMLElement
         }
         else
         {
-            this.path = this.getAttribute(namings.attributePath);
+            this.path = this.getAttribute(namings.attributes.path);
         }
         if(useShadow != null)
         {
@@ -85,7 +83,7 @@ export default class Route extends HTMLElement
         }
         else
         {
-            this.useShadow = this.getAttribute(namings.attributeUseShadow) !== "false";
+            this.useShadow = this.getAttribute(namings.attributes.useShadow) !== "false";
         }
 
         if(!this.path.endsWith('/'))
@@ -98,7 +96,7 @@ export default class Route extends HTMLElement
         if(this.isRouteur)
         {
             console.log("route is routeur");
-            this.addEventListener(namings.connectingRoutingComponentEvent,
+            this.addEventListener(namings.events.connectingRoutingComponent,
                 e => 
                 {
                     e.detail.path = "";
@@ -113,12 +111,12 @@ export default class Route extends HTMLElement
             window.addEventListener("popstate",
             this.popstateEventListener);
             ///when click internal navigation
-            this.addEventListener(namings.navigateEvent,
+            this.addEventListener(namings.events.navigate,
                 this.navigateEventListener);
 
             
         }
-        this.addEventListener(namings.connectingRoutingComponentEvent,
+        this.addEventListener(namings.events.connectingRoutingComponent,
             e => 
             {
                 e.detail.path += this.path;
@@ -128,7 +126,7 @@ export default class Route extends HTMLElement
                 capture: true
             }
         );
-        this.addEventListener(namings.connectingRoutingComponentEvent,
+        this.addEventListener(namings.events.connectingRoutingComponent,
             this.connectionEventListener,
             {
                 passive: true,
@@ -140,10 +138,10 @@ export default class Route extends HTMLElement
     connectedCallback()
     {
         console.log("route is connecting");
-        this.addEventListener(namings.connectedRoutingComponentEvent, 
+        this.addEventListener(namings.events.connectedRoutingComponent, 
             this.connectionEventListener);
         this.dispatchEvent(
-            new CustomEvent(namings.connectingRoutingComponentEvent,
+            new CustomEvent(namings.events.connectingRoutingComponent,
                 {
                     //bubbles:true,
                     composed: true,
@@ -164,7 +162,7 @@ export default class Route extends HTMLElement
         //disconnect eventListenner
         if(this.eventListener)
         {
-            window.removeEventListener(namings.routeChangeEvent,this.eventListener);
+            window.removeEventListener(namings.events.routeChange,this.eventListener);
         }
     }
 
@@ -184,7 +182,7 @@ export default class Route extends HTMLElement
             }
         }
 
-        this.setAttribute(namings.attributeMachedRoute,match);
+        this.setAttribute(namings.attributes.machedRoute,match);
     }
 
     updateRouteState()
@@ -260,7 +258,7 @@ export default class Route extends HTMLElement
     updateRoutes()
     {
         this.dispatchEvent(
-            new CustomEvent(namings.routeChangeEvent,
+            new CustomEvent(namings.events.routeChange,
                 {
                     bubbles:true,
                     composed: true
@@ -270,4 +268,4 @@ export default class Route extends HTMLElement
     }
 }
 
-customElements.define(namings.routeComponent, Route);
+customElements.define(namings.components.route, Route);
