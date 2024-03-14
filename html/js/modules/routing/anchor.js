@@ -49,10 +49,7 @@ export default class Anchor extends HTMLAnchorElement
                 new CustomEvent(namings.events.connectingRoutingComponent,
                     {
                         composed: true,
-                        detail:
-                        {
-                            src: this
-                        }
+                        detail: {}
                     }
                 )
             );
