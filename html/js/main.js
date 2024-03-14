@@ -1,5 +1,6 @@
 import "./modules/routing/route.js"
 import "./modules/routing/anchor.js"
+import "./modules/routing/form.js"
 import "./modules/routing/router.js"
 //import "dev";
 

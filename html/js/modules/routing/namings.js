@@ -24,5 +24,6 @@ export default
         route: "alt-route",
         router: "alt-router",
         anchor: "alt-a",
+        form: "alt-form"
     }
 }
