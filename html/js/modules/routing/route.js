@@ -113,9 +113,8 @@ export default class Route extends HTMLElement
             ///when click internal navigation
             this.addEventListener(namings.events.navigate,
                 this.navigateEventListener);
-
-            
         }
+
         this.addEventListener(namings.events.connectingRoutingComponent,
             e => 
             {
@@ -126,6 +125,7 @@ export default class Route extends HTMLElement
                 capture: true
             }
         );
+
         this.addEventListener(namings.events.connectingRoutingComponent,
             this.connectionEventListener,
             {
@@ -138,8 +138,6 @@ export default class Route extends HTMLElement
     connectedCallback()
     {
         console.log("route is connecting");
-        this.addEventListener(namings.events.connectedRoutingComponent, 
-            this.connectionEventListener);
         this.dispatchEvent(
             new CustomEvent(namings.events.connectingRoutingComponent,
                 {
