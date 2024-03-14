@@ -26,9 +26,10 @@ export default class Route extends HTMLElement
         //set absolute path
         console.log("route connected !");
         this.absolutePath = e.detail.path;
+        this.routeur = e.detail.routeur;
         this.setMatching();
         //listen to route change
-        window.addEventListener(namings.events.routeChange,
+        this.routeur.addEventListener(namings.events.routeChange,
             this.routeChangeEventListener);
     };
 
@@ -56,6 +57,7 @@ export default class Route extends HTMLElement
         {
             console.log("navigate")
             history.pushState(newState, null, newHref);
+            this.updateRoutes();
         }
         else
         {
@@ -63,7 +65,6 @@ export default class Route extends HTMLElement
             //just reload
             history.go()
         }
-        this.updateRoutes();
     }
 
     constructor(path = null, useShadow = config.useShadow)
@@ -99,6 +100,7 @@ export default class Route extends HTMLElement
             this.addEventListener(namings.events.connectingRoutingComponent,
                 e => 
                 {
+                    e.detail.routeur = this;
                     e.detail.path = "";
                 },
                 {
@@ -153,11 +155,12 @@ export default class Route extends HTMLElement
     disconnectedCallback()
     {
         console.log("disconnect" + this.absolutePath);
-        //disconnect eventListenner
-        if(this.eventListener)
+        //disconnect window eventListenners
+        if(this.isRouteur)
         {
-            window.removeEventListener(namings.events.routeChange,this.eventListener);
+            window.removeEventListener("popstate", this.popstateEventListener);
         }
+        this.routeur.removeEventListener(namings.events.routeChange, this.routeChangeEventListener);
     }
 
     setMatching()
