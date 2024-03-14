@@ -1,23 +1,19 @@
-import * as namings from "./namings.js"
-
+import namings from "./namings.js"
+import Route from "./route.js";
 console.log("router module");
+
 export default class Router extends HTMLBodyElement
 {
     constructor()
     {
         super();
-        
     }
 
     connectedCallback()
     {
         console.log("routeur is connected");
-        //const shadow = this.attachShadow({mode: "open"});
-        const baseRoute = document.createElement("alt-route");
-        baseRoute.setAttribute(namings.attributePath, "/");
-        this.appendChild(baseRoute);
+        this.appendChild(new Route('/'));
     }
-
-    
 }
 
+customElements.define(namings.components.router, Router, { extends: "body" });
