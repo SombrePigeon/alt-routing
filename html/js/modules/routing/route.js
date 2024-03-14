@@ -28,6 +28,7 @@ export default class Route extends HTMLElement
         this.absolutePath = e.detail.path;
         this.routeur = e.detail.routeur;
         this.setMatching();
+        this.loadTemplate();
         //listen to route change
         this.routeur.addEventListener(namings.events.routeChange,
             this.routeChangeEventListener);
@@ -187,13 +188,11 @@ export default class Route extends HTMLElement
         if(!this.rendered && document.location.pathname.startsWith(this.absolutePath))
         {
             this.loadRoute();
-            this.loadTemplate();
             this.rendered=true;
         }
         else if(this.rendered && !document.location.pathname.startsWith(this.absolutePath)) 
         {
             this.unloadRoute();
-            this.unloadTemplate();
             this.rendered=false;
         }
     }
@@ -216,7 +215,10 @@ export default class Route extends HTMLElement
 
     unloadRoute()
     {
-        this.innerHTML="";//meh moryleak ?
+        for (let child of this.childNodes)
+        {
+            this.removeChild(child);
+        }
     }
 
     async loadTemplate()
@@ -241,15 +243,6 @@ export default class Route extends HTMLElement
                 }
             );
         }
-    }
-
-    unloadTemplate()
-    {
-        if(this.useShadow && this.shadow !== null)
-        {
-            this.shadow.innerHTML="";//meh moryleak ?
-        }
-        
     }
 
     updateRoutes()
