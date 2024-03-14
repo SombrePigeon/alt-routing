@@ -23,7 +23,6 @@ export default class Form extends HTMLFormElement
         super();
         //when initialisez :
         this.location = new URL(this.action);
-        debugger
         this.appNavigation = this.location.origin == location.origin
         if(!this.appNavigation)
         {
@@ -70,7 +69,6 @@ export default class Form extends HTMLFormElement
                         return `${e.name}=${e.value}`
                     })
                 .join("&");
-            debugger
             this.dispatchEvent(
                 new CustomEvent(namings.events.navigate,
                     {
