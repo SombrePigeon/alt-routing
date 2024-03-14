@@ -1,4 +1,5 @@
 import namings from "./namings.js";
+import config from "./config.js";
 console.log("route module");
 
 export default class Route extends HTMLElement
@@ -39,7 +40,6 @@ export default class Route extends HTMLElement
     popstateEventListener = (e)=>
     {
         console.log("browser navigation");
-        //this.navigate(document.location.pathname)
         this.updateRoutes();
     };
 
@@ -55,7 +55,7 @@ export default class Route extends HTMLElement
         if(location.href !== newHref)
         {
             console.log("navigate")
-            history.pushState(newState,null,newHref);
+            history.pushState(newState, null, newHref);
         }
         else
         {
@@ -66,7 +66,7 @@ export default class Route extends HTMLElement
         this.updateRoutes();
     }
 
-    constructor(path = null, useShadow = null)
+    constructor(path = null, useShadow = config.useShadow)
     {
         super();
         if(path != null)
@@ -143,12 +143,8 @@ export default class Route extends HTMLElement
         this.dispatchEvent(
             new CustomEvent(namings.events.connectingRoutingComponent,
                 {
-                    //bubbles:true,
                     composed: true,
-                    detail:
-                    {
-                        src: this
-                    }
+                    detail: {}
                 }
             )
         );
@@ -248,7 +244,7 @@ export default class Route extends HTMLElement
 
     unloadTemplate()
     {
-        if(this.useShadow && this.shadow != null)
+        if(this.useShadow && this.shadow !== null)
         {
             this.shadow.innerHTML="";//meh moryleak ?
         }
