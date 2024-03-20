@@ -57,34 +57,78 @@ export default class Form extends HTMLFormElement
 
     initNavigationEvent()
     {
-        this.addEventListener("submit", 
-        (e) => 
+        const formdata = new FormData(this);
+        const detail =
         {
-            e.preventDefault();
-            console.log("cancel natural form navigation, go to : " + this.action + " or "+ this.getAttribute("href"));
-            let searchParam = Array.from(this.elements)
-                .filter(e => e.name)
-                .map(e =>
-                    {
-                        return `${e.name}=${e.value}`
+            pathname: this.location.pathname,
+            search: null,
+            hash: this.location.hash,
+            state: null
+        };
+        switch(this.method)
+        {
+            case "get":
+                this.addEventListener("submit",
+                (e) =>
+                {
+                    e.preventDefault();
+                    const formData = new FormData(this);
+                    const search = new URLSearchParams(formData);
+                    this.dispatchEvent(
+                        new CustomEvent(namings.events.navigate,
+                            {
+                                bubbles:true,
+                                composed: true,
+                                detail: 
+                                {
+                                    ...detail,
+                                    search: search
+                                }
+                            }
+                        )
+                    );
+                });
+                break;
+            case "post":
+                this.addEventListener("submit",
+                (e) =>
+                {
+                    e.preventDefault();
+                    const formData = new FormData(this);
+                    fetch(this.action, {
+                        method: "POST",
+                        body: formData
                     })
-                .join("&");
-            this.dispatchEvent(
-                new CustomEvent(namings.events.navigate,
-                    {
-                        bubbles:true,
-                        composed: true,
-                        detail:
-                        {
-                            pathname: this.location.pathname,
-                            search: searchParam,
-                            hash: this.location.hash,
-                            state: null
+                    .then(response => {
+                        if (response.redirected) {
+                            this.dispatchEvent(
+                                new CustomEvent(namings.events.navigate,
+                                    {
+                                        bubbles:true,
+                                        composed: true,
+                                        detail: 
+                                        {
+                                            ...detail,
+                                            pathname: response.url
+                                        }
+                                    }
+                                )
+                            );
                         }
-                    }
-                )
-            );
-        });
+                        else
+                        {
+                            //replace target with response body
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Une erreur s\'est produite:', error);
+                    });
+                    
+                });
+                break;
+            default:
+                console.error(`unhandled method "${this.method}"`);
+        }
     }
 }
 
