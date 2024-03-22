@@ -85,11 +85,6 @@ export default class Route extends HTMLElement
             this.useShadow = this.getAttribute(namings.attributes.useShadow) !== "false";
         }
 
-        if(!this.path.endsWith('/'))
-        {
-            this.path += '/';
-        }
-
         this.isRouteur = this.path.startsWith('/');
 
         if(this.isRouteur)
