@@ -49,7 +49,7 @@ export default class Anchor extends HTMLAnchorElement
                 new CustomEvent(namings.events.connectingRoutingComponent,
                     {
                         composed: true,
-                        detail: {}
+                        detail: {}//needed 
                     }
                 )
             );
@@ -70,9 +70,7 @@ export default class Anchor extends HTMLAnchorElement
                         composed: true,
                         detail:
                         {
-                            pathname: this.pathname,
-                            search: this.search,
-                            hash: this.hash,
+                            url: new URL(this.href),
                             state: null
                         }
                     }

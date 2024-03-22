@@ -47,17 +47,14 @@ export default class Route extends HTMLElement
 
     navigateEventListener = (e)=>
     {
-        let newState = e.detail.state;
-        let newLocation = new URL(location.origin);
-        newLocation.pathname = e.detail.pathname;
-        newLocation.hash = e.detail.hash;
-        newLocation.search = e.detail.search;
-        let newHref = newLocation.href;
+        let destinationURL = e.detail.url;
+        let destinationState = e.detail.state;
 
-        if(location.href !== newHref)
+        if(location.href !== destinationURL
+            || history.state !== destinationState)
         {
             console.log("navigate")
-            history.pushState(newState, null, newHref);
+            history.pushState(destinationState, null, destinationURL);
             this.updateRoutes();
         }
         else
