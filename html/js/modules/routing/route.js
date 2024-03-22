@@ -5,7 +5,7 @@ console.log("route module");
 export default class Route extends HTMLElement
 {
     path;
-    absolutePath;
+    url;
     isRouteur = false;
     rendered = false;
     useShadow;
@@ -25,7 +25,7 @@ export default class Route extends HTMLElement
     {
         //set absolute path
         console.log("route connected !");
-        this.absolutePath = e.detail.path;
+        this.url = e.detail.url;
         this.routeur = e.detail.routeur;
         this.setMatching();
         this.loadTemplate();
@@ -100,6 +100,7 @@ export default class Route extends HTMLElement
                 {
                     e.detail.routeur = this;
                     e.detail.path = "";
+                    e.detail.url = new URL(location.origin);
                 },
                 {
                     passive: true,
@@ -119,6 +120,7 @@ export default class Route extends HTMLElement
             e => 
             {
                 e.detail.path += this.path;
+                e.detail.url = new URL(this.path, e.detail.url);
             },
             {
                 passive: true,
@@ -152,7 +154,7 @@ export default class Route extends HTMLElement
 
     disconnectedCallback()
     {
-        console.log("disconnect" + this.absolutePath);
+        console.log("disconnect" + this.url);
         //disconnect window eventListenners
         if(this.isRouteur)
         {
@@ -165,9 +167,9 @@ export default class Route extends HTMLElement
     {
         //match match-exact no
         let match = "no";
-        if(location.pathname.startsWith(this.absolutePath))
+        if(location.pathname.startsWith(this.url.pathname))
         {
-            if(location.pathname === this.absolutePath)
+            if(location.pathname === this.url.pathname)
             {
                 match = "match-exact";
             }
@@ -182,12 +184,12 @@ export default class Route extends HTMLElement
 
     updateRouteState()
     {
-        if(!this.rendered && document.location.pathname.startsWith(this.absolutePath))
+        if(!this.rendered && document.location.pathname.startsWith(this.url.pathname))
         {
             this.loadRoute();
             this.rendered=true;
         }
-        else if(this.rendered && !document.location.pathname.startsWith(this.absolutePath)) 
+        else if(this.rendered && !document.location.pathname.startsWith(this.url.pathname)) 
         {
             this.unloadRoute();
             this.rendered=false;
@@ -196,7 +198,7 @@ export default class Route extends HTMLElement
 
     async loadRoute()
     {
-        const componentAbsolutePath = this.absolutePath + "content.html";
+        const componentAbsolutePath = new URL("content.html", this.url.href);
         console.log("path is " + componentAbsolutePath);
         await fetch(componentAbsolutePath)
             .then((response) =>
@@ -227,7 +229,7 @@ export default class Route extends HTMLElement
                 this.shadow = this.attachShadow({mode: "open"});
             }
 
-            const componentAbsoluteTemplatePath = this.absolutePath + "template.html";
+            const componentAbsoluteTemplatePath = new URL("template.html", this.url.href);
             console.log("path is " + componentAbsoluteTemplatePath)
             await fetch(componentAbsoluteTemplatePath)
                 .then(response =>
