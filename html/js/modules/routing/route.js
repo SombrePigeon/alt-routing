@@ -4,18 +4,45 @@ console.log("route module");
 
 export default class Route extends HTMLElement
 {
-    path;
     url;
     isRouteur = false;
     rendered = false;
-    useShadow;
     shadow = null;
 
-    static observedAttributes = [namings.attributes.machedRoute];
+    //getters setters
+    get path()
+    {
+        return this.getAttribute(namings.attributes.path);
+    }
+    set path(path)
+    {
+        this.setAttribute(namings.attributes.path, path);
+    }
+
+    get useShadow()
+    {
+        return this.getAttribute(namings.attributes.useShadow) !== "false";
+    }
+    set useShadow(value)
+    {
+        this.setAttribute(namings.attributes.useShadow, value);
+    }
+
+    get locationMatch()
+    {
+        return this.getAttribute(namings.attributes.locationMatching);
+    }
+    set locationMatch(value)
+    {
+        this.setAttribute(namings.attributes.locationMatching, value);
+    }
+
+
+    static observedAttributes = [namings.attributes.locationMatching];
 
     attributeChangedCallback(name, oldValue, newValue)
     {
-        if(namings.attributes.machedRoute === name
+        if(namings.attributes.locationMatching === name
             && oldValue !== newValue)
         {
             this.updateRouteState();
@@ -33,8 +60,9 @@ export default class Route extends HTMLElement
         console.log("route connected !");
         this.url = e.detail.url;
         this.routeur = e.detail.routeur;
-        this.setMatching();
         this.loadTemplate();
+        //set for first time
+        this.setMatching();
         //listen to route change
         this.routeur.addEventListener(namings.events.routeChange,
             this.routeChangeEventListener);
@@ -70,26 +98,32 @@ export default class Route extends HTMLElement
             history.go()
         }
     }
+    
 
-    constructor(path = null, useShadow = config.useShadow)
+    constructor(path = null, useShadow = null)
     {
         super();
-        if(path != null)
+
+        if(path)
         {
             this.path = path;
         }
-        else
+        else if (this.path == null)
         {
-            this.path = this.getAttribute(namings.attributes.path);
+            console.error("not path for route");
         }
-        if(useShadow != null)
+        
+        if(useShadow)
         {
             this.useShadow = useShadow;
         }
-        else
+        else if(this.useShadow == null)
         {
-            this.useShadow = this.getAttribute(namings.attributes.useShadow) !== "false";
+            this.useShadow = config.useShadow;
         }
+        
+    
+        this.locationMatch = namings.attributes.locationMatchingValues.none;
 
         this.isRouteur = this.path.startsWith('/');
 
@@ -163,39 +197,41 @@ export default class Route extends HTMLElement
     setMatching()
     {
         //match match-exact no
-        let match = "no";
-        if(location.pathname.startsWith(this.url.pathname))
+        const locationMatchingValues = namings.attributes.locationMatchingValues;
+        let match = locationMatchingValues.none;
+        if(location.pathname.startsWith(this.url.pathname))//refait ça stp ! signé toi de hier
         {
-            if(location.pathname === this.url.pathname)
+            if(location.pathname === this.url.pathname)// ça aussi
             {
-                match = "match-exact";
+                match = locationMatchingValues.exact;
             }
             else
             {
-                match = "match";
+                match = locationMatchingValues.part;
             }
         }
 
-        this.setAttribute(namings.attributes.machedRoute,match);
+        this.locationMatch = match;
     }
 
     updateRouteState()
     {
-        if(!this.rendered && document.location.pathname.startsWith(this.url.pathname))
+        const render = this.locationMatch !== namings.attributes.locationMatchingValues.none;
+        if(!this.rendered && render)
         {
             this.loadRoute();
-            this.rendered=true;
+            this.rendered = true;
         }
-        else if(this.rendered && !document.location.pathname.startsWith(this.url.pathname)) 
+        else if(this.rendered && !render) 
         {
             this.unloadRoute();
-            this.rendered=false;
+            this.rendered = false;
         }
     }
 
     async loadRoute()
     {
-        const componentAbsolutePath = new URL("content.html", this.url.href);
+        const componentAbsolutePath = new URL("content.html", this.url);
         console.log("path is " + componentAbsolutePath);
         await fetch(componentAbsolutePath)
             .then((response) =>
@@ -226,7 +262,7 @@ export default class Route extends HTMLElement
                 this.shadow = this.attachShadow({mode: "open"});
             }
 
-            const componentAbsoluteTemplatePath = new URL("template.html", this.url.href);
+            const componentAbsoluteTemplatePath = new URL("template.html", this.url);
             console.log("path is " + componentAbsoluteTemplatePath)
             await fetch(componentAbsoluteTemplatePath)
                 .then(response =>

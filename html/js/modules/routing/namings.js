@@ -3,11 +3,14 @@ export default
     attributes:
     {
         path: "path",
-        absolutePath: "abspath",
-        consumablePath: "matchable",
-        consumedPath: "matched",
         useShadow: "use-shadow",
-        machedRoute: "match",
+        locationMatching: "match",
+        locationMatchingValues:
+        {
+            part: "part",
+            exact: "exact",
+            none: "none"
+        }
     },
     events:
     {

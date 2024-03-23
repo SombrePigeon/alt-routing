@@ -12,6 +12,6 @@ export default
     },
     route:
     {
-        useShadow: true,
+        useShadow: false,
     }
 }
