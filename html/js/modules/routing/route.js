@@ -20,6 +20,11 @@ export default class Route extends HTMLElement
             this.updateRouteState();
         }
     }
+    
+    constructUrlEventListener = (e) => 
+    {
+        e.detail.url = new URL(this.path, e.detail.url);
+    };
 
     connectionEventListener = (e) => 
     {
@@ -112,11 +117,7 @@ export default class Route extends HTMLElement
         }
 
         this.addEventListener(namings.events.connectingRoutingComponent,
-            e => 
-            {
-                e.detail.path += this.path;
-                e.detail.url = new URL(this.path, e.detail.url);
-            },
+            this.constructUrlEventListener,
             {
                 passive: true,
                 capture: true
