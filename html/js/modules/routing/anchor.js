@@ -3,11 +3,13 @@ console.log("anchor module");
 
 export default class Anchor extends HTMLAnchorElement
 {
+    routeur;
     connectionEventListener = (e) => 
     {
         //rewrite href(absolute) 
         let href = this.getAttribute("href");
         this.href = new URL(href, e.detail.url);
+        this.routeur = e.detail.routeur;
         console.log("anchor is connected ");
         this.initNavigationEvent();
     };
@@ -43,17 +45,15 @@ export default class Anchor extends HTMLAnchorElement
         {
             e.preventDefault();
             console.log("cancel natural navigation, go to : " + this.href + " or "+ this.getAttribute("href"));
-            this.dispatchEvent(
+            this.routeur.dispatchEvent(
                 new CustomEvent(namings.events.navigate,
+                {
+                    detail:
                     {
-                        bubbles:true,
-                        composed: true,
-                        detail:
-                        {
-                            url: new URL(this.href),
-                            state: null
-                        }
+                        url: new URL(this.href),
+                        state: null
                     }
+                }
                 )
             );
         });
