@@ -16,9 +16,7 @@ export default
     {
         navigate: "alt-navigate",
         routeChange: "alt-route-change",
-        connectedRoute: "alt-new-route",
         connectingRoutingComponent: "alt-new-routing",
-        connectedRoutingComponent: "alt-new-routing-ok",
     },
     components:
     {
