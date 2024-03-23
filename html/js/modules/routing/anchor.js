@@ -4,19 +4,41 @@ console.log("anchor module");
 export default class Anchor extends HTMLAnchorElement
 {
     routeur;
+    //getterSetter
+    get locationMatch()
+    {
+        return this.getAttribute(namings.attributes.locationMatching);
+    }
+    set locationMatch(value)
+    {
+        this.setAttribute(namings.attributes.locationMatching, value);
+    }
+
     connectionEventListener = (e) => 
     {
         //rewrite href(absolute) 
         let href = this.getAttribute("href");
         this.href = new URL(href, e.detail.url);
         this.routeur = e.detail.routeur;
-        console.log("anchor is connected ");
+        //set for first time
+        this.setMatching();
+        //listen to route change
+        this.routeur.addEventListener(namings.events.routeChange,
+            this.routeChangeEventListener);
         this.initNavigationEvent();
+        console.log("anchor is connected ");
     };
+
+    routeChangeEventListener = (e) =>
+    {
+        this.setMatching();
+    };
+    
 
     constructor() 
     {
         super();
+        this.locationMatch = namings.attributes.locationMatchingValues.none;
         //init callback
         this.addEventListener(namings.events.connectingRoutingComponent, 
             this.connectionEventListener,
@@ -38,6 +60,11 @@ export default class Anchor extends HTMLAnchorElement
         );
     }
 
+    disconnectedCallback()
+    {
+        this.routeur.removeEventListener(namings.events.routeChange, this.routeChangeEventListener);
+    }
+
     initNavigationEvent()
     {
         this.addEventListener("click", 
@@ -57,6 +84,26 @@ export default class Anchor extends HTMLAnchorElement
                 )
             );
         });
+    }
+
+    setMatching()
+    {
+        //match match-exact no
+        const locationMatchingValues = namings.attributes.locationMatchingValues;
+        let match = locationMatchingValues.none;
+        if(location.pathname.startsWith(this.pathname))//refait ça stp ! signé toi de hier
+        {
+            if(location.pathname === this.pathname)// ça aussi
+            {
+                match = locationMatchingValues.exact;
+            }
+            else
+            {
+                match = locationMatchingValues.part;
+            }
+        }
+
+        this.locationMatch = match;
     }
 }
 
