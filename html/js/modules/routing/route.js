@@ -15,7 +15,8 @@ export default class Route extends HTMLElement
 
     attributeChangedCallback(name, oldValue, newValue)
     {
-        if(oldValue !== newValue)
+        if(namings.attributes.machedRoute === name
+            && oldValue !== newValue)
         {
             this.updateRouteState();
         }
