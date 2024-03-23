@@ -9,7 +9,7 @@ export default class Route extends HTMLElement
     rendered = false;
     shadow = null;
 
-    //getters setters
+    //getters&setters
     get path()
     {
         return this.getAttribute(namings.attributes.path);
@@ -18,7 +18,6 @@ export default class Route extends HTMLElement
     {
         this.setAttribute(namings.attributes.path, path);
     }
-
     get useShadow()
     {
         return this.getAttribute(namings.attributes.useShadow) !== "false";
@@ -27,7 +26,6 @@ export default class Route extends HTMLElement
     {
         this.setAttribute(namings.attributes.useShadow, value);
     }
-
     get locationMatch()
     {
         return this.getAttribute(namings.attributes.locationMatching);
@@ -37,7 +35,7 @@ export default class Route extends HTMLElement
         this.setAttribute(namings.attributes.locationMatching, value);
     }
 
-
+    //observers
     static observedAttributes = [namings.attributes.locationMatching];
 
     attributeChangedCallback(name, oldValue, newValue)
@@ -49,57 +47,6 @@ export default class Route extends HTMLElement
         }
     }
     
-    constructUrlEventListener = (e) => 
-    {
-        e.detail.url = new URL(this.path, e.detail.url);
-    };
-
-    connectionEventListener = (e) => 
-    {
-        //set absolute path
-        console.log("route connected !");
-        this.url = e.detail.url;
-        this.routeur = e.detail.routeur;
-        this.loadTemplate();
-        //set for first time
-        this.setMatching();
-        //listen to route change
-        this.routeur.addEventListener(namings.events.routeChange,
-            this.routeChangeEventListener);
-    };
-
-    routeChangeEventListener = (e) =>
-    {
-        this.setMatching();
-    };
-
-    popstateEventListener = (e)=>
-    {
-        console.log("browser navigation");
-        this.updateRoutes();
-    };
-
-    navigateEventListener = (e)=>
-    {
-        let destinationURL = e.detail.url;
-        let destinationState = e.detail.state;
-
-        if(location.href !== destinationURL
-            || history.state !== destinationState)
-        {
-            console.log("navigate")
-            history.pushState(destinationState, null, destinationURL);
-            this.updateRoutes();
-        }
-        else
-        {
-            console.log("refresh")
-            //just reload
-            history.go()
-        }
-    }
-    
-
     constructor(path = null, useShadow = null)
     {
         super();
@@ -138,7 +85,6 @@ export default class Route extends HTMLElement
                     e.detail.url = new URL(location.origin);
                 },
                 {
-                    passive: true,
                     capture: true
                 }
             );
@@ -154,7 +100,6 @@ export default class Route extends HTMLElement
         this.addEventListener(namings.events.connectingRoutingComponent,
             this.constructUrlEventListener,
             {
-                passive: true,
                 capture: true
             }
         );
@@ -162,12 +107,12 @@ export default class Route extends HTMLElement
         this.addEventListener(namings.events.connectingRoutingComponent,
             this.connectionEventListener,
             {
-                passive: true,
                 once: true
             }   
         )
     }
 
+    //callbacks
     connectedCallback()
     {
         console.log("route is connecting");
@@ -175,12 +120,10 @@ export default class Route extends HTMLElement
             new CustomEvent(namings.events.connectingRoutingComponent,
                 {
                     composed: true,
-                    detail: {}
+                    detail: {}//must be initialized
                 }
             )
-        );
-        
-        
+        ); 
     }
 
     disconnectedCallback()
@@ -194,9 +137,9 @@ export default class Route extends HTMLElement
         this.routeur.removeEventListener(namings.events.routeChange, this.routeChangeEventListener);
     }
 
+    //methods
     setMatching()
     {
-        //match match-exact no
         const locationMatchingValues = namings.attributes.locationMatchingValues;
         let match = locationMatchingValues.none;
         if(location.pathname.startsWith(this.url.pathname))//refait ça stp ! signé toi de hier
@@ -287,6 +230,57 @@ export default class Route extends HTMLElement
                 }
             )
         );
+    }
+
+    constructUrlEventListener = (e) => 
+    {
+        e.detail.url = new URL(this.path, e.detail.url);
+    };
+
+    //eventsListeners
+    connectionEventListener = (e) => 
+    {
+        //set absolute path
+        console.log("route connected !");
+        this.url = e.detail.url;
+        this.routeur = e.detail.routeur;
+        this.loadTemplate();
+        //set for first time
+        this.setMatching();
+        //listen to route change
+        this.routeur.addEventListener(namings.events.routeChange,
+            this.routeChangeEventListener);
+    };
+
+    routeChangeEventListener = (e) =>
+    {
+        this.setMatching();
+    };
+
+    popstateEventListener = (e)=>
+    {
+        console.log("browser navigation");
+        this.updateRoutes();
+    };
+
+    navigateEventListener = (e)=>
+    {
+        let destinationURL = e.detail.url;
+        let destinationState = e.detail.state;
+
+        if(location.href !== destinationURL
+            || history.state !== destinationState)
+        {
+            console.log("navigate")
+            history.pushState(destinationState, null, destinationURL);
+            this.updateRoutes();
+        }
+        else
+        {
+            console.log("refresh")
+            //just reload
+            history.go()
+        }
     }
 }
 

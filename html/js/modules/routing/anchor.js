@@ -4,7 +4,7 @@ console.log("anchor module");
 export default class Anchor extends HTMLAnchorElement
 {
     routeur;
-    //getterSetter
+    //getters&setters
     get locationMatch()
     {
         return this.getAttribute(namings.attributes.locationMatching);
@@ -13,27 +13,6 @@ export default class Anchor extends HTMLAnchorElement
     {
         this.setAttribute(namings.attributes.locationMatching, value);
     }
-
-    connectionEventListener = (e) => 
-    {
-        //rewrite href(absolute) 
-        let href = this.getAttribute("href");
-        this.href = new URL(href, e.detail.url);
-        this.routeur = e.detail.routeur;
-        //set for first time
-        this.setMatching();
-        //listen to route change
-        this.routeur.addEventListener(namings.events.routeChange,
-            this.routeChangeEventListener);
-        this.initNavigationEvent();
-        console.log("anchor is connected ");
-    };
-
-    routeChangeEventListener = (e) =>
-    {
-        this.setMatching();
-    };
-    
 
     constructor() 
     {
@@ -47,6 +26,7 @@ export default class Anchor extends HTMLAnchorElement
             });
     }
 
+    //callbacks
     connectedCallback()
     {
         console.log("anchor is connecting " );
@@ -54,7 +34,7 @@ export default class Anchor extends HTMLAnchorElement
             new CustomEvent(namings.events.connectingRoutingComponent,
                 {
                     composed: true,
-                    detail: {}//needed 
+                    detail: {}//must be initialized
                 }
             )
         );
@@ -65,6 +45,7 @@ export default class Anchor extends HTMLAnchorElement
         this.routeur.removeEventListener(namings.events.routeChange, this.routeChangeEventListener);
     }
 
+    //methods
     initNavigationEvent()
     {
         this.addEventListener("click", 
@@ -88,7 +69,6 @@ export default class Anchor extends HTMLAnchorElement
 
     setMatching()
     {
-        //match match-exact no
         const locationMatchingValues = namings.attributes.locationMatchingValues;
         let match = locationMatchingValues.none;
         if(location.pathname.startsWith(this.pathname))//refait ça stp ! signé toi de hier
@@ -105,6 +85,27 @@ export default class Anchor extends HTMLAnchorElement
 
         this.locationMatch = match;
     }
+
+    //eventsListeners
+    connectionEventListener = (e) => 
+    {
+        //rewrite href(absolute) 
+        let href = this.getAttribute("href");
+        this.href = new URL(href, e.detail.url);
+        this.routeur = e.detail.routeur;
+        //set for first time
+        this.setMatching();
+        //listen to route change
+        this.routeur.addEventListener(namings.events.routeChange,
+            this.routeChangeEventListener);
+        this.initNavigationEvent();
+        console.log("anchor is connected ");
+    };
+
+    routeChangeEventListener = (e) =>
+    {
+        this.setMatching();
+    };
 }
 
 customElements.define(namings.components.anchor, Anchor, { extends: "a" });
