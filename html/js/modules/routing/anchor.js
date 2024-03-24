@@ -59,6 +59,7 @@ export default class Anchor extends HTMLAnchorElement
                     detail:
                     {
                         url: new URL(this.href),
+                        target: this.target,
                         state: null
                     }
                 }

@@ -69,11 +69,14 @@ export default class Route extends HTMLElement
             this.useShadow = config.useShadow;
         }
         
-    
         this.locationMatch = namings.attributes.locationMatchingValues.none;
 
         this.isRouteur = this.path.startsWith('/');
+    }
 
+    //callbacks
+    connectedCallback()
+    {
         if(this.isRouteur)
         {
             console.log("route is routeur");
@@ -110,11 +113,7 @@ export default class Route extends HTMLElement
                 once: true
             }   
         )
-    }
 
-    //callbacks
-    connectedCallback()
-    {
         console.log("route is connecting");
         this.dispatchEvent(
             new CustomEvent(namings.events.connectingRoutingComponent,
@@ -265,22 +264,55 @@ export default class Route extends HTMLElement
 
     navigateEventListener = (e)=>
     {
+        debugger
         let destinationURL = e.detail.url;
         let destinationState = e.detail.state;
+        const target = e.detail.target == "" ? 
+                    "_self" : e.detail.target;
 
-        if(location.href !== destinationURL
-            || history.state !== destinationState)
+        if(target === "_self"
+            || window.name === target)
         {
-            console.log("navigate")
-            history.pushState(destinationState, null, destinationURL);
-            this.updateRoutes();
+            if(location.href !== destinationURL.href
+                || history.state !== destinationState)
+            {
+                console.log("navigate")
+                history.pushState(destinationState, null, destinationURL);
+                this.updateRoutes();
+            }
+            else
+            {
+                console.log("refresh")
+                //just reload
+                history.go()
+            }
         }
         else
         {
-            console.log("refresh")
-            //just reload
-            history.go()
+            const targetWindow = window.open("", target);
+            const targetRouteur = targetWindow.document?.querySelector(`${namings.components.route}[${namings.attributes.path}^='/']`);
+            const navigable = targetWindow.location.href.startsWith(this.url.href);
+            debugger
+            if(navigable)
+            {
+                targetRouteur.dispatchEvent(
+                    new CustomEvent(namings.events.navigate,
+                    {
+                        detail:
+                        {
+                            url: new URL(destinationURL),
+                            target: target,
+                            state: destinationState
+                        }
+                    })
+                );
+            }
+            else
+            {
+                window.open(destinationURL, target);
+            }
         }
+        
     }
 }
 
