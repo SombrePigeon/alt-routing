@@ -307,7 +307,7 @@ export default class Route extends HTMLElement
                 const authorizedTargetsOrigins = config.targetNavigation.targets;
                 const message = 
                 {
-                    type: namings.events.navigate,//toDo use namings
+                    type: namings.events.navigate,
                     href: destinationURL.href,
                     target: target,
                     state: destinationState
