@@ -13,5 +13,12 @@ export default
     route:
     {
         useShadow: false,
+    },
+    targetNavigation:
+    {
+        origins:["http://training.localhost"],
+        targets:["http://training.localhost"],
+        timeout: 10
     }
+
 }

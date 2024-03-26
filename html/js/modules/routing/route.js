@@ -33,7 +33,7 @@ export default class Route extends HTMLElement
     set locationMatch(value)
     {
         this.setAttribute(namings.attributes.locationMatching, value);
-    }
+    }    
 
     //observers
     static observedAttributes = [namings.attributes.locationMatching];
@@ -94,21 +94,23 @@ export default class Route extends HTMLElement
             //generate navigation event
             ///when popstate event
             window.addEventListener("popstate",
-            this.popstateEventListener);
+            this.#popstateEventListener);
             ///when click internal navigation
             this.addEventListener(namings.events.navigate,
-                this.navigateEventListener);
+                this.#navigateEventListener);
+            
+            window.addEventListener("message", this.#messageNavigateEventListenner);
         }
 
         this.addEventListener(namings.events.connectingRoutingComponent,
-            this.constructUrlEventListener,
+            this.#constructUrlEventListener,
             {
                 capture: true
             }
         );
 
         this.addEventListener(namings.events.connectingRoutingComponent,
-            this.connectionEventListener,
+            this.#connectionEventListener,
             {
                 once: true
             }   
@@ -131,9 +133,10 @@ export default class Route extends HTMLElement
         //disconnect window eventListenners
         if(this.isRouteur)
         {
-            window.removeEventListener("popstate", this.popstateEventListener);
+            window.removeEventListener("popstate", this.#popstateEventListener);
+            window.addEventListener("message", this.#messageNavigateEventListenner);
         }
-        this.routeur.removeEventListener(namings.events.routeChange, this.routeChangeEventListener);
+        this.routeur.removeEventListener(namings.events.routeChange, this.#routeChangeEventListener);
     }
 
     //methods
@@ -231,13 +234,13 @@ export default class Route extends HTMLElement
         );
     }
 
-    constructUrlEventListener = (e) => 
+    #constructUrlEventListener = (e) => 
     {
         e.detail.url = new URL(this.path, e.detail.url);
     };
 
     //eventsListeners
-    connectionEventListener = (e) => 
+    #connectionEventListener = (e) => 
     {
         //set absolute path
         console.log("route connected !");
@@ -248,30 +251,31 @@ export default class Route extends HTMLElement
         this.setMatching();
         //listen to route change
         this.routeur.addEventListener(namings.events.routeChange,
-            this.routeChangeEventListener);
+            this.#routeChangeEventListener);
     };
 
-    routeChangeEventListener = (e) =>
+    #routeChangeEventListener = (e) =>
     {
         this.setMatching();
     };
 
-    popstateEventListener = (e)=>
+    #popstateEventListener = (e)=>
     {
         console.log("browser navigation");
         this.updateRoutes();
     };
 
-    navigateEventListener = (e)=>
+    #navigateEventListener = (e)=>
     {
-        debugger
-        let destinationURL = e.detail.url;
-        let destinationState = e.detail.state;
-        const target = e.detail.target == "" ? 
-                    "_self" : e.detail.target;
+        const destinationURL = e.detail.url;
+        const destinationState = e.detail.state;
+        let target = e.detail.target;
+        if(target === "" || target === window.name)
+        {
+            target = "_self";
+        }
 
-        if(target === "_self"
-            || window.name === target)
+        if(target === "_self")
         {
             if(location.href !== destinationURL.href
                 || history.state !== destinationState)
@@ -289,30 +293,84 @@ export default class Route extends HTMLElement
         }
         else
         {
-            const targetWindow = window.open("", target);
-            const targetRouteur = targetWindow.document?.querySelector(`${namings.components.route}[${namings.attributes.path}^='/']`);
-            const navigable = targetWindow.location.href.startsWith(this.url.href);
-            debugger
-            if(navigable)
+            const targetOrigin = destinationURL.origin;
+            const rel = e.detail.rel;
+
+            if(target === "_blank" || rel !== "")
             {
-                targetRouteur.dispatchEvent(
-                    new CustomEvent(namings.events.navigate,
-                    {
-                        detail:
-                        {
-                            url: new URL(destinationURL),
-                            target: target,
-                            state: destinationState
-                        }
-                    })
-                );
+                window.open(destinationURL, target, rel);
             }
             else
             {
-                window.open(destinationURL, target);
+
+                const targetWindow = window.open("", target);
+                const authorizedTargetsOrigins = config.targetNavigation.targets;
+                const message = 
+                {
+                    type: namings.events.navigate,//toDo use namings
+                    href: destinationURL.href,
+                    target: target,
+                    state: destinationState
+                }
+                for(const origin of authorizedTargetsOrigins)
+                {
+                    targetWindow.postMessage(
+                        message,
+                        origin);
+                }
+                const abortTimeout = AbortSignal.timeout(config.targetNavigation.timeout);
+                const abortListener = new AbortController();
+                const abortSignal = AbortSignal.any([abortTimeout,abortListener.signal]);
+                abortSignal.addEventListener("abort", 
+                (e)=>
+                {
+                    if(abortTimeout.aborted)
+                    {
+                        window.open(destinationURL, target);
+                    }
+                    else
+                    {
+                        console.log(`${target} window has navigated successfully`);
+                    }
+                });
+                window.addEventListener("message",
+                (e)=>
+                {
+                    if(e.data === namings.events.navigated)
+                    {
+                        abortListener.abort();
+                    }
+                },
+                {
+                    signal: abortSignal
+                }
+                );
             }
         }
         
+    }
+
+    #messageNavigateEventListenner = (e)=>
+    {
+        if(e.data.type == namings.events.navigate)
+        {
+            e.source.postMessage(
+                namings.events.navigated,
+                e.origin);
+            this.dispatchEvent(
+                new CustomEvent(namings.events.navigate,
+                {
+                    detail:
+                    {
+                        url: new URL(e.data.href),
+                        target: e.data.target,
+                        state: e.data.state,
+                        rel: ""
+                    }
+                }
+                )
+            );
+        }
     }
 }
 

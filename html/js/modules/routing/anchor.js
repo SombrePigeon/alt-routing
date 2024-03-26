@@ -60,7 +60,10 @@ export default class Anchor extends HTMLAnchorElement
                     {
                         url: new URL(this.href),
                         target: this.target,
-                        state: null
+                        state: null,
+                        rel: this.rel.split(',')
+                            .filter(r => r === "noopener" || r === "noreferrer")
+                            .join(',')
                     }
                 }
                 )

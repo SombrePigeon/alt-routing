@@ -15,6 +15,7 @@ export default
     events:
     {
         navigate: "alt-navigate",
+        navigated: "alt-navigated",
         routeChange: "alt-route-change",
         connectingRoutingComponent: "alt-new-routing",
     },
