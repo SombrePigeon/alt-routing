@@ -98,12 +98,12 @@ a:hover
     box-shadow: 1px 1px 6px 6px rgba(0, 0, 0, 0.6);
 }
 
-a[match=exact]
+a[match=exact]:not([target])
 {
     pointer-events: none;
     filter: grayscale();
 }
-a[match=part]
+a[match=part]:not([target])
 {
     text-decoration:underline;
 }
