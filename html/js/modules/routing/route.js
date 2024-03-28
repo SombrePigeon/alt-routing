@@ -352,7 +352,8 @@ export default class Route extends HTMLElement
 
     #messageNavigateEventListenner = (e)=>
     {
-        if(e.data.type == namings.events.navigate)
+        if(e.data.type == namings.events.navigate
+            || config.targetNavigation.origins.includes(e.origin))
         {
             e.source.postMessage(
                 namings.events.navigated,
