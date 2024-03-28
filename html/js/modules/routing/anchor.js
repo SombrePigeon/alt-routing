@@ -3,7 +3,7 @@ console.log("anchor module");
 
 export default class Anchor extends HTMLAnchorElement
 {
-    routeur;
+    #routeur;
     //getters&setters
     get locationMatch()
     {
@@ -42,7 +42,7 @@ export default class Anchor extends HTMLAnchorElement
 
     disconnectedCallback()
     {
-        this.routeur.removeEventListener(namings.events.routeChange, this.routeChangeEventListener);
+        this.#routeur.removeEventListener(namings.events.routeChange, this.routeChangeEventListener);
     }
 
     //methods
@@ -53,7 +53,7 @@ export default class Anchor extends HTMLAnchorElement
         {
             e.preventDefault();
             console.log("cancel natural navigation, go to : " + this.href + " or "+ this.getAttribute("href"));
-            this.routeur.dispatchEvent(
+            this.#routeur.dispatchEvent(
                 new CustomEvent(namings.events.navigate,
                 {
                     detail:
@@ -96,11 +96,11 @@ export default class Anchor extends HTMLAnchorElement
         //rewrite href(absolute) 
         let href = this.getAttribute("href");
         this.href = new URL(href, e.detail.url);
-        this.routeur = e.detail.routeur;
+        this.#routeur = e.detail.routeur;
         //set for first time
         this.setMatching();
         //listen to route change
-        this.routeur.addEventListener(namings.events.routeChange,
+        this.#routeur.addEventListener(namings.events.routeChange,
             this.routeChangeEventListener);
         this.initNavigationEvent();
         console.log("anchor is connected ");
