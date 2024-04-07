@@ -2,15 +2,32 @@ export default
 { 
     attributes:
     {
-        path: "path",
-        useShadow: "use-shadow",
-        locationMatching: "match",
-        locationMatchingValues:
+        path: "path",//toDo remove
+        useShadow: "use-shadow",//toDo remove
+        locationMatching: "match",//toDo remove
+        locationMatchingValues://toDo move to enum
         {
             part: "part",
             exact: "exact",
             none: "none"
+        },
+    },
+    enum:
+    {
+        state: 
+        {
+            unloaded: Symbol.for("unloaded"),
+            loaded: Symbol.for("loaded"),
+            loading: Symbol.for("loading"),
+            unloading: Symbol.for("unloading"),
+        },
+        reason:
+        {
+            ok: "",//?
+            ko: "",
+            cancelled: ""
         }
+
     },
     events:
     {
