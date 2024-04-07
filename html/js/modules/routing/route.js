@@ -99,13 +99,13 @@ export default class Route extends HTMLElement
         }
         
         this.locationMatch = namings.attributes.locationMatchingValues.none;
-        this.isRouteur = this.path.startsWith('/');
+        this.#isRouteur = this.path.startsWith('/');
     }
 
     //callbacks
     connectedCallback()
     {
-        if(this.isRouteur)
+        if(this.#isRouteur)
         {
             console.log("route is routeur");
             this.addEventListener(namings.events.connectingRoutingComponent,
@@ -158,7 +158,7 @@ export default class Route extends HTMLElement
     {
         console.log("disconnect" + this.#url);
         //disconnect window eventListenners
-        if(this.isRouteur)
+        if(this.#isRouteur)
         {
             window.removeEventListener("popstate", this.#popstateEventListener);
             window.addEventListener("message", this.#messageNavigateEventListenner);
