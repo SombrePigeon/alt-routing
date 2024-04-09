@@ -6,8 +6,9 @@ export default class Route extends HTMLElement
 {
     #url;
     #isRouteur = false;
-    #rendered = false;
     #shadow = null;
+    #nav = false;
+    #recursive = false;
 
     #setProperties()
     {
@@ -66,14 +67,63 @@ export default class Route extends HTMLElement
     }    
 
     //observers
-    static observedAttributes = [namings.attributes.locationMatching];
+    static observedAttributes = [namings.attributes.locationMatching,"data-state"];
 
     attributeChangedCallback(name, oldValue, newValue)
     {
-        if(namings.attributes.locationMatching === name
-            && oldValue !== newValue)
+        if(oldValue !== newValue)
         {
-            this.updateRouteState();
+            switch(name)
+            {
+                case namings.attributes.locationMatching:
+                    switch(newValue)
+                    {
+                        case namings.attributes.locationMatchingValues.exact:
+                        case namings.attributes.locationMatchingValues.part:
+                            
+                            switch(Symbol.for(this.dataset.state))
+                            {
+                                case namings.enum.state.unloaded:
+                                    this.dataset.state = Symbol.keyFor(namings.enum.state.loading);
+                                    break;
+                                case namings.enum.state.loaded:
+                                    break;
+                                case namings.enum.state.loading:
+                                    break;
+                                case namings.enum.state.unloading:
+                                    break;
+                            }
+                            break;
+                            case namings.attributes.locationMatchingValues.none:
+                            switch(Symbol.for(this.dataset.state))
+                            {
+                                case namings.enum.state.unloaded:
+                                    break;
+                                case namings.enum.state.loaded:
+                                    this.dataset.state = Symbol.keyFor(namings.enum.state.unloading);
+                                    break;
+                                case namings.enum.state.loading:
+                                    break;
+                                case namings.enum.state.unloading:
+                                    break;
+                            }
+                    }
+                    break;
+                case "data-state":
+                    switch(Symbol.for(this.dataset.state))
+                    {
+                        case namings.enum.state.unloaded:
+                            break;
+                        case namings.enum.state.loaded:
+                            break;
+                        case namings.enum.state.loading:
+                            this.loadRoute();
+                            break;
+                        case namings.enum.state.unloading:
+                            this.unloadRoute();
+                            break;
+                    }
+            }
         }
     }
     
@@ -97,7 +147,8 @@ export default class Route extends HTMLElement
         {
             this.useShadow = config.useShadow;
         }
-        
+        this.dataset.state = Symbol.keyFor(namings.enum.state.unloaded);
+        this.dataset.reason = Symbol.keyFor(namings.enum.reason.ok);
         this.locationMatch = namings.attributes.locationMatchingValues.none;
         this.#isRouteur = this.path.startsWith('/');
     }
@@ -125,7 +176,6 @@ export default class Route extends HTMLElement
             ///when click internal navigation
             this.addEventListener(namings.events.navigate,
                 this.#navigateEventListener);
-            
             window.addEventListener("message", this.#messageNavigateEventListenner);
         }
 
@@ -141,17 +191,15 @@ export default class Route extends HTMLElement
             {
                 once: true
             }   
-        )
-
+        );
         console.log("route is connecting");
         this.dispatchEvent(
             new CustomEvent(namings.events.connectingRoutingComponent,
                 {
-                    composed: true,
                     detail: {}//must be initialized
                 }
             )
-        ); 
+        );
     }
 
     disconnectedCallback()
@@ -161,7 +209,7 @@ export default class Route extends HTMLElement
         if(this.#isRouteur)
         {
             window.removeEventListener("popstate", this.#popstateEventListener);
-            window.addEventListener("message", this.#messageNavigateEventListenner);
+            window.removeEventListener("message", this.#messageNavigateEventListenner);
         }
         this.routeur.removeEventListener(namings.events.routeChange, this.#routeChangeEventListener);
     }
@@ -171,9 +219,10 @@ export default class Route extends HTMLElement
     {
         const locationMatchingValues = namings.attributes.locationMatchingValues;
         let match = locationMatchingValues.none;
-        if(location.pathname.startsWith(this.#url.pathname))//refait ça stp ! signé toi de hier
+        //toDo try opti
+        if(location.pathname.startsWith(this.#url.pathname))
         {
-            if(location.pathname === this.#url.pathname)// ça aussi
+            if(location.pathname === this.#url.pathname)
             {
                 match = locationMatchingValues.exact;
             }
@@ -182,47 +231,53 @@ export default class Route extends HTMLElement
                 match = locationMatchingValues.part;
             }
         }
-
         this.locationMatch = match;
-    }
-
-    updateRouteState()
-    {
-        const render = this.locationMatch !== namings.attributes.locationMatchingValues.none;
-        if(!this.#rendered && render)
-        {
-            this.loadRoute();
-            this.#rendered = true;
-        }
-        else if(this.#rendered && !render) 
-        {
-            this.unloadRoute();
-            this.#rendered = false;
-        }
     }
 
     async loadRoute()
     {
         const componentAbsolutePath = new URL("content.html", this.#url);
         console.log("path is " + componentAbsolutePath);
-        await fetch(componentAbsolutePath)
-            .then((response) =>
-            {
-                return response.text();
-            })
-            .then((html) =>
-            {
-                this.innerHTML = html;
-            });
+        try
+        {
+            await fetch(componentAbsolutePath)
+                .then((response) =>
+                {
+                    return response.text();
+                })
+                .then((html) =>
+                {
+                    this.innerHTML = html;
+                    this.dataset.state = Symbol.keyFor(namings.enum.state.loaded);
+                    this.dataset.reason = Symbol.keyFor(namings.enum.reason.ok);
+                });
+        }
+        catch(error)
+        {
+            this.dataset.state = Symbol.keyFor(namings.enum.state.unloaded);
+            this.dataset.reason = Symbol.keyFor(namings.enum.reason.ko);
+            throw error;
+        }
+        
     
     }
 
     unloadRoute()
     {
-        for (let child of this.childNodes)
+        let elementsToRemove=[];
+        for (const child of this.children)
         {
-            this.removeChild(child);
+            const remove = !this.#recursive || (child.tagName !== namings.components.route.toLocaleUpperCase());
+            if(remove)
+            {
+                elementsToRemove.push(child);
+            }
         }
+        for(let elementToRemove of elementsToRemove)
+        {
+            elementToRemove.remove();
+        }
+        this.dataset.state = Symbol.keyFor(namings.enum.state.unloaded);
     }
 
     async loadTemplate()
@@ -297,6 +352,7 @@ export default class Route extends HTMLElement
         const destinationURL = e.detail.url;
         const destinationState = e.detail.state;
         let target = e.detail.target;
+
         if(target === "" || target === window.name)
         {
             target = "_self";
@@ -322,14 +378,12 @@ export default class Route extends HTMLElement
         {
             const targetOrigin = destinationURL.origin;
             const rel = e.detail.rel;
-
             if(target === "_blank" || rel !== "")
             {
                 window.open(destinationURL, target, rel);
             }
             else
             {
-
                 const targetWindow = window.open("", target);
                 const authorizedTargetsOrigins = config.targetNavigation.targets;
                 const message = 
@@ -339,8 +393,10 @@ export default class Route extends HTMLElement
                     target: target,
                     state: destinationState
                 }
+                
                 for(const origin of authorizedTargetsOrigins)
                 {
+                    
                     targetWindow.postMessage(
                         message,
                         origin);
@@ -349,7 +405,7 @@ export default class Route extends HTMLElement
                 const abortListener = new AbortController();
                 const abortSignal = AbortSignal.any([abortTimeout,abortListener.signal]);
                 abortSignal.addEventListener("abort", 
-                (e)=>
+                (abort)=>
                 {
                     if(abortTimeout.aborted)
                     {
@@ -361,14 +417,16 @@ export default class Route extends HTMLElement
                     }
                 });
                 window.addEventListener("message",
-                (e)=>
+                (response)=>
                 {
-                    if(e.data === namings.events.navigated)
+                    if(response.data === namings.events.navigated)
                     {
+                        response.stopImmediatePropagation();
                         abortListener.abort();
                     }
                 },
                 {
+                    capture:true,
                     signal: abortSignal
                 }
                 );
@@ -380,8 +438,9 @@ export default class Route extends HTMLElement
     #messageNavigateEventListenner = (e)=>
     {
         if(e.data.type == namings.events.navigate
-            || config.targetNavigation.origins.includes(e.origin))
+            && config.targetNavigation.origins.includes(e.origin))
         {
+            
             e.source.postMessage(
                 namings.events.navigated,
                 e.origin);
@@ -398,6 +457,10 @@ export default class Route extends HTMLElement
                 }
                 )
             );
+        }
+        else
+        {
+            console.debug("event message is : ", e)
         }
     }
 }

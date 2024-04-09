@@ -23,9 +23,9 @@ export default
         },
         reason:
         {
-            ok: "",//?
-            ko: "",
-            cancelled: ""
+            ok: Symbol.for("ok"),
+            ko: Symbol.for("ko"),
+            cancelled: Symbol.for("cancelled"),
         }
 
     },
