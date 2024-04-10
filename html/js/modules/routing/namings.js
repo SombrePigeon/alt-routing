@@ -35,6 +35,16 @@ export default
         navigated: "alt-navigated",
         routeChange: "alt-route-change",
         connectingRoutingComponent: "alt-new-routing",
+
+        //routingconnecting
+        connectComponent:"alt-connect",
+        disconnectComponent:"alt-disconnect",
+        //routing lifeCycle
+        unloaded :"alt-unloaded",
+        loading :"alt-loading",
+        loaded :"alt-loaded",
+        unloading :"alt-unloading"
+
     },
     components:
     {
