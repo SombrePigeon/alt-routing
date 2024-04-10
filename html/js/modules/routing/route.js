@@ -113,13 +113,17 @@ export default class Route extends HTMLElement
                     switch(Symbol.for(this.dataset.state))
                     {
                         case namings.enum.state.unloaded:
+                            this.dispatchEvent(new CustomEvent(namings.events.unloaded));
                             break;
                         case namings.enum.state.loaded:
+                            this.dispatchEvent(new CustomEvent(namings.events.loaded));
                             break;
                         case namings.enum.state.loading:
+                            this.dispatchEvent(new CustomEvent(namings.events.loading));
                             this.loadRoute();
                             break;
                         case namings.enum.state.unloading:
+                            this.dispatchEvent(new CustomEvent(namings.events.unloading));
                             this.unloadRoute();
                             break;
                     }
@@ -192,6 +196,21 @@ export default class Route extends HTMLElement
                 once: true
             }   
         );
+
+        this.addEventListener(namings.events.unloaded,
+            this.#onUnloaded
+        );
+        this.addEventListener(namings.events.loading,
+            this.#onLoading
+        );
+        this.addEventListener(namings.events.loaded,
+            this.#onLoaded
+        );
+        this.addEventListener(namings.events.unloading,
+            this.#onUnloading
+        );
+
+
         console.log("route is connecting");
         this.dispatchEvent(
             new CustomEvent(namings.events.connectingRoutingComponent,
@@ -212,6 +231,30 @@ export default class Route extends HTMLElement
             window.removeEventListener("message", this.#messageNavigateEventListenner);
         }
         this.routeur.removeEventListener(namings.events.routeChange, this.#routeChangeEventListener);
+    }
+
+    //state listeners
+    #onUnloaded = (e) =>
+    {
+        console.debug("route ", this.#url.pathname, " ", e.type);
+    }
+    #onLoading = (e) =>
+    {
+        //load data
+        //this.loadRoute();
+        //this.dataset.state = namings.enum.state.loaded;
+        console.debug("route ", this.#url.pathname, " ", e.type);
+    }
+    #onLoaded = (e) =>
+    {
+        console.debug("route ", this.#url.pathname, " ", e.type);
+    }
+    #onUnloading = (e) =>
+    {
+        //unloadData
+        //this.unloadRoute();
+        //this.dataset.state = namings.enum.state.unloaded;
+        console.debug("route ", this.#url.pathname, " ", e.type);
     }
 
     //methods
@@ -346,6 +389,8 @@ export default class Route extends HTMLElement
         console.log("browser navigation");
         this.updateRoutes();
     };
+
+    //navigation event listener
 
     #navigateEventListener = (e)=>
     {
