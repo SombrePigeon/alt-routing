@@ -93,7 +93,7 @@ export default class Route extends HTMLElement
     {
         this.#path = this.dataset.path;
         this.#isRouteur = this.#path.startsWith('/');
-        this.#propagateKeepChildRoutes = this.dataset.propagateKeepRoute ?? config.route.propagateKeepRouteChild;
+        this.#propagateKeepChildRoutes = this.dataset.propagateKeepChildRoute ?? config.route.propagateKeepRouteChild;
         if(this.#isRouteur)
         {
             console.log("route is routeur");
@@ -324,7 +324,7 @@ export default class Route extends HTMLElement
         //set absolute path
         console.log("route connected !");
         //config
-        this.#useShadow = this.dataset.useShadow ?? e.detail.useShadow ?? config.route.useShadow;
+        this.#useShadow = this.dataset.useShadow ?? config.route.useShadow;
         this.#keepChildRoutes = this.dataset.keepChildRoutes ?? e.detail.keepChildRoutes ?? config.route.keepChildRoutes;
         this.#url = e.detail.url;
         this.#routeur = e.detail.routeur;
