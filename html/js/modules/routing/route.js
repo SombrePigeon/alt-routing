@@ -9,6 +9,7 @@ export default class Route extends HTMLElement
     #useShadow;
     #loadNav = false;
     #keepChildRoutes;
+    #propagateKeepChildRoutes
     
     #path;
     #routeur;
@@ -92,6 +93,7 @@ export default class Route extends HTMLElement
     {
         this.#path = this.dataset.path;
         this.#isRouteur = this.#path.startsWith('/');
+        this.#propagateKeepChildRoutes = this.dataset.propagateKeepRoute ?? config.route.propagateKeepRouteChild;
         if(this.#isRouteur)
         {
             console.log("route is routeur");
@@ -116,7 +118,7 @@ export default class Route extends HTMLElement
         }
 
         this.addEventListener(namings.events.connectingRoutingComponent,
-            this.#constructUrlEventListener,
+            this.#constructionEventListener,
             {
                 capture: true
             }
@@ -246,10 +248,7 @@ export default class Route extends HTMLElement
 
     #onAbort = (e) =>
     {
-        if(this.#abortController)
-        {
-            this.#abortController.abort();
-        }
+        this.#abortController?.abort();
     }
     //methods
     setMatching()
@@ -275,11 +274,7 @@ export default class Route extends HTMLElement
     {
         if(this.#useShadow)
         {
-            if(this.#shadow == null)
-            {
-                this.#shadow = this.attachShadow({mode: "open"});
-            }
-
+            this.#shadow ??= this.attachShadow(config.route.shadowRootInit);
             const componentAbsoluteTemplatePath = new URL("template.html", this.#url);
             console.log("path is " + componentAbsoluteTemplatePath)
             await fetch(componentAbsoluteTemplatePath)
@@ -307,9 +302,20 @@ export default class Route extends HTMLElement
         );
     }
 
-    #constructUrlEventListener = (e) => 
+    #constructionEventListener = (e) => 
     {
         e.detail.url = new URL(this.#path, e.detail.url);
+        if(this.#propagateKeepChildRoutes != null)
+        {
+            if(this.#propagateKeepChildRoutes)
+            {
+                e.detail.keepChildRoutes = this.#keepChildRoutes;
+            }
+            else
+            {
+                delete e.detail.keepChildRoutes;
+            }
+        }
     };
 
     //eventsListeners
@@ -318,8 +324,8 @@ export default class Route extends HTMLElement
         //set absolute path
         console.log("route connected !");
         //config
-        this.#useShadow = this.dataset.useShadow || e.detail.useShadow || config.route.useShadow;
-        this.#keepChildRoutes = this.dataset.keepChildRoutes || e.detail.keepChildRoutes || config.route.keepChildRoutes;
+        this.#useShadow = this.dataset.useShadow ?? e.detail.useShadow ?? config.route.useShadow;
+        this.#keepChildRoutes = this.dataset.keepChildRoutes ?? e.detail.keepChildRoutes ?? config.route.keepChildRoutes;
         this.#url = e.detail.url;
         this.#routeur = e.detail.routeur;
         //init

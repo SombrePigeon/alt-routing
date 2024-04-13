@@ -13,14 +13,19 @@ export default
     route:
     {
         useShadow: true,
+        shadowRootInit: 
+        {
+            mode: "open"
+        },
         loadNav: false,
-        keepChildRoutes: true
+        keepChildRoutes: true,
+        //propagateKeepChildRoutes: null
     },
     targetNavigation:
     {
         origins:["http://training.localhost"],
         targets:["http://training.localhost"],
-        timeout: 10
+        timeout: 10//ms
     }
 
 }
