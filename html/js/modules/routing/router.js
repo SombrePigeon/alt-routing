@@ -12,7 +12,10 @@ export default class Router extends HTMLBodyElement
     connectedCallback()
     {
         console.log("routeur is connected");
-        this.appendChild(new Route('/'));
+        this.innerHTML = `
+        <${namings.components.route} data-path="/">
+        </${namings.components.route}>
+        `;
     }
 }
 

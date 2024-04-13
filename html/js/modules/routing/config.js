@@ -12,7 +12,9 @@ export default
     },
     route:
     {
-        useShadow: false,
+        useShadow: true,
+        loadNav: false,
+        keepChildRoutes: true
     },
     targetNavigation:
     {

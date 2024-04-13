@@ -4,70 +4,20 @@ console.log("route module");
 
 export default class Route extends HTMLElement
 {
+    //config
+    #isRouteur;
+    #useShadow;
+    #loadNav = false;
+    #keepChildRoutes;
+    
+    #path;
+    #routeur;
     #url;
-    #isRouteur = false;
     #shadow = null;
-    #nav = false;
-    #recursive = false;
-
-    #setProperties()
-    {
-        //toDo 
-        Object.defineProperty(this, "path", {
-            enumerable: true,
-            get: this.getPath,
-            set: this.setPath
-        });
-
-        Object.defineProperty(this, "useShadow", {
-            enumerable: true,
-            get: this.getUseShadow,
-            set: this.setUseShadow
-        });
-
-        Object.defineProperty(this, "locationMatch", {
-            enumerable: true,
-            get: this.getLocationMatch,
-            set: this.setLocationMatch
-        });
-    }
-    //getters&setters
-    getPath()
-    {
-        
-        return this.getAttribute(namings.attributes.path);
-    }
-    setPath(path)
-    {
-        this.setAttribute(namings.attributes.path, path);
-    }
-    getUseShadow()
-    {
-        return this.getAttribute(namings.attributes.useShadow) !== "false";
-    }
-    setUseShadow(value)
-    {
-        if(this.#shadow)
-        {
-            console.error("shadow is already loaded, you can't set it anymore");
-        }
-        else
-        {
-            this.setAttribute(namings.attributes.useShadow, value);
-        }
-
-    }
-    getLocationMatch()
-    {
-        return this.getAttribute(namings.attributes.locationMatching);
-    }
-    setLocationMatch(value)
-    {
-        this.setAttribute(namings.attributes.locationMatching, value);
-    }    
+    #abortController = null;
 
     //observers
-    static observedAttributes = [namings.attributes.locationMatching,"data-state"];
+    static observedAttributes = ["data-match-location","data-state"];
 
     attributeChangedCallback(name, oldValue, newValue)
     {
@@ -75,7 +25,7 @@ export default class Route extends HTMLElement
         {
             switch(name)
             {
-                case namings.attributes.locationMatching:
+                case "data-match-location":
                     switch(newValue)
                     {
                         case namings.attributes.locationMatchingValues.exact:
@@ -120,46 +70,28 @@ export default class Route extends HTMLElement
                             break;
                         case namings.enum.state.loading:
                             this.dispatchEvent(new CustomEvent(namings.events.loading));
-                            this.loadRoute();
                             break;
                         case namings.enum.state.unloading:
                             this.dispatchEvent(new CustomEvent(namings.events.unloading));
-                            this.unloadRoute();
                             break;
                     }
             }
         }
     }
     
-    constructor(path = null, useShadow = null)
+    constructor()
     {
         super();
-        this.#setProperties();
-        if(path)
-        {
-            this.path = path;
-        }
-        else if (this.path == null)
-        {
-            console.error("no path for route");
-        }
-        if(useShadow)
-        {
-            this.useShadow = useShadow;
-        }
-        else if(this.useShadow == null)
-        {
-            this.useShadow = config.useShadow;
-        }
         this.dataset.state = Symbol.keyFor(namings.enum.state.unloaded);
-        this.dataset.reason = Symbol.keyFor(namings.enum.reason.ok);
-        this.locationMatch = namings.attributes.locationMatchingValues.none;
-        this.#isRouteur = this.path.startsWith('/');
+        this.dataset.status = Symbol.keyFor(namings.enum.status.ok);
+        this.dataset.matchLocation = namings.attributes.locationMatchingValues.none;
     }
-
+    
     //callbacks
     connectedCallback()
     {
+        this.#path = this.dataset.path;
+        this.#isRouteur = this.#path.startsWith('/');
         if(this.#isRouteur)
         {
             console.log("route is routeur");
@@ -194,7 +126,7 @@ export default class Route extends HTMLElement
             this.#connectionEventListener,
             {
                 once: true
-            }   
+            }
         );
 
         this.addEventListener(namings.events.unloaded,
@@ -230,7 +162,7 @@ export default class Route extends HTMLElement
             window.removeEventListener("popstate", this.#popstateEventListener);
             window.removeEventListener("message", this.#messageNavigateEventListenner);
         }
-        this.routeur.removeEventListener(namings.events.routeChange, this.#routeChangeEventListener);
+        this.#routeur.removeEventListener(namings.events.routeChange, this.#routeChangeEventListener);
     }
 
     //state listeners
@@ -241,9 +173,51 @@ export default class Route extends HTMLElement
     #onLoading = (e) =>
     {
         //load data
-        //this.loadRoute();
-        //this.dataset.state = namings.enum.state.loaded;
-        console.debug("route ", this.#url.pathname, " ", e.type);
+        const componentAbsolutePath = new URL(namings.files.content, this.#url);
+        //set abort
+        this.#abortController = new AbortController();
+        this.addEventListener(namings.events.abort,this.#onAbort);
+
+        fetch(componentAbsolutePath)
+            .then((response) =>
+            {
+                this.dataset.state = Symbol.keyFor(namings.enum.state.loaded);
+                if(response.ok)
+                {
+                    this.dataset.status = Symbol.keyFor(namings.enum.status.ok);
+                }
+                else
+                {
+                    this.dataset.status = Symbol.keyFor(namings.enum.status.ko);
+                }
+                return response.text();
+            },
+            {
+                signal: this.#abortController.signal
+            })
+            .then((html) =>
+            {
+                this.innerHTML = html;
+            })
+            .catch((error) =>
+            {
+                this.dataset.state = Symbol.keyFor(namings.enum.state.unloaded);
+                switch(error.name)
+                {
+                    case "AbortError":
+                        this.dataset.status = Symbol.keyFor(namings.enum.status.aborted);
+                        break;
+                    default:
+                        throw error;
+                }
+            })
+            .finally(()=>
+            {
+                this.removeEventListener(namings.events.abort, this.#onAbort);
+                this.#abortController = null;
+                console.debug("route ", this.#url.pathname, " ", e.type);
+            });
+        
     }
     #onLoaded = (e) =>
     {
@@ -252,11 +226,31 @@ export default class Route extends HTMLElement
     #onUnloading = (e) =>
     {
         //unloadData
-        //this.unloadRoute();
-        //this.dataset.state = namings.enum.state.unloaded;
+        let elementsToRemove=[];
+        for (const child of this.children)
+        {
+            const remove = !this.#keepChildRoutes || (child.tagName !== namings.components.route.toLocaleUpperCase());
+            if(remove)
+            {
+                elementsToRemove.push(child);
+            }
+        }
+        for(let elementToRemove of elementsToRemove)
+        {
+            elementToRemove.remove();
+        }
+        this.dataset.state = Symbol.keyFor(namings.enum.state.unloaded);
+        this.dataset.state = Symbol.keyFor(namings.enum.state.unloaded);
         console.debug("route ", this.#url.pathname, " ", e.type);
     }
 
+    #onAbort = (e) =>
+    {
+        if(this.#abortController)
+        {
+            this.#abortController.abort();
+        }
+    }
     //methods
     setMatching()
     {
@@ -274,58 +268,12 @@ export default class Route extends HTMLElement
                 match = locationMatchingValues.part;
             }
         }
-        this.locationMatch = match;
-    }
-
-    async loadRoute()
-    {
-        const componentAbsolutePath = new URL("content.html", this.#url);
-        console.log("path is " + componentAbsolutePath);
-        try
-        {
-            await fetch(componentAbsolutePath)
-                .then((response) =>
-                {
-                    return response.text();
-                })
-                .then((html) =>
-                {
-                    this.innerHTML = html;
-                    this.dataset.state = Symbol.keyFor(namings.enum.state.loaded);
-                    this.dataset.reason = Symbol.keyFor(namings.enum.reason.ok);
-                });
-        }
-        catch(error)
-        {
-            this.dataset.state = Symbol.keyFor(namings.enum.state.unloaded);
-            this.dataset.reason = Symbol.keyFor(namings.enum.reason.ko);
-            throw error;
-        }
-        
-    
-    }
-
-    unloadRoute()
-    {
-        let elementsToRemove=[];
-        for (const child of this.children)
-        {
-            const remove = !this.#recursive || (child.tagName !== namings.components.route.toLocaleUpperCase());
-            if(remove)
-            {
-                elementsToRemove.push(child);
-            }
-        }
-        for(let elementToRemove of elementsToRemove)
-        {
-            elementToRemove.remove();
-        }
-        this.dataset.state = Symbol.keyFor(namings.enum.state.unloaded);
+        this.dataset.matchLocation = match;
     }
 
     async loadTemplate()
     {
-        if(this.useShadow)
+        if(this.#useShadow)
         {
             if(this.#shadow == null)
             {
@@ -361,7 +309,7 @@ export default class Route extends HTMLElement
 
     #constructUrlEventListener = (e) => 
     {
-        e.detail.url = new URL(this.path, e.detail.url);
+        e.detail.url = new URL(this.#path, e.detail.url);
     };
 
     //eventsListeners
@@ -369,13 +317,17 @@ export default class Route extends HTMLElement
     {
         //set absolute path
         console.log("route connected !");
+        //config
+        this.#useShadow = this.dataset.useShadow || e.detail.useShadow || config.route.useShadow;
+        this.#keepChildRoutes = this.dataset.keepChildRoutes || e.detail.keepChildRoutes || config.route.keepChildRoutes;
         this.#url = e.detail.url;
-        this.routeur = e.detail.routeur;
+        this.#routeur = e.detail.routeur;
+        //init
         this.loadTemplate();
         //set for first time
         this.setMatching();
         //listen to route change
-        this.routeur.addEventListener(namings.events.routeChange,
+        this.#routeur.addEventListener(namings.events.routeChange,
             this.#routeChangeEventListener);
     };
 

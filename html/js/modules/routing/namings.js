@@ -21,11 +21,11 @@ export default
             loading: Symbol.for("loading"),
             unloading: Symbol.for("unloading"),
         },
-        reason:
+        status:
         {
             ok: Symbol.for("ok"),
             ko: Symbol.for("ko"),
-            cancelled: Symbol.for("cancelled"),
+            aborted: Symbol.for("aborted"),
         }
 
     },
@@ -43,7 +43,9 @@ export default
         unloaded :"alt-unloaded",
         loading :"alt-loading",
         loaded :"alt-loaded",
-        unloading :"alt-unloading"
+        unloading :"alt-unloading",
+        //abort request
+        abort: "alt-abort",
 
     },
     components:
@@ -51,5 +53,12 @@ export default
         route: "alt-route",
         router: "alt-router",
         anchor: "alt-a",
+    },
+    files:
+    {
+        template: "template.html",
+        nav: "nav.html",
+        content: "content.html",
+        route: "route.html"
     }
 }
