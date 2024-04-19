@@ -12,7 +12,7 @@ export default
             none: "none"
         },
     },
-    enum:
+    enums:
     {
         state: 
         {

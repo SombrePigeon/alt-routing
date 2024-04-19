@@ -34,28 +34,28 @@ export default class Route extends HTMLElement
                             
                             switch(Symbol.for(this.dataset.state))
                             {
-                                case namings.enum.state.unloaded:
-                                    this.dataset.state = Symbol.keyFor(namings.enum.state.loading);
+                                case namings.enums.state.unloaded:
+                                    this.dataset.state = Symbol.keyFor(namings.enums.state.loading);
                                     break;
-                                case namings.enum.state.loaded:
+                                case namings.enums.state.loaded:
                                     break;
-                                case namings.enum.state.loading:
+                                case namings.enums.state.loading:
                                     break;
-                                case namings.enum.state.unloading:
+                                case namings.enums.state.unloading:
                                     break;
                             }
                             break;
                             case namings.attributes.locationMatchingValues.none:
                             switch(Symbol.for(this.dataset.state))
                             {
-                                case namings.enum.state.unloaded:
+                                case namings.enums.state.unloaded:
                                     break;
-                                case namings.enum.state.loaded:
-                                    this.dataset.state = Symbol.keyFor(namings.enum.state.unloading);
+                                case namings.enums.state.loaded:
+                                    this.dataset.state = Symbol.keyFor(namings.enums.state.unloading);
                                     break;
-                                case namings.enum.state.loading:
+                                case namings.enums.state.loading:
                                     break;
-                                case namings.enum.state.unloading:
+                                case namings.enums.state.unloading:
                                     break;
                             }
                     }
@@ -63,16 +63,16 @@ export default class Route extends HTMLElement
                 case "data-state":
                     switch(Symbol.for(this.dataset.state))
                     {
-                        case namings.enum.state.unloaded:
+                        case namings.enums.state.unloaded:
                             this.dispatchEvent(new CustomEvent(namings.events.unloaded));
                             break;
-                        case namings.enum.state.loaded:
+                        case namings.enums.state.loaded:
                             this.dispatchEvent(new CustomEvent(namings.events.loaded));
                             break;
-                        case namings.enum.state.loading:
+                        case namings.enums.state.loading:
                             this.dispatchEvent(new CustomEvent(namings.events.loading));
                             break;
-                        case namings.enum.state.unloading:
+                        case namings.enums.state.unloading:
                             this.dispatchEvent(new CustomEvent(namings.events.unloading));
                             break;
                     }
@@ -83,8 +83,8 @@ export default class Route extends HTMLElement
     constructor()
     {
         super();
-        this.dataset.state = Symbol.keyFor(namings.enum.state.unloaded);
-        this.dataset.status = Symbol.keyFor(namings.enum.status.ok);
+        this.dataset.state = Symbol.keyFor(namings.enums.state.unloaded);
+        this.dataset.status = Symbol.keyFor(namings.enums.status.ok);
         this.dataset.matchLocation = namings.attributes.locationMatchingValues.none;
     }
     
@@ -183,14 +183,14 @@ export default class Route extends HTMLElement
         fetch(componentAbsolutePath)
             .then((response) =>
             {
-                this.dataset.state = Symbol.keyFor(namings.enum.state.loaded);
+                this.dataset.state = Symbol.keyFor(namings.enums.state.loaded);
                 if(response.ok)
                 {
-                    this.dataset.status = Symbol.keyFor(namings.enum.status.ok);
+                    this.dataset.status = Symbol.keyFor(namings.enums.status.ok);
                 }
                 else
                 {
-                    this.dataset.status = Symbol.keyFor(namings.enum.status.ko);
+                    this.dataset.status = Symbol.keyFor(namings.enums.status.ko);
                 }
                 return response.text();
             },
@@ -203,11 +203,11 @@ export default class Route extends HTMLElement
             })
             .catch((error) =>
             {
-                this.dataset.state = Symbol.keyFor(namings.enum.state.unloaded);
+                this.dataset.state = Symbol.keyFor(namings.enums.state.unloaded);
                 switch(error.name)
                 {
                     case "AbortError":
-                        this.dataset.status = Symbol.keyFor(namings.enum.status.aborted);
+                        this.dataset.status = Symbol.keyFor(namings.enums.status.aborted);
                         break;
                     default:
                         throw error;
@@ -241,8 +241,8 @@ export default class Route extends HTMLElement
         {
             elementToRemove.remove();
         }
-        this.dataset.state = Symbol.keyFor(namings.enum.state.unloaded);
-        this.dataset.state = Symbol.keyFor(namings.enum.state.unloaded);
+        this.dataset.state = Symbol.keyFor(namings.enums.state.unloaded);
+        this.dataset.state = Symbol.keyFor(namings.enums.state.unloaded);
         console.debug("route ", this.#url.pathname, " ", e.type);
     }
 
@@ -293,12 +293,7 @@ export default class Route extends HTMLElement
     updateRoutes()
     {
         this.dispatchEvent(
-            new CustomEvent(namings.events.routeChange,
-                {
-                    bubbles:true,
-                    composed: true
-                }
-            )
+            new CustomEvent(namings.events.routeChange)
         );
     }
 
