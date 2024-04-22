@@ -61,6 +61,7 @@ export default class Route extends HTMLElement
                                 : this.dispatchEvent(new CustomEvent(namings.events.unloading));
                             break;
                         case namings.enums.state.loading:
+                            //toDo add abort reason
                             this.shadowRoot ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.beforeAbort,{bubbles: true, composed: true}))
                                 : this.dispatchEvent(new CustomEvent(namings.events.abort));
                             break;
@@ -77,6 +78,21 @@ export default class Route extends HTMLElement
         return this.#_state;
     }
 
+    set #state(state)
+    {
+        console.debug(`state for ${this.#url?.pathname} : try change to ${Symbol.keyFor(state)}`);
+        if(this.#_state !== state)
+        {
+            this.#_state = state;
+            this.dataset.state = Symbol.keyFor(this.#_state);
+        }
+    }
+    
+    get #status()
+    {
+        return this.#_state;
+    }
+
     set #status(status)
     {
         if(this.#_status !== status)
@@ -86,19 +102,7 @@ export default class Route extends HTMLElement
         }
     }
 
-    get #status()
-    {
-        return this.#_state;
-    }
-
-    set #state(state)
-    {
-        if(this.#_state !== state)
-        {
-            this.#_state = state;
-            this.dataset.state = Symbol.keyFor(this.#_state);
-        }
-    }
+    
     //observers
     static observedAttributes = [];
 
@@ -235,6 +239,7 @@ export default class Route extends HTMLElement
     #onUnloaded = (e) =>
     {
         console.debug("route ", this.#url.pathname, " ", e.type);
+        this.#state = namings.enums.state.unloaded;
     }
     #onBeforeLoading = (e) =>
     {
@@ -244,6 +249,7 @@ export default class Route extends HTMLElement
     }
     #onLoading = (e) =>
     {
+        this.#state = namings.enums.state.loading;
         //load data
         const componentAbsolutePath = new URL(namings.files.content, this.#url);
         //set abort
@@ -252,7 +258,6 @@ export default class Route extends HTMLElement
         fetch(componentAbsolutePath)
             .then((response) =>
             {
-                this.#state = namings.enums.state.loaded;
                 if(response.ok)
                 {
                     this.#status = namings.enums.status.ok;
@@ -261,6 +266,7 @@ export default class Route extends HTMLElement
                 {
                     this.#status = namings.enums.status.ko;
                 }
+                this.dispatchEvent(new CustomEvent(namings.events.loaded));
                 return response.text();
             },
             {
@@ -292,6 +298,7 @@ export default class Route extends HTMLElement
     #onLoaded = (e) =>
     {
         console.debug("route ", this.#url.pathname, " ", e.type);
+        this.#state = namings.enums.state.loaded;
     }
     #onBeforeUnloading = (e) =>
     {
@@ -301,6 +308,7 @@ export default class Route extends HTMLElement
     }
     #onUnloading = (e) =>
     {
+        this.#state = namings.enums.state.unloading;
         //unloadData
         let elementsToRemove=[];
         for (const child of this.children)
@@ -315,8 +323,7 @@ export default class Route extends HTMLElement
         {
             elementToRemove.remove();
         }
-        this.dataset.state = Symbol.keyFor(namings.enums.state.unloaded);
-        this.dataset.state = Symbol.keyFor(namings.enums.state.unloaded);
+        this.dispatchEvent(new CustomEvent(namings.events.unloaded));
         console.debug("route ", this.#url.pathname, " ", e.type);
     }
 
