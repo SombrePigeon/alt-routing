@@ -14,12 +14,20 @@ export default
     },
     enums:
     {
+        locationMatch:
+        {
+            part: Symbol.for("part"),
+            exact: Symbol.for("exact"),
+            none: Symbol.for("none")
+        },
         state: 
         {
+            init: Symbol(),
             unloaded: Symbol.for("unloaded"),
             loaded: Symbol.for("loaded"),
             loading: Symbol.for("loading"),
             unloading: Symbol.for("unloading"),
+
         },
         status:
         {
@@ -41,10 +49,13 @@ export default
         disconnectComponent:"alt-disconnect",
         //routing lifeCycle
         unloaded :"alt-unloaded",
-        loading :"alt-loading",
         loaded :"alt-loaded",
+        beforeLoading :"alt-beforeLoading",
+        loading :"alt-loading",
+        beforeUnloading :"alt-beforeUnloading",
         unloading :"alt-unloading",
         //abort request
+        beforeAbort: "alt-beforeAbort",
         abort: "alt-abort",
 
     },

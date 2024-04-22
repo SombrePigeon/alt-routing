@@ -17,8 +17,90 @@ export default class Route extends HTMLElement
     #shadow = null;
     #abortController = null;
 
+    #_locationMatch;
+    #_state;
+    #_status;
+
+    get #locationMatch()
+    {
+        return this.#_locationMatch;
+    }
+
+    set #locationMatch(locationMatch) 
+    {
+        this.#url && console.debug("location match", this.#url.href, " : ", Symbol.keyFor(locationMatch));
+        
+        if(this.#_locationMatch !== locationMatch)
+        {
+            this.#_locationMatch = locationMatch;
+            switch(this.#_locationMatch)
+            {
+                case namings.enums.locationMatch.exact:
+                case namings.enums.locationMatch.part:
+                    switch(this.#state)
+                    {
+                        case namings.enums.state.unloaded:
+                            this.shadowRoot ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.beforeLoading, {bubbles: true, composed: true}))
+                                : this.dispatchEvent(new CustomEvent(namings.events.loading));
+                            break;
+                        case namings.enums.state.loaded:
+                            break;
+                        case namings.enums.state.loading:
+                            break;
+                        case namings.enums.state.unloading:
+                            break;
+                    }
+                    break;
+                case namings.enums.locationMatch.none:
+                    switch(this.#state)
+                    {
+                        case namings.enums.state.unloaded:
+                            break;
+                        case namings.enums.state.loaded:
+                            this.shadowRoot ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.beforeUnloading,{bubbles: true, composed: true}))
+                                : this.dispatchEvent(new CustomEvent(namings.events.unloading));
+                            break;
+                        case namings.enums.state.loading:
+                            this.shadowRoot ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.beforeAbort,{bubbles: true, composed: true}))
+                                : this.dispatchEvent(new CustomEvent(namings.events.abort));
+                            break;
+                        case namings.enums.state.unloading:
+                            break;
+                    }
+                break;
+            }
+            this.dataset.locationMatch = Symbol.keyFor(this.#_locationMatch);
+        }
+    }
+    get #state()
+    {
+        return this.#_state;
+    }
+
+    set #status(status)
+    {
+        if(this.#_status !== status)
+        {
+            this.#_status = status;
+            this.dataset.status = Symbol.keyFor(this.#_status);
+        }
+    }
+
+    get #status()
+    {
+        return this.#_state;
+    }
+
+    set #state(state)
+    {
+        if(this.#_state !== state)
+        {
+            this.#_state = state;
+            this.dataset.state = Symbol.keyFor(this.#_state);
+        }
+    }
     //observers
-    static observedAttributes = ["data-match-location","data-state"];
+    static observedAttributes = [];
 
     attributeChangedCallback(name, oldValue, newValue)
     {
@@ -26,40 +108,6 @@ export default class Route extends HTMLElement
         {
             switch(name)
             {
-                case "data-match-location":
-                    switch(newValue)
-                    {
-                        case namings.attributes.locationMatchingValues.exact:
-                        case namings.attributes.locationMatchingValues.part:
-                            
-                            switch(Symbol.for(this.dataset.state))
-                            {
-                                case namings.enums.state.unloaded:
-                                    this.dataset.state = Symbol.keyFor(namings.enums.state.loading);
-                                    break;
-                                case namings.enums.state.loaded:
-                                    break;
-                                case namings.enums.state.loading:
-                                    break;
-                                case namings.enums.state.unloading:
-                                    break;
-                            }
-                            break;
-                            case namings.attributes.locationMatchingValues.none:
-                            switch(Symbol.for(this.dataset.state))
-                            {
-                                case namings.enums.state.unloaded:
-                                    break;
-                                case namings.enums.state.loaded:
-                                    this.dataset.state = Symbol.keyFor(namings.enums.state.unloading);
-                                    break;
-                                case namings.enums.state.loading:
-                                    break;
-                                case namings.enums.state.unloading:
-                                    break;
-                            }
-                    }
-                    break;
                 case "data-state":
                     switch(Symbol.for(this.dataset.state))
                     {
@@ -83,9 +131,10 @@ export default class Route extends HTMLElement
     constructor()
     {
         super();
-        this.dataset.state = Symbol.keyFor(namings.enums.state.unloaded);
-        this.dataset.status = Symbol.keyFor(namings.enums.status.ok);
-        this.dataset.matchLocation = namings.attributes.locationMatchingValues.none;
+        //toDo change to state
+        this.#state = namings.enums.state.unloaded;
+        this.#status = namings.enums.status.ok;
+        this.#locationMatch = namings.enums.locationMatch.none;
     }
     
     //callbacks
@@ -131,8 +180,12 @@ export default class Route extends HTMLElement
             }
         );
 
+        
         this.addEventListener(namings.events.unloaded,
             this.#onUnloaded
+        );
+        this.addEventListener(namings.events.beforeLoading,
+            this.#onBeforeLoading
         );
         this.addEventListener(namings.events.loading,
             this.#onLoading
@@ -140,9 +193,20 @@ export default class Route extends HTMLElement
         this.addEventListener(namings.events.loaded,
             this.#onLoaded
         );
+        this.addEventListener(namings.events.beforeUnloading,
+            this.#onBeforeUnloading
+        );
         this.addEventListener(namings.events.unloading,
             this.#onUnloading
         );
+
+        this.addEventListener(namings.events.beforeAbort,
+            this.#onBeforeAbort
+        );
+        this.addEventListener(namings.events.abort,
+            this.#onAbort
+        );
+
 
 
         console.log("route is connecting");
@@ -172,25 +236,30 @@ export default class Route extends HTMLElement
     {
         console.debug("route ", this.#url.pathname, " ", e.type);
     }
+    #onBeforeLoading = (e) =>
+    {
+        console.debug("route ", this.#url.pathname, " ", e.type);
+        e.stopPropagation();
+        this.dispatchEvent(new CustomEvent(namings.events.loading));
+    }
     #onLoading = (e) =>
     {
         //load data
         const componentAbsolutePath = new URL(namings.files.content, this.#url);
         //set abort
         this.#abortController = new AbortController();
-        this.addEventListener(namings.events.abort,this.#onAbort);
 
         fetch(componentAbsolutePath)
             .then((response) =>
             {
-                this.dataset.state = Symbol.keyFor(namings.enums.state.loaded);
+                this.#state = namings.enums.state.loaded;
                 if(response.ok)
                 {
-                    this.dataset.status = Symbol.keyFor(namings.enums.status.ok);
+                    this.#status = namings.enums.status.ok;
                 }
                 else
                 {
-                    this.dataset.status = Symbol.keyFor(namings.enums.status.ko);
+                    this.#status = namings.enums.status.ko;
                 }
                 return response.text();
             },
@@ -203,11 +272,11 @@ export default class Route extends HTMLElement
             })
             .catch((error) =>
             {
-                this.dataset.state = Symbol.keyFor(namings.enums.state.unloaded);
+                this.#state = namings.enums.state.unloaded;
                 switch(error.name)
                 {
                     case "AbortError":
-                        this.dataset.status = Symbol.keyFor(namings.enums.status.aborted);
+                        this.#status = namings.enums.status.aborted;
                         break;
                     default:
                         throw error;
@@ -215,7 +284,6 @@ export default class Route extends HTMLElement
             })
             .finally(()=>
             {
-                this.removeEventListener(namings.events.abort, this.#onAbort);
                 this.#abortController = null;
                 console.debug("route ", this.#url.pathname, " ", e.type);
             });
@@ -224,6 +292,12 @@ export default class Route extends HTMLElement
     #onLoaded = (e) =>
     {
         console.debug("route ", this.#url.pathname, " ", e.type);
+    }
+    #onBeforeUnloading = (e) =>
+    {
+        console.debug("route ", this.#url.pathname, " ", e.type);
+        e.stopPropagation();
+        this.dispatchEvent(new CustomEvent(namings.events.unloading));
     }
     #onUnloading = (e) =>
     {
@@ -246,29 +320,36 @@ export default class Route extends HTMLElement
         console.debug("route ", this.#url.pathname, " ", e.type);
     }
 
+    #onBeforeAbort = (e) =>
+    {
+        console.debug("route ", this.#url.pathname, " ", e.type);
+        e.stopPropagation();
+        this.dispatchEvent(new CustomEvent(namings.events.abort));
+    }
     #onAbort = (e) =>
     {
+        console.debug("route ", this.#url.pathname, " ", e.type);
         this.#abortController?.abort();
     }
     //methods
-    setMatching()
+    updateLocationMatch()
     {
-        const locationMatchingValues = namings.attributes.locationMatchingValues;
-        let match = locationMatchingValues.none;
+        let match = namings.enums.locationMatch.none;
         //toDo try opti
         if(location.pathname.startsWith(this.#url.pathname))
         {
             if(location.pathname === this.#url.pathname)
             {
-                match = locationMatchingValues.exact;
+                match = namings.enums.locationMatch.exact;
             }
             else
             {
-                match = locationMatchingValues.part;
+                match = namings.enums.locationMatch.part;
             }
         }
-        this.dataset.matchLocation = match;
+        this.#locationMatch = match;
     }
+    
 
     async loadTemplate()
     {
@@ -326,7 +407,7 @@ export default class Route extends HTMLElement
         //init
         this.loadTemplate();
         //set for first time
-        this.setMatching();
+        this.updateLocationMatch();
         //listen to route change
         this.#routeur.addEventListener(namings.events.routeChange,
             this.#routeChangeEventListener);
@@ -334,7 +415,7 @@ export default class Route extends HTMLElement
 
     #routeChangeEventListener = (e) =>
     {
-        this.setMatching();
+        this.updateLocationMatch();
     };
 
     #popstateEventListener = (e)=>
