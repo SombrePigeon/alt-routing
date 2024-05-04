@@ -101,36 +101,6 @@ export default class Route extends HTMLElement
             this.dataset.status = Symbol.keyFor(this.#_status);
         }
     }
-
-    
-    //observers
-    static observedAttributes = [];
-
-    attributeChangedCallback(name, oldValue, newValue)
-    {
-        if(oldValue !== newValue)
-        {
-            switch(name)
-            {
-                case "data-state":
-                    switch(Symbol.for(this.dataset.state))
-                    {
-                        case namings.enums.state.unloaded:
-                            this.dispatchEvent(new CustomEvent(namings.events.unloaded));
-                            break;
-                        case namings.enums.state.loaded:
-                            this.dispatchEvent(new CustomEvent(namings.events.loaded));
-                            break;
-                        case namings.enums.state.loading:
-                            this.dispatchEvent(new CustomEvent(namings.events.loading));
-                            break;
-                        case namings.enums.state.unloading:
-                            this.dispatchEvent(new CustomEvent(namings.events.unloading));
-                            break;
-                    }
-            }
-        }
-    }
     
     constructor()
     {
