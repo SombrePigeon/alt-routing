@@ -2,6 +2,9 @@ import namings from "./namings.js";
 import config from "./config.js";
 console.log("route module");
 
+const globalStylesheet = new CSSStyleSheet();//toDo
+const routeStyleSheet = new CSSStyleSheet();//toDo
+
 export default class Route extends HTMLElement
 {
     //config
@@ -14,7 +17,6 @@ export default class Route extends HTMLElement
     #path;
     #routeur;
     #url;
-    #shadow = null;
     #abortController = null;
 
     #_locationMatch;
@@ -327,12 +329,11 @@ export default class Route extends HTMLElement
         this.#locationMatch = match;
     }
     
-
     async loadTemplate()
     {
         if(this.#useShadow)
         {
-            this.#shadow ??= this.attachShadow(config.route.shadowRootInit);
+            this.shadowRoot ?? this.attachShadow(config.route.shadowRootInit);
             const componentAbsoluteTemplatePath = new URL("template.html", this.#url);
             console.log("path is " + componentAbsoluteTemplatePath)
             await fetch(componentAbsoluteTemplatePath)
@@ -342,7 +343,21 @@ export default class Route extends HTMLElement
                 })
                 .then((html) =>
                 {
-                    this.#shadow.innerHTML = html;
+                    this.shadowRoot.innerHTML = html;
+                }
+            );
+            const componentAbsoluteStylePath = new URL("style.css", this.#url);
+
+            const localSheet = new CSSStyleSheet();
+            this.shadowRoot.adoptedStyleSheets = [globalStylesheet, routeStyleSheet, localSheet];
+            await fetch(componentAbsoluteStylePath)
+                .then(response =>
+                {
+                    return response.text();
+                })
+                .then((css) =>
+                {
+                    localSheet.replace(css);
                 }
             );
         }
