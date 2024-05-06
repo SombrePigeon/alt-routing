@@ -108,7 +108,7 @@ export default class Route extends HTMLElement
     {
         super();
         //toDo change to state
-        this.#state = namings.enums.state.unloaded;
+        this.#state = namings.enums.state.init;
         this.#status = namings.enums.status.ok;
         this.#locationMatch = namings.enums.locationMatch.none;
     }
@@ -398,6 +398,7 @@ export default class Route extends HTMLElement
         this.#routeur = e.detail.routeur;
         //init
         this.loadTemplate();
+        this.#state = namings.enums.state.unloaded;
         //set for first time
         this.updateLocationMatch();
         //listen to route change
