@@ -1,0 +1,15 @@
+:host
+{
+    display: grid;
+    border: 0.2em inset red;
+}
+
+:host([data-location-match="none"])
+{
+    display: none;
+}
+
+:host([data-location-match="exact"])
+{
+    border-color: blue;
+}

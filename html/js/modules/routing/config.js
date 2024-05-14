@@ -6,6 +6,11 @@ export default
         cached: false
         //use request object instead
     },
+    style:
+    {
+        global: "/css/style.css",
+        route: "/css/route.css"
+    },
     content:
     {
         //use request object
