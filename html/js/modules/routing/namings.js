@@ -22,7 +22,7 @@ export default
         },
         state: 
         {
-            init: Symbol(),
+            init: Symbol("init"),
             unloaded: Symbol.for("unloaded"),
             loaded: Symbol.for("loaded"),
             loading: Symbol.for("loading"),

@@ -8,6 +8,8 @@ const routeStyleSheet = style.route;
 
 export default class Route extends HTMLElement
 {
+    #internals
+
     //config
     #isRouteur;
     #useShadow;
@@ -35,7 +37,9 @@ export default class Route extends HTMLElement
         
         if(this.#_locationMatch !== locationMatch)
         {
+            this.#_locationMatch && this.#internals.states.delete(`${Symbol.keyFor(this.#_locationMatch)}`);
             this.#_locationMatch = locationMatch;
+            this.#_locationMatch && this.#internals.states.add(`${Symbol.keyFor(this.#_locationMatch)}`);
             switch(this.#_locationMatch)
             {
                 case namings.enums.locationMatch.exact:
@@ -86,9 +90,16 @@ export default class Route extends HTMLElement
         console.debug(`state for ${this.#url?.pathname} : try change to ${Symbol.keyFor(state)}`);
         if(this.#_state !== state)
         {
+            this.#_state && this.#internals.states.delete(`${Symbol.keyFor(this.#_state)}`);
             this.#_state = state;
+            this.#_state && this.#internals.states.add(`${Symbol.keyFor(this.#_state)}`);
             this.dataset.state = Symbol.keyFor(this.#_state);
         }
+        console.group("states : ")
+            this.#internals.states.forEach(element => {
+                console.log(element)
+            });
+            console.groupEnd()
     }
     
     get #status()
@@ -100,7 +111,9 @@ export default class Route extends HTMLElement
     {
         if(this.#_status !== status)
         {
+            this.#_status && this.#internals.states.delete(`${Symbol.keyFor(this.#_status)}`);
             this.#_status = status;
+            this.#_status && this.#internals.states.add(`${Symbol.keyFor(this.#_status)}`);
             this.dataset.status = Symbol.keyFor(this.#_status);
         }
     }
@@ -108,7 +121,7 @@ export default class Route extends HTMLElement
     constructor()
     {
         super();
-        //toDo change to state
+        this.#internals = this.attachInternals();
         this.#state = namings.enums.state.init;
         this.#status = namings.enums.status.ok;
         this.#locationMatch = namings.enums.locationMatch.none;
@@ -239,7 +252,6 @@ export default class Route extends HTMLElement
                 {
                     this.#status = namings.enums.status.ko;
                 }
-                this.dispatchEvent(new CustomEvent(namings.events.loaded));
                 return response.text();
             },
             {
@@ -248,6 +260,7 @@ export default class Route extends HTMLElement
             .then((html) =>
             {
                 this.innerHTML = html;
+                this.dispatchEvent(new CustomEvent(namings.events.loaded));
             })
             .catch((error) =>
             {
