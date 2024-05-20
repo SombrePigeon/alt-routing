@@ -241,7 +241,10 @@ export default class Route extends HTMLElement
         //set abort
         this.#abortController = new AbortController();
 
-        fetch(componentAbsolutePath)
+        fetch(componentAbsolutePath,
+            {
+                signal: this.#abortController.signal
+            })
             .then((response) =>
             {
                 if(response.ok)
@@ -253,9 +256,6 @@ export default class Route extends HTMLElement
                     this.#status = namings.enums.status.ko;
                 }
                 return response.text();
-            },
-            {
-                signal: this.#abortController.signal
             })
             .then((html) =>
             {
