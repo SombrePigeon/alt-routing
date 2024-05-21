@@ -141,6 +141,15 @@ export default class Route extends HTMLElement
                 {
                     e.detail.routeur = this;
                     e.detail.url = new URL(location.origin);
+
+                    let base = document.getElementsByTagName("base")[0];
+                    if (!base)
+                    {
+                        base = document.createElement("base");
+                        document.head.appendChild(base);
+                    }
+                    base.setAttribute("href", this.path);
+
                 },
                 {
                     capture: true
