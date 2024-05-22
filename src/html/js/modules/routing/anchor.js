@@ -42,7 +42,7 @@ export default class Anchor extends HTMLAnchorElement
 
     disconnectedCallback()
     {
-        this.#routeur.removeEventListener(namings.events.routeChange, this.routeChangeEventListener);
+        this.#routeur?.removeEventListener(namings.events.routeChange, this.routeChangeEventListener);
     }
 
     //methods
@@ -95,12 +95,14 @@ export default class Anchor extends HTMLAnchorElement
     {
         //rewrite href(absolute) 
         let href = this.getAttribute("href");
-        this.href = new URL(href, e.detail.url);
+        //debugger
+        if(e.detail.url)
+            this.href = new URL(href, e.detail.url);
         this.#routeur = e.detail.routeur;
         //set for first time
         this.setMatching();
         //listen to route change
-        this.#routeur.addEventListener(namings.events.routeChange,
+        this.#routeur?.addEventListener(namings.events.routeChange,
             this.routeChangeEventListener);
         this.initNavigationEvent();
         console.log("anchor is connected ");
