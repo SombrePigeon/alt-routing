@@ -100,7 +100,7 @@ a:hover
 
 a[match=exact]:not([target])
 {
-    pointer-events: none;
+    /*pointer-events: none;*/
     filter: grayscale();
 }
 a[match=part]:not([target])
@@ -112,5 +112,8 @@ a[match=part]:not([target])
     
 }
 
-
+:state(exact) [data-target]:not(:state(exact) :state(part) [data-target])
+{
+    border: 2px solid black;
+}
   
