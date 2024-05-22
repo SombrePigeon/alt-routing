@@ -112,7 +112,7 @@ a[match=part]:not([target])
     
 }
 
-:state(exact) [data-target]:not(:state(exact) :state(part) [data-target])
+[data-target]
 {
     border: 2px solid black;
 }

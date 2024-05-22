@@ -285,6 +285,7 @@ export default class Route extends HTMLElement
     {
         console.debug("route ", this.#url.pathname, " ", e.type);
         this.#state = namings.enums.state.loaded;
+        this.updateTarget();
     }
     #onBeforeUnloading = (e) =>
     {
@@ -423,6 +424,7 @@ export default class Route extends HTMLElement
     #routeChangeEventListener = (e) =>
     {
         this.updateLocationMatch();
+        this.updateTarget();
     };
 
     #popstateEventListener = (e)=>
@@ -547,6 +549,23 @@ export default class Route extends HTMLElement
         else
         {
             console.debug("event message is : ", e)
+        }
+    }
+
+    updateTarget()
+    {
+        
+        if(this.#state === namings.enums.state.loaded)
+        {
+            const hash = location.hash.substring(1);
+            //recherche uniquement dans la route
+            let newTarget = this.querySelector(`:scope:state(exact) [id="${hash}"]:not(:state(exact) :state(part) [id="${hash}"])`);
+            const oldTarget = this.querySelector("[data-target]:not(:scope alt-route [data-target])");
+            if(oldTarget && oldTarget !== newTarget)
+            {
+                delete oldTarget.dataset.target;
+            }
+            newTarget && (newTarget.dataset.target = "");
         }
     }
 }
