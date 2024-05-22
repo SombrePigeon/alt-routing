@@ -7,7 +7,7 @@ all: $(foreach dir,$(SUBDIRS),$(dir)/index.html)
 # Règle pour chaque index.html
 %index.html: %content.html index.template.html
 	@echo "Génération de $@"
-	sed 's/\$${content.html}/$(shell cat $< | sed 's/\//\\\//g')/g' index.template.html > $@
+	@sed 's/\$${content.html}/$(shell cat $< | sed 's/\//\\\//g')/g' index.template.html > $@
 
 # Règle pour nettoyer les fichiers index.html générés
 clean:
