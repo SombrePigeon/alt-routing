@@ -4,20 +4,27 @@ console.log("anchor module");
 export default class Anchor extends HTMLAnchorElement
 {
     #routeur;
+    #_locationMatch;
     //getters&setters
-    get locationMatch()
+    get #locationMatch()
     {
-        return this.getAttribute(namings.attributes.locationMatching);
+        return this.#_locationMatch;
     }
-    set locationMatch(value)
+    set #locationMatch(locationMatch) 
     {
-        this.setAttribute(namings.attributes.locationMatching, value);
+        if(this.#_locationMatch !== locationMatch)
+        {
+            //this.#_locationMatch && this.#internals.states.delete(`${Symbol.keyFor(this.#_locationMatch)}`);
+            this.#_locationMatch = locationMatch;
+            //this.#_locationMatch && this.#internals.states.add(`${Symbol.keyFor(this.#_locationMatch)}`);
+            this.dataset.locationMatch = Symbol.keyFor(this.#_locationMatch);
+        }
     }
 
     constructor() 
     {
         super();
-        this.locationMatch = namings.attributes.locationMatchingValues.none;
+        this.#locationMatch = namings.enums.locationMatch.none;
         //init callback
         this.addEventListener(namings.events.connectingRoutingComponent, 
             this.connectionEventListener,
@@ -48,46 +55,49 @@ export default class Anchor extends HTMLAnchorElement
     //methods
     initNavigationEvent()
     {
-        this.addEventListener("click", 
-        (e) => 
+        if(!this.getAttribute(this.download))
         {
-            e.preventDefault();
-            console.log("cancel natural navigation, go to : " + this.href + " or "+ this.getAttribute("href"));
-            this.#routeur.dispatchEvent(
-                new CustomEvent(namings.events.navigate,
-                {
-                    detail:
+            this.addEventListener("click", 
+            (e) => 
+            {
+                e.preventDefault();
+                console.log("cancel natural navigation, go to : " + this.href + " or "+ this.getAttribute("href"));
+                this.#routeur.dispatchEvent(
+                    new CustomEvent(namings.events.navigate,
                     {
-                        url: new URL(this.href),
-                        target: this.target,
-                        state: null,
-                        rel: this.rel.split(',')
-                            .filter(r => r === "noopener" || r === "noreferrer")
-                            .join(',')
+                        detail:
+                        {
+                            url: new URL(this.href),
+                            target: this.target,
+                            state: null,
+                            rel: this.rel.split(',')
+                                .filter(r => r === "noopener" || r === "noreferrer")
+                                .join(',')
+                        }
                     }
-                }
-                )
-            );
-        });
+                    )
+                );
+            });
+        }
+        
     }
 
-    setMatching()
+    updateLocationMatch()
     {
-        const locationMatchingValues = namings.attributes.locationMatchingValues;
-        let match = locationMatchingValues.none;
-        if(location.pathname.startsWith(this.pathname))//refait ça stp ! signé toi de hier
+        let match = namings.enums.locationMatch.none;
+        //toDo try opti
+        if(location.href.startsWith(this.href))
         {
-            if(location.pathname === this.pathname)// ça aussi
+            if(location.href === this.href)
             {
-                match = locationMatchingValues.exact;
+                match = namings.enums.locationMatch.exact;
             }
             else
             {
-                match = locationMatchingValues.part;
+                match = namings.enums.locationMatch.part;
             }
         }
-
-        this.locationMatch = match;
+        this.#locationMatch = match;
     }
 
     //eventsListeners
@@ -97,10 +107,12 @@ export default class Anchor extends HTMLAnchorElement
         let href = this.getAttribute("href");
         //debugger
         if(e.detail.url)
+        {
             this.href = new URL(href, e.detail.url);
+        }
         this.#routeur = e.detail.routeur;
         //set for first time
-        this.setMatching();
+        this.updateLocationMatch();
         //listen to route change
         this.#routeur?.addEventListener(namings.events.routeChange,
             this.routeChangeEventListener);
@@ -110,7 +122,7 @@ export default class Anchor extends HTMLAnchorElement
 
     routeChangeEventListener = (e) =>
     {
-        this.setMatching();
+        this.updateLocationMatch();
     };
 }
 
