@@ -2,20 +2,19 @@
 SUBDIRS := $(shell find . -type f -name 'content.html' -exec dirname {} \;)
 
 # Règle principale pour générer les fichiers index.html
-all: $(foreach dir,$(SUBDIRS),$(dir)/index.html)
+all: generate-index
 
-# Règle pour chaque index.html
-%index.html: %content.html index.template.html
-	@echo "Génération de $@"
-	@sed 's/\$${content.html}/$(shell cat $< | sed 's/\//\\\//g')/g' index.template.html > $@
+generate-index:
+	@./generate_indexes.sh
 
 # Règle pour nettoyer les fichiers index.html générés
 clean:
 	@echo "Nettoyage des fichiers index.html"
 	@find . -type f -name 'index.html' -delete
 
+# Règle pour lister les répertoires
 ls:
 	@echo "Liste des répertoires du projet :"
-	@echo $(SUBDIRS)
+	@find . -type d -not -path '*/\.*' -exec echo "- {}" \;
 
-.PHONY: all clean ls
+.PHONY: all clean ls generate-index
