@@ -22,7 +22,8 @@ export default
         {
             mode: "open"
         },
-        loadNav: false,
+        staticNav: true,
+        staticRouting:true,
         keepChildRoutes: true,
         //propagateKeepChildRoutes: null
     },
