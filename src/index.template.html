@@ -9,10 +9,11 @@
     </noscript>
     <script type="module" src="/js/main.js"></script>
   </head>
-  <body is="alt-router">
+  <body>
     <header>Alt-routing</header>
-    <nav>${nav.html}</nav>
-    <main>
+    <nav><a href="/" >restart</a></nav>
+    <main is="alt-router">
+      ${nav.html}
       ${content.html}
     </main>
     <footer slot="footer">made by : SombrePigeon</footer>
