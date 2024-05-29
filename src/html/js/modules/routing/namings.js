@@ -64,6 +64,7 @@ export default
         route: "alt-route",
         router: "alt-router",
         anchor: "alt-a",
+        title: "alt-title"
     },
     files:
     {
@@ -71,6 +72,7 @@ export default
         nav: "nav.html",
         content: "content.html",
         route: "route.html",
+        title: "title.html",
         style: "style.css"
     }
 }
