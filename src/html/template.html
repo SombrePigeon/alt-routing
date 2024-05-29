@@ -1,12 +1,7 @@
-<div>
-    <slot name="header"></slot>
-</div>
-<div>
-    <slot name="nav"></slot>
-</div>
-<div>
-    <slot name="main"></slot>
-</div>
-<div>
-    <slot name="footer"></slot>
-</div>
+
+<header>${title.html}</header>
+<nav><slot name="nav"></slot></nav>
+<main>
+    <slot></slot>
+</main>
+<footer slot="footer">made by : SombrePigeon</footer>

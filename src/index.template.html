@@ -2,11 +2,19 @@
 <html lang="fr" is="alt-app">
   <head>
     <meta charset="utf-8">
-    <title>WebComponent Routeur</title>
+    <title>${title.html}</title>
     <link rel="stylesheet" href="/css/style.css"/>
+    <noscript>
+      <link rel="stylesheet" href="/css/noScript.css"/>
+    </noscript>
     <script type="module" src="/js/main.js"></script>
   </head>
   <body is="alt-router">
-    ${content.html}
+    <header>${title.html}</header>
+    <nav>${nav.html}</nav>
+    <main>
+      ${content.html}
+    </main>
+    <footer slot="footer">made by : SombrePigeon</footer>
   </body>
 </html>
