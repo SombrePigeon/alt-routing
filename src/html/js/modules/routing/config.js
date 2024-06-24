@@ -23,7 +23,7 @@ export default
             mode: "open"
         },
         localNav: true,
-        staticRouting:true,
+        staticRouting: true,
         propagateStaticRouting: undefined
     },
     targetNavigation:

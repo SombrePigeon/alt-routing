@@ -237,8 +237,11 @@ export default class Route extends HTMLElement
         //set abort
         this.#abortController = new AbortController();
 
-        this.loadNav();
-        this.loadRoutes();
+        if(!this.#staticRouting) 
+        {
+            this.loadRoutes();
+        }
+
         const abortListener = this.#abortController.signal;
 
         const contentPromise = fetch(contentAbsolutePath,
@@ -308,9 +311,13 @@ export default class Route extends HTMLElement
         let elementsToRemove=[];
         for (const child of this.children)
         {
-            const remove =
+            const keep = 
                 //routes
-                !this.#staticRouting || (child.tagName !== namings.components.route.toLocaleUpperCase())
+                this.#staticRouting && (child.tagName === namings.components.route.toLocaleUpperCase())
+                //nav 
+                || (this.#localNav && (child.tagName === "NAV"));
+
+            const remove = !keep;
             if(remove)
             {
                 elementsToRemove.push(child);
@@ -383,14 +390,14 @@ export default class Route extends HTMLElement
         });
     }
 
-    async loadTemplate()
+    loadTemplate()
     {
         if(this.#useShadow)
         {
             this.shadowRoot ?? this.attachShadow(config.route.shadowRootInit);
             const componentAbsoluteTemplatePath = new URL(namings.files.template, this.#url);
             console.log("path is " + componentAbsoluteTemplatePath)
-            await fetch(componentAbsoluteTemplatePath)
+            fetch(componentAbsoluteTemplatePath)
                 .then(response =>
                 {
                     return response.text();
@@ -404,7 +411,7 @@ export default class Route extends HTMLElement
 
             const localSheet = new CSSStyleSheet();
             this.shadowRoot.adoptedStyleSheets = [globalStylesheet, routeStyleSheet, localSheet];
-            await fetch(componentAbsoluteStylePath)
+            fetch(componentAbsoluteStylePath)
                 .then(response =>
                 {
                     return response.text();
@@ -459,6 +466,14 @@ export default class Route extends HTMLElement
         this.#routeur = e.detail.routeur;
         //init
         this.loadTemplate();
+        if(this.#localNav) 
+        {
+            this.loadNav();
+        }
+        if(this.#staticRouting) 
+        {
+            this.loadRoutes();
+        }
         this.#state = namings.enums.state.unloaded;
         //set for first time
         this.updateLocationMatch();
