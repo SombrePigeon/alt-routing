@@ -22,10 +22,9 @@ export default
         {
             mode: "open"
         },
-        staticNav: true,
+        localNav: true,
         staticRouting:true,
-        keepChildRoutes: true,
-        //propagateKeepChildRoutes: null
+        propagateStaticRouting: undefined
     },
     targetNavigation:
     {

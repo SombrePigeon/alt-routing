@@ -13,9 +13,9 @@ export default class Route extends HTMLElement
     //config
     #isRouteur;
     #useShadow;
-    #loadNav = false;
-    #keepChildRoutes;
-    #propagateKeepChildRoutes
+    #localNav;
+    #staticRouting;
+    #propagateStaticRouting
     
     #path;
     #routeur;
@@ -132,10 +132,16 @@ export default class Route extends HTMLElement
     {
         this.#path = this.dataset.path;
         this.#isRouteur = this.#path.startsWith('/');
-        this.#propagateKeepChildRoutes = this.dataset.propagateKeepChildRoute ?? config.route.propagateKeepRouteChild;
+        this.#propagateStaticRouting = this.dataset.propagateStaticRouting ?? config.route.propagateStaticRouting;
         if(this.#isRouteur)
         {
             console.log("route is routeur");
+            this.addEventListener(namings.events.connectingRoutingComponent,
+                this.#routeurConstructionEventListener,
+                {
+                    capture: true
+                }
+            );
             //generate navigation event
             ///when popstate event
             window.addEventListener("popstate",
@@ -145,7 +151,6 @@ export default class Route extends HTMLElement
                 this.#navigateEventListener);
             window.addEventListener("message", this.#messageNavigateEventListenner);
         }
-
         this.addEventListener(namings.events.connectingRoutingComponent,
             this.#constructionEventListener,
             {
@@ -227,11 +232,42 @@ export default class Route extends HTMLElement
     {
         this.#state = namings.enums.state.loading;
         //load data
-        const componentAbsolutePath = new URL(namings.files.content, this.#url);
+        const contentAbsolutePath = new URL(namings.files.content, this.#url);
+        const navAbsolutePath = new URL(namings.files.nav, this.#url);
+        const routeAbsolutePath = new URL(namings.files.route, this.#url);
+        debugger
         //set abort
         this.#abortController = new AbortController();
 
-        fetch(componentAbsolutePath,
+        //load nav
+        const navPromise = fetch(navAbsolutePath,
+            {
+                signal: this.#abortController.signal
+            })
+            .then((response) =>
+            {
+                return response.text();
+            })
+            .then((html) =>
+            {
+                this.insertAdjacentHTML("afterbegin", html);
+            });
+
+            //load nav
+        const routePromise = fetch(routeAbsolutePath,
+            {
+                signal: this.#abortController.signal
+            })
+            .then((response) =>
+            {
+                return response.text();
+            })
+            .then((html) =>
+            {
+                this.insertAdjacentHTML("beforeend", html);
+            });
+            
+        const contentPromise = fetch(contentAbsolutePath,
             {
                 signal: this.#abortController.signal
             })
@@ -239,6 +275,7 @@ export default class Route extends HTMLElement
             {
                 if(response.ok)
                 {
+                    //toDo status is aborted or http code
                     this.#status = namings.enums.status.ok;
                 }
                 else
@@ -246,10 +283,9 @@ export default class Route extends HTMLElement
                     this.#status = namings.enums.status.ko;
                 }
                 return response.text();
-            })
-            .then((html) =>
+            }).then((html) =>
             {
-                this.innerHTML = html;
+                this.insertAdjacentHTML("beforeend", html);
                 this.dispatchEvent(new CustomEvent(namings.events.loaded));
             })
             .catch((error) =>
@@ -290,7 +326,11 @@ export default class Route extends HTMLElement
         let elementsToRemove=[];
         for (const child of this.children)
         {
-            const remove = !this.#keepChildRoutes || (child.tagName !== namings.components.route.toLocaleUpperCase());
+            const remove =
+                //routes
+                !this.#staticRouting || (child.tagName !== namings.components.route.toLocaleUpperCase())
+                //toDo nav
+                || false;
             if(remove)
             {
                 elementsToRemove.push(child);
@@ -339,7 +379,7 @@ export default class Route extends HTMLElement
         if(this.#useShadow)
         {
             this.shadowRoot ?? this.attachShadow(config.route.shadowRootInit);
-            const componentAbsoluteTemplatePath = new URL("template.html", this.#url);
+            const componentAbsoluteTemplatePath = new URL(namings.files.template, this.#url);
             console.log("path is " + componentAbsoluteTemplatePath)
             await fetch(componentAbsoluteTemplatePath)
                 .then(response =>
@@ -375,18 +415,24 @@ export default class Route extends HTMLElement
         );
     }
 
+    #routeurConstructionEventListener = (e) => 
+    {
+        e.detail.routeur = this;
+        e.detail.url = new URL(location.origin);
+    };
+
     #constructionEventListener = (e) => 
     {
         e.detail.url = new URL(this.#path, e.detail.url);
-        if(this.#propagateKeepChildRoutes != null)
+        if(this.#propagateStaticRouting != null)
         {
-            if(this.#propagateKeepChildRoutes)
+            if(this.#propagateStaticRouting)
             {
-                e.detail.keepChildRoutes = this.#keepChildRoutes;
+                e.detail.staticRouting = this.#staticRouting;
             }
             else
             {
-                delete e.detail.keepChildRoutes;
+                delete e.detail.staticRouting;
             }
         }
     };
@@ -398,7 +444,8 @@ export default class Route extends HTMLElement
         console.log("route connected !");
         //config
         this.#useShadow = this.dataset.useShadow ?? config.route.useShadow;
-        this.#keepChildRoutes = this.dataset.keepChildRoutes ?? e.detail.keepChildRoutes ?? config.route.keepChildRoutes;
+        this.#localNav = this.dataset.localNav ?? config.route.localNav;
+        this.#staticRouting = this.dataset.staticRouting ?? e.detail.staticRouting ?? config.route.staticRouting;
         this.#url = e.detail.url;
         this.#routeur = e.detail.routeur;
         //init
