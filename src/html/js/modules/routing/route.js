@@ -233,43 +233,17 @@ export default class Route extends HTMLElement
         this.#state = namings.enums.state.loading;
         //load data
         const contentAbsolutePath = new URL(namings.files.content, this.#url);
-        const navAbsolutePath = new URL(namings.files.nav, this.#url);
-        const routeAbsolutePath = new URL(namings.files.route, this.#url);
-        debugger
+        
         //set abort
         this.#abortController = new AbortController();
 
-        //load nav
-        const navPromise = fetch(navAbsolutePath,
-            {
-                signal: this.#abortController.signal
-            })
-            .then((response) =>
-            {
-                return response.text();
-            })
-            .then((html) =>
-            {
-                this.insertAdjacentHTML("afterbegin", html);
-            });
+        this.loadNav();
+        this.loadRoutes();
+        const abortListener = this.#abortController.signal;
 
-            //load nav
-        const routePromise = fetch(routeAbsolutePath,
-            {
-                signal: this.#abortController.signal
-            })
-            .then((response) =>
-            {
-                return response.text();
-            })
-            .then((html) =>
-            {
-                this.insertAdjacentHTML("beforeend", html);
-            });
-            
         const contentPromise = fetch(contentAbsolutePath,
             {
-                signal: this.#abortController.signal
+                signal: abortListener
             })
             .then((response) =>
             {
@@ -285,7 +259,15 @@ export default class Route extends HTMLElement
                 return response.text();
             }).then((html) =>
             {
-                this.insertAdjacentHTML("beforeend", html);
+                const firstRoute = this.querySelector(":scope>alt-route:first-of-type");
+                if(firstRoute)
+                {
+                    firstRoute.insertAdjacentHTML("beforebegin", html);
+                }
+                else
+                {
+                    this.insertAdjacentHTML("beforeend", html);
+                }
                 this.dispatchEvent(new CustomEvent(namings.events.loaded));
             })
             .catch((error) =>
@@ -329,8 +311,6 @@ export default class Route extends HTMLElement
             const remove =
                 //routes
                 !this.#staticRouting || (child.tagName !== namings.components.route.toLocaleUpperCase())
-                //toDo nav
-                || false;
             if(remove)
             {
                 elementsToRemove.push(child);
@@ -374,6 +354,35 @@ export default class Route extends HTMLElement
         this.#locationMatch = match;
     }
     
+    loadNav()
+    {
+        const navAbsolutePath = new URL(namings.files.nav, this.#url);
+        fetch(navAbsolutePath)
+        .then((response) =>
+        {
+            return response.text();
+        })
+        .then((html) =>
+        {
+            this.insertAdjacentHTML("afterbegin", html);
+        });
+    }
+
+    loadRoutes()
+    {
+
+        const routeAbsolutePath = new URL(namings.files.route, this.#url);
+        fetch(routeAbsolutePath)
+        .then((response) =>
+        {
+            return response.text();
+        })
+        .then((html) =>
+        {
+            this.insertAdjacentHTML("beforeend", html);
+        });
+    }
+
     async loadTemplate()
     {
         if(this.#useShadow)
