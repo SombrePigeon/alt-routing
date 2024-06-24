@@ -136,25 +136,6 @@ export default class Route extends HTMLElement
         if(this.#isRouteur)
         {
             console.log("route is routeur");
-            this.addEventListener(namings.events.connectingRoutingComponent,
-                e => 
-                {
-                    e.detail.routeur = this;
-                    e.detail.url = new URL(location.origin);
-
-                    let base = document.getElementsByTagName("base")[0];
-                    if (!base)
-                    {
-                        base = document.createElement("base");
-                        document.head.appendChild(base);
-                    }
-                    base.setAttribute("href", this.path);
-
-                },
-                {
-                    capture: true
-                }
-            );
             //generate navigation event
             ///when popstate event
             window.addEventListener("popstate",
