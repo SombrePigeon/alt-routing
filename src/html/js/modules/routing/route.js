@@ -509,7 +509,6 @@ export default class Route extends HTMLElement
 
         if(target === "_self")
         {
-            debugger
             if(location.origin === destinationURL.origin)
             {
                 if(location.pathname === destinationURL.pathname
