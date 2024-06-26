@@ -37,9 +37,24 @@ export default class Route extends HTMLElement
         
         if(this.#_locationMatch !== locationMatch)
         {
-            this.#_locationMatch && this.#internals.states.delete(`${Symbol.keyFor(this.#_locationMatch)}`);
+            try
+            {
+                this.#_locationMatch && this.#internals.states.delete(`${Symbol.keyFor(this.#_locationMatch)}`);
+            }
+            catch
+            {
+                this._internals.states.delete(`--${Symbol.keyFor(this.#_locationMatch)}`);
+            }
             this.#_locationMatch = locationMatch;
             this.#_locationMatch && this.#internals.states.add(`${Symbol.keyFor(this.#_locationMatch)}`);
+            try
+            {
+                this.#_locationMatch && this.#internals.states.add(`${Symbol.keyFor(this.#_locationMatch)}`);
+            }
+            catch
+            {
+                this._internals.states.add(`--${Symbol.keyFor(this.#_locationMatch)}`);
+            }
             switch(this.#_locationMatch)
             {
                 case namings.enums.locationMatch.exact:
@@ -90,9 +105,23 @@ export default class Route extends HTMLElement
         console.debug(`state for ${this.#url?.pathname} : try change to ${Symbol.keyFor(state)}`);
         if(this.#_state !== state)
         {
-            this.#_state && this.#internals.states.delete(`${Symbol.keyFor(this.#_state)}`);
+            try
+            {
+                this.#_state && this.#internals.states.delete(`${Symbol.keyFor(this.#_state)}`);
+            }
+            catch
+            {
+                this.#internals.states.delete(`--${Symbol.keyFor(this.#_state)}`);
+            }
             this.#_state = state;
-            this.#_state && this.#internals.states.add(`${Symbol.keyFor(this.#_state)}`);
+            try
+            {
+                this.#_state && this.#internals.states.add(`${Symbol.keyFor(this.#_state)}`);
+            }
+            catch
+            {
+                this.#internals.states.add(`--${Symbol.keyFor(this.#_state)}`);
+            }
             this.dataset.state = Symbol.keyFor(this.#_state);
         }
         console.group("states : ")
@@ -111,9 +140,24 @@ export default class Route extends HTMLElement
     {
         if(this.#_status !== status)
         {
-            this.#_status && this.#internals.states.delete(`${Symbol.keyFor(this.#_status)}`);
+            try
+            {
+                this.#_status && this.#internals.states.delete(`${Symbol.keyFor(this.#_status)}`);
+            }
+            catch
+            {
+                this.#internals.states.delete(`--${Symbol.keyFor(this.#_status)}`);
+            }
             this.#_status = status;
             this.#_status && this.#internals.states.add(`${Symbol.keyFor(this.#_status)}`);
+            try
+            {
+                this.#_status && this.#internals.states.add(`${Symbol.keyFor(this.#_status)}`);
+            }
+            catch
+            {
+                this.#internals.states.add(`--${Symbol.keyFor(this.#_status)}`);
+            }
             this.dataset.status = Symbol.keyFor(this.#_status);
         }
     }
