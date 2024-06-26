@@ -509,19 +509,38 @@ export default class Route extends HTMLElement
 
         if(target === "_self")
         {
-            if(location.href !== destinationURL.href
-                || history.state !== destinationState)
+            debugger
+            if(location.origin === destinationURL.origin)
             {
-                console.log("navigate")
-                history.pushState(destinationState, null, destinationURL);
-                this.updateRoutes();
+                if(location.pathname === destinationURL.pathname
+                    && location.search === destinationURL.search
+                    && (destinationURL.hash !== "" || destinationURL.href.endsWith("#"))
+                    && history.state === destinationState)
+                {
+                    if(location.hash !== destinationURL.hash)
+                    {
+                        location.hash = destinationURL.hash;
+                    }
+                }
+                else if(location.href === destinationURL.href)
+                {
+                    console.log("refresh")
+                    //just reload
+                    history.go()
+                    
+                }
+                else
+                {
+                    console.log("navigate")
+                    history.pushState(destinationState, null, destinationURL);
+                    this.updateRoutes();
+                }
             }
             else
             {
-                console.log("refresh")
-                //just reload
-                history.go()
+                location.href = destinationURL.href;
             }
+            
         }
         else
         {
