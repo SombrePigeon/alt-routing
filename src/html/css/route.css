@@ -1,0 +1,34 @@
+:host
+{
+    display: grid;
+    border: 0.2em ridge red;
+    margin: auto;
+}
+
+/*:host([data-location-match="none"]),*/
+:host(:state(unloaded))
+{
+    display: none;
+    grid-template-rows: 1fr max-content 1fr;
+}
+
+:host(:state(loading))
+{
+    border: 0.3em solid #f3f3f3; /* Light grey */
+    border-top: 0.3em solid #3498db; /* Blue */
+    border-radius: 50%;
+    width: 1.5em;
+    height: 1.5em;
+    animation: spin 2s linear infinite;
+}
+@keyframes spin
+{
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/*:host([data-location-match="exact"])*/
+:host(:state(loaded):state(exact))
+{
+   border-color: blue;
+}

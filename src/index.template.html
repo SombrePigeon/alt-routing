@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="fr" is="alt-app">
+  <head>
+    <meta charset="utf-8">
+    <title is="alt-title">${title.html}</title>
+    <link rel="stylesheet" href="/css/style.css"/>
+    <noscript>
+      <link rel="stylesheet" href="/css/noScript.css"/>
+    </noscript>
+    <script type="module" src="/js/main.js"></script>
+  </head>
+  <body>
+    <header>Alt-routing</header>
+    <nav><a href="/" >restart</a></nav>
+    <main is="alt-router">
+      ${nav.html}
+      ${content.html}
+    </main>
+    <footer slot="footer">made by : SombrePigeon</footer>
+  </body>
+</html>

@@ -1,0 +1,141 @@
+@media (prefers-color-scheme: light)
+{
+    :root
+    {
+        --color-theme-1:#FCF8EC;
+        --color-theme-2:#D0E8F2;
+        --color-theme-3:#79A3B1;
+        --color-theme-4:#456268;
+    }
+}
+
+@media (prefers-color-scheme: dark)
+{
+    :root
+    {
+        --color-theme-1:#382933;
+        --color-theme-2:#3B5249;
+        --color-theme-3:#519872;
+        --color-theme-4:#A4B494;
+    }
+}
+
+*
+{
+    box-sizing: border-box;
+    margin: 0;
+}
+
+html, body
+{
+    height: 100%;
+    margin: 0;
+}
+
+body
+{
+    color: var(--color-theme-4);
+    font-size: 1.5em;
+    display: grid;
+    grid-template-rows: min-content min-content 1fr min-content ;
+
+}
+
+body > *
+{
+    overflow: scroll;
+} 
+
+header,footer
+{
+    z-index: 1;
+}
+
+header
+{
+    background-color: var(--color-theme-1);
+    font-size: 2em;
+    text-align: center;
+    box-shadow: 0px 1px 6px 0px rgba(0, 0, 0, 0.6);
+}
+
+nav
+{
+    background-color: var(--color-theme-2);
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    grid-auto-rows: min-content;
+    padding: 1em;
+    gap: 1em;
+    overflow-y: scroll;
+    container-type: inline-size;
+}
+
+alt-route
+{
+    container-name: rrr;
+    container-type: inline-size;
+}
+
+@container rrr (width < 10em)
+{
+    nav
+    {
+        grid-template-columns: 1fr;
+        color: white;
+    }
+}
+
+main
+{
+    background-color: var(--color-theme-1);
+}
+
+footer
+{
+    background-color: var(--color-theme-1);
+    text-align: right;
+    font-size: 0.8em;
+    box-shadow: 0px -1px 6px 0px rgba(0, 0, 0, 0.6);
+}
+
+a
+{
+    background-color: var(--color-theme-3);
+    border-radius: 0.5em;
+    /*padding: 1em;*/
+    text-align: center;
+    box-shadow: 1px 1px 6px 0px rgba(0, 0, 0, 0.6);
+    transition: box-shadow 0.15s ease-in-out;
+    text-decoration: none;
+}
+
+a, a:visited
+{
+    color: var(--color-theme-1);
+}
+
+a:hover
+{
+    box-shadow: 1px 1px 6px 6px rgba(0, 0, 0, 0.6);
+}
+
+a[data-location-match=exact]:not([target])
+{
+    /*pointer-events: none;*/
+    filter: grayscale();
+}
+a[data-location-match=part]:not([target])
+{
+    text-decoration:underline;
+}
+@keyframes buttonShadowAnim
+{
+    
+}
+
+[data-target]
+{
+    border: 2px solid black;
+}
+  
