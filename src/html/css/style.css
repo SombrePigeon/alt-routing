@@ -37,8 +37,14 @@ body
     color: var(--color-theme-4);
     font-size: 1.5em;
     display: grid;
+    grid-template-rows: min-content min-content 1fr min-content ;
 
 }
+
+body > *
+{
+    overflow: scroll;
+} 
 
 header,footer
 {
@@ -60,8 +66,24 @@ nav
     grid-template-columns: 1fr 1fr;
     grid-auto-rows: min-content;
     padding: 1em;
-    gap: 2em;
+    gap: 1em;
     overflow-y: scroll;
+    container-type: inline-size;
+}
+
+alt-route
+{
+    container-name: rrr;
+    container-type: inline-size;
+}
+
+@container rrr (width < 10em)
+{
+    nav
+    {
+        grid-template-columns: 1fr;
+        color: white;
+    }
 }
 
 main
@@ -98,12 +120,12 @@ a:hover
     box-shadow: 1px 1px 6px 6px rgba(0, 0, 0, 0.6);
 }
 
-a[match=exact]:not([target])
+a[data-location-match=exact]:not([target])
 {
     /*pointer-events: none;*/
     filter: grayscale();
 }
-a[match=part]:not([target])
+a[data-location-match=part]:not([target])
 {
     text-decoration:underline;
 }
