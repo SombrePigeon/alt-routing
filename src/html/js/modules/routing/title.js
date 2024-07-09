@@ -41,7 +41,7 @@ export default class Title extends HTMLTitleElement
             .finally(()=>
             {
                 this.#abortController = null;
-                console.log("title update : ");
+                console.log(`title update : ${this.text}`);
             });
         
     };
