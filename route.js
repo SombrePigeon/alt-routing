@@ -8,14 +8,14 @@ const routeStyleSheet = style.route;
 
 export default class Route extends HTMLElement
 {
-    #internals
+    #internals;
 
     //config
     #isRouteur;
     #useShadow;
     #localNav;
     #staticRouting;
-    #propagateStaticRouting
+    #propagateStaticRouting;
     
     #path;
     #routeur;
