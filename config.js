@@ -28,8 +28,8 @@ export default
     },
     targetNavigation:
     {
-        origins:["http://training.localhost"],
-        targets:["http://training.localhost"],
+        origins:[],
+        targets:[],
         timeout: 10//ms
     }
 
