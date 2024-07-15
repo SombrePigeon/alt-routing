@@ -124,9 +124,9 @@ export default class Route extends HTMLElement
             }
             this.dataset.state = Symbol.keyFor(this.#_state);
         }
-        console.group("states : ")
-            this.#internals.states.forEach(element => {
-                console.log(element)
+        console.group(`states for route "${this.#path}" : `)
+            this.#internals.states.forEach(state => {
+                console.debug(state)
             });
             console.groupEnd()
     }
@@ -179,7 +179,7 @@ export default class Route extends HTMLElement
         this.#propagateStaticRouting = this.dataset.propagateStaticRouting ?? config.route.propagateStaticRouting;
         if(this.#isRouteur)
         {
-            console.log("route is routeur");
+            console.info(`router alt-route activate`);
             this.addEventListener(namings.events.connectingRoutingComponent,
                 this.#routeurConstructionEventListener,
                 {
