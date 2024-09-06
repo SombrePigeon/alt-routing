@@ -1,10 +1,22 @@
 import namings from "./namings.js";
 import config from "./config.js";
-import style from "./style.js";
 console.log("route module");
 
-const globalStylesheet = style.global;
-const routeStyleSheet = style.route;
+
+const routesStyleSheet = new CSSStyleSheet();
+
+if (config.route.style)
+{
+    fetch(config.route.style)
+    .then((response) => 
+    {
+        return response.text();
+    })
+    .then((style) =>
+    {
+        routesStylePromise.replace(style);
+    });
+}
 
 export default class Route extends HTMLElement
 {
@@ -454,7 +466,7 @@ export default class Route extends HTMLElement
             const componentAbsoluteStylePath = new URL(namings.files.style, this.#url);
 
             const localSheet = new CSSStyleSheet();
-            this.shadowRoot.adoptedStyleSheets = [globalStylesheet, routeStyleSheet, localSheet];
+            this.shadowRoot.adoptedStyleSheets = [routesStyleSheet, localSheet];
             fetch(componentAbsoluteStylePath)
                 .then(response =>
                 {

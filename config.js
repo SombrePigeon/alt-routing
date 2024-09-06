@@ -1,10 +1,5 @@
 export default 
 { 
-    style:
-    {
-        global: "/css/style.css",
-        route: "/css/route.css"
-    },
     route:
     {
         useShadow: false,
@@ -12,6 +7,7 @@ export default
         {
             mode: "open"
         },
+        style: undefined,
         localNav: false,
         staticRouting: false,
         propagateStaticRouting: undefined
