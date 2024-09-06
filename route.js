@@ -446,7 +446,7 @@ export default class Route extends HTMLElement
         });
     }
 
-    loadTemplate()
+    loadShadow()
     {
         if(this.#useShadow)
         {
@@ -521,7 +521,7 @@ export default class Route extends HTMLElement
         this.#url = e.detail.url;
         this.#routeur = e.detail.routeur;
         //init
-        this.loadTemplate();
+        this.loadShadow();
         if(this.#localNav) 
         {
             this.loadNav();
