@@ -1,30 +1,28 @@
 export default 
 { 
-    
-    template: 
-    {
-        cached: false
-        //use request object instead
-    },
     style:
     {
         global: "/css/style.css",
         route: "/css/route.css"
     },
-    content:
-    {
-        //use request object
-    },
     route:
     {
-        useShadow: true,
+        useShadow: false,
         shadowRootInit: 
         {
             mode: "open"
         },
-        localNav: true,
-        staticRouting: true,
+        localNav: false,
+        staticRouting: false,
         propagateStaticRouting: undefined
+    },
+    routeur:
+    {
+
+    },
+    anchor:
+    {
+
     },
     targetNavigation:
     {
