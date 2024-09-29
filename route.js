@@ -694,8 +694,8 @@ export default class Route extends HTMLElement
         {
             const hash = location.hash.substring(1);
             //recherche uniquement dans la route
-            let newTarget = this.querySelector(`:scope:state(exact) [id="${hash}"]:not(:state(exact) :state(part) [id="${hash}"])`);
-            const oldTarget = this.querySelector("[data-target]:not(:scope alt-route [data-target])");
+            let newTarget = this.querySelector(`:scope:state(${Symbol.keyFor(namings.enums.locationMatch.exact)}) [id="${hash}"]:not(:state(${Symbol.keyFor(namings.enums.locationMatch.exact)}) ${namings.components.route} [id="${hash}"])`);
+            const oldTarget = this.querySelector(`[data-target]:not(:scope ${namings.components.route} [data-target])`);
             if(oldTarget && oldTarget !== newTarget)
             {
                 delete oldTarget.dataset.target;
