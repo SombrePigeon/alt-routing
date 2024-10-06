@@ -9,6 +9,7 @@ export default
         },
         style: undefined,
         localNav: false,
+        staticNav: false,
         staticRouting: false,
         propagateStaticRouting: undefined
     },
