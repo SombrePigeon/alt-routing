@@ -26,6 +26,7 @@ export default class Route extends HTMLElement
     #isRouteur;
     #useShadow;
     #localNav;
+    #staticNav;
     #staticRouting;
     #propagateStaticRouting;
     
@@ -293,6 +294,11 @@ export default class Route extends HTMLElement
         //set abort
         this.#abortController = new AbortController();
 
+        if(this.#localNav && !this.#staticNav) 
+        {
+            this.loadNav();
+        }
+
         if(!this.#staticRouting) 
         {
             this.loadRoutes();
@@ -371,7 +377,7 @@ export default class Route extends HTMLElement
                 //routes
                 this.#staticRouting && (child.tagName === namings.components.route.toLocaleUpperCase())
                 //nav 
-                || (this.#localNav && (child.tagName === "NAV"));
+                || (this.#localNav && this.#staticNav && (child.tagName === "NAV"));
 
             const remove = !keep;
             if(remove)
@@ -517,12 +523,14 @@ export default class Route extends HTMLElement
         //config
         this.#useShadow = this.dataset.useShadow ?? config.route.useShadow;
         this.#localNav = this.dataset.localNav ?? config.route.localNav;
+        this.#staticNav = this.dataset.staticNav ?? config.route.staticNav;
         this.#staticRouting = this.dataset.staticRouting ?? e.detail.staticRouting ?? config.route.staticRouting;
         this.#url = e.detail.url;
         this.#routeur = e.detail.routeur;
         //init
         this.loadShadow();
-        if(this.#localNav) 
+        
+        if(this.#localNav && this.#staticNav) 
         {
             this.loadNav();
         }
