@@ -1,5 +1,5 @@
 import namings from "./namings.js";
-import config from "./config.js";
+import config from "alt-routing/config";
 console.log("route module");
 
 
