@@ -1,0 +1,40 @@
+services:
+    alt-routing:
+        profiles: [none]
+        image: release-repository
+        networks:
+            nginxproxygitdeploy_net-proxy:
+                aliases: [alt-routing.releases.sombrepigeon.fr]
+
+    alt-routing-prod:
+        extends: alt-routing
+        profiles: [prod]
+        environment:
+            SOURCE: "https://github.com/SombrePigeon/alt-routing"
+            VIRTUAL_HOST: "alt-routing.releases.sombrepigeon.fr"
+            LETSENCRYPT_HOST: "alt-routing.releases.sombrepigeon.fr"
+        depends_on: 
+            - release-repository
+
+    alt-routing-dev:
+        extends: alt-routing
+        profiles: [dev]
+        volumes:
+            - ./:/usr/local/apache2/htdocs/:ro
+        entrypoint: "/bin/sh" #hack temporaire pour pas modifier le script
+        command: "-c httpd-foreground" #hack temporaire //
+        networks:
+            nginxproxygitdeploy_net-proxy:
+                aliases: [alt-routing.dev.releases.sombrepigeon.fr]
+        develop:
+            watch:
+                -
+                    action: sync
+                    path: .
+                    target: /usr/local/apache2/htdocs/
+
+
+
+networks:
+    nginxproxygitdeploy_net-proxy:
+        external: true
