@@ -1,5 +1,5 @@
 import namings from "./namings.js"
-console.log("anchor module");
+console.debug("anchor module");
 
 export default class Anchor extends HTMLAnchorElement
 {
@@ -36,7 +36,7 @@ export default class Anchor extends HTMLAnchorElement
     //callbacks
     connectedCallback()
     {
-        console.log("anchor is connecting " );
+        console.debug("anchor is connecting " );
         this.dispatchEvent(
             new CustomEvent(namings.events.connectingRoutingComponent,
                 {
@@ -117,7 +117,7 @@ export default class Anchor extends HTMLAnchorElement
         this.#routeur?.addEventListener(namings.events.routeChange,
             this.routeChangeEventListener);
         this.initNavigationEvent();
-        console.log("anchor is connected ");
+        console.debug(`anchor "${this.href}" is connected `);
     };
 
     routeChangeEventListener = (e) =>

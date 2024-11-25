@@ -1,21 +1,34 @@
 import namings from "./namings.js";
-import config from "./config.js";
-import style from "./style.js";
+import config from "alt-routing/config";
 console.log("route module");
 
-const globalStylesheet = style.global;
-const routeStyleSheet = style.route;
+
+const routesStyleSheet = new CSSStyleSheet();
+
+if (config.route.style)
+{
+    fetch(config.route.style)
+    .then((response) => 
+    {
+        return response.text();
+    })
+    .then((style) =>
+    {
+        routesStylePromise.replace(style);
+    });
+}
 
 export default class Route extends HTMLElement
 {
-    #internals
+    #internals;
 
     //config
     #isRouteur;
     #useShadow;
     #localNav;
+    #staticNav;
     #staticRouting;
-    #propagateStaticRouting
+    #propagateStaticRouting;
     
     #path;
     #routeur;
@@ -124,9 +137,9 @@ export default class Route extends HTMLElement
             }
             this.dataset.state = Symbol.keyFor(this.#_state);
         }
-        console.group("states : ")
-            this.#internals.states.forEach(element => {
-                console.log(element)
+        console.group(`states for route "${this.#path}" : `)
+            this.#internals.states.forEach(state => {
+                console.debug(state)
             });
             console.groupEnd()
     }
@@ -179,7 +192,7 @@ export default class Route extends HTMLElement
         this.#propagateStaticRouting = this.dataset.propagateStaticRouting ?? config.route.propagateStaticRouting;
         if(this.#isRouteur)
         {
-            console.log("route is routeur");
+            console.info(`router alt-route activate`);
             this.addEventListener(namings.events.connectingRoutingComponent,
                 this.#routeurConstructionEventListener,
                 {
@@ -281,6 +294,11 @@ export default class Route extends HTMLElement
         //set abort
         this.#abortController = new AbortController();
 
+        if(this.#localNav && !this.#staticNav) 
+        {
+            this.loadNav();
+        }
+
         if(!this.#staticRouting) 
         {
             this.loadRoutes();
@@ -359,7 +377,7 @@ export default class Route extends HTMLElement
                 //routes
                 this.#staticRouting && (child.tagName === namings.components.route.toLocaleUpperCase())
                 //nav 
-                || (this.#localNav && (child.tagName === "NAV"));
+                || (this.#localNav && this.#staticNav && (child.tagName === "NAV"));
 
             const remove = !keep;
             if(remove)
@@ -434,7 +452,7 @@ export default class Route extends HTMLElement
         });
     }
 
-    loadTemplate()
+    loadShadow()
     {
         if(this.#useShadow)
         {
@@ -454,7 +472,7 @@ export default class Route extends HTMLElement
             const componentAbsoluteStylePath = new URL(namings.files.style, this.#url);
 
             const localSheet = new CSSStyleSheet();
-            this.shadowRoot.adoptedStyleSheets = [globalStylesheet, routeStyleSheet, localSheet];
+            this.shadowRoot.adoptedStyleSheets = [routesStyleSheet, localSheet];
             fetch(componentAbsoluteStylePath)
                 .then(response =>
                 {
@@ -505,12 +523,14 @@ export default class Route extends HTMLElement
         //config
         this.#useShadow = this.dataset.useShadow ?? config.route.useShadow;
         this.#localNav = this.dataset.localNav ?? config.route.localNav;
+        this.#staticNav = this.dataset.staticNav ?? config.route.staticNav;
         this.#staticRouting = this.dataset.staticRouting ?? e.detail.staticRouting ?? config.route.staticRouting;
         this.#url = e.detail.url;
         this.#routeur = e.detail.routeur;
         //init
-        this.loadTemplate();
-        if(this.#localNav) 
+        this.loadShadow();
+        
+        if(this.#localNav && this.#staticNav) 
         {
             this.loadNav();
         }
@@ -682,8 +702,8 @@ export default class Route extends HTMLElement
         {
             const hash = location.hash.substring(1);
             //recherche uniquement dans la route
-            let newTarget = this.querySelector(`:scope:state(exact) [id="${hash}"]:not(:state(exact) :state(part) [id="${hash}"])`);
-            const oldTarget = this.querySelector("[data-target]:not(:scope alt-route [data-target])");
+            let newTarget = this.querySelector(`:scope:state(${Symbol.keyFor(namings.enums.locationMatch.exact)}) [id="${hash}"]:not(:state(${Symbol.keyFor(namings.enums.locationMatch.exact)}) ${namings.components.route} [id="${hash}"])`);
+            const oldTarget = this.querySelector(`[data-target]:not(:scope ${namings.components.route} [data-target])`);
             if(oldTarget && oldTarget !== newTarget)
             {
                 delete oldTarget.dataset.target;
