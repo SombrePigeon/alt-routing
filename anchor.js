@@ -103,7 +103,8 @@ export default class Anchor extends HTMLAnchorElement
     //eventsListeners
     connectionEventListener = (e) => 
     {
-        //rewrite href(absolute) 
+        //rewrite href
+        //this.href return the absolute url and not what is href attribute
         let href = this.getAttribute("href");
         //debugger
         if(e.detail.url)
