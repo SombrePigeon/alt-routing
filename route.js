@@ -14,7 +14,7 @@ if (config.route.style)
     })
     .then((style) =>
     {
-        routesStylePromise.replace(style);
+        routesStyleSheet.replace(style);
     });
 }
 
