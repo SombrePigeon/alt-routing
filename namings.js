@@ -64,7 +64,8 @@ export default
         route: "alt-route",
         router: "alt-router",
         anchor: "alt-a",
-        title: "alt-title"
+        title: "alt-title",
+        source: "alt-source"
     },
     files:
     {
