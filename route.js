@@ -14,7 +14,7 @@ if (config.route.style)
     })
     .then((style) =>
     {
-        routesStylePromise.replace(style);
+        routesStyleSheet.replace(style);
     });
 }
 
@@ -24,7 +24,6 @@ export default class Route extends HTMLElement
 
     //config
     #isRouteur;
-    #useShadow;
     #localNav;
     #staticNav;
     #staticRouting;
@@ -173,6 +172,11 @@ export default class Route extends HTMLElement
             }
             this.dataset.status = Symbol.keyFor(this.#_status);
         }
+    }
+
+    get url()
+    {
+        return this.#url;
     }
     
     constructor()
@@ -452,40 +456,6 @@ export default class Route extends HTMLElement
         });
     }
 
-    loadShadow()
-    {
-        if(this.#useShadow)
-        {
-            this.shadowRoot ?? this.attachShadow(config.route.shadowRootInit);
-            const componentAbsoluteTemplatePath = new URL(namings.files.template, this.#url);
-            console.log("path is " + componentAbsoluteTemplatePath)
-            fetch(componentAbsoluteTemplatePath)
-                .then(response =>
-                {
-                    return response.text();
-                })
-                .then((html) =>
-                {
-                    this.shadowRoot.innerHTML = html;
-                }
-            );
-            const componentAbsoluteStylePath = new URL(namings.files.style, this.#url);
-
-            const localSheet = new CSSStyleSheet();
-            this.shadowRoot.adoptedStyleSheets = [routesStyleSheet, localSheet];
-            fetch(componentAbsoluteStylePath)
-                .then(response =>
-                {
-                    return response.text();
-                })
-                .then((css) =>
-                {
-                    localSheet.replace(css);
-                }
-            );
-        }
-    }
-
     updateRoutes()
     {
         this.dispatchEvent(
@@ -521,14 +491,11 @@ export default class Route extends HTMLElement
         //set absolute path
         console.log("route connected !");
         //config
-        this.#useShadow = this.dataset.useShadow ?? config.route.useShadow;
         this.#localNav = this.dataset.localNav ?? config.route.localNav;
         this.#staticNav = this.dataset.staticNav ?? config.route.staticNav;
         this.#staticRouting = this.dataset.staticRouting ?? e.detail.staticRouting ?? config.route.staticRouting;
         this.#url = e.detail.url;
         this.#routeur = e.detail.routeur;
-        //init
-        this.loadShadow();
         
         if(this.#localNav && this.#staticNav) 
         {
