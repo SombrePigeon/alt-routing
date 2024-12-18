@@ -9,7 +9,7 @@ const connectShadow = (e) =>
     useShadow ??= (element.dataset.useShadow === "true" ? true : undefined);
     useShadow ??= (element.dataset.useShadow === "false" ? false : undefined);
     useShadow ??= config.route.useShadow;
-    debugger
+
     if(useShadow)
     {
         element.shadowRoot ?? element.attachShadow(config.route.shadowRootInit);
@@ -18,12 +18,10 @@ const connectShadow = (e) =>
         fetch(componentTemplateAbsolutePath)
             .then(response =>
             {
-                debugger
                 return response.text();
             })
             .then((html) =>
             {
-                debugger
                 element.shadowRoot.innerHTML = html;
             }
         );
