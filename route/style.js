@@ -1,5 +1,5 @@
-import namings from "../namings.js";
 import "./shadow.js"
+import namings from "../namings.js";
 import config from "alt-routing/config";
 
 const routesStyleSheet = new CSSStyleSheet();
@@ -16,7 +16,6 @@ if (config.route.style)
         routesStyleSheet.replace(style);
     });
 }
-
 
 const connectStyleSheet = (e) =>
 {
@@ -54,7 +53,7 @@ const connectingRoutingComponent = (e) =>
     }
 }
 
-console.log("styleRoutes module");
+console.debug("styleRoutes module");
 console.debug("must appear before route module");
 document.body.addEventListener(namings.events.connectingRoutingComponent, 
     connectingRoutingComponent,
