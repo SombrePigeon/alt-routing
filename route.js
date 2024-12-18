@@ -2,22 +2,6 @@ import namings from "./namings.js";
 import config from "alt-routing/config";
 console.log("route module");
 
-
-const routesStyleSheet = new CSSStyleSheet();
-
-if (config.route.style)
-{
-    fetch(config.route.style)
-    .then((response) => 
-    {
-        return response.text();
-    })
-    .then((style) =>
-    {
-        routesStyleSheet.replace(style);
-    });
-}
-
 export default class Route extends HTMLElement
 {
     #internals;
