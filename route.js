@@ -29,28 +29,12 @@ export default class Route extends HTMLElement
 
     set #locationMatch(locationMatch) 
     {
-        this.#url && console.debug("location match", this.#url.href, " : ", Symbol.keyFor(locationMatch));
-        
         if(this.#_locationMatch !== locationMatch)
-        {
-            try
             {
-                this.#_locationMatch && this.#internals.states.delete(`${Symbol.keyFor(this.#_locationMatch)}`);
-            }
-            catch
-            {
-                this._internals.states.delete(`--${Symbol.keyFor(this.#_locationMatch)}`);
-            }
-            this.#_locationMatch = locationMatch;
-            this.#_locationMatch && this.#internals.states.add(`${Symbol.keyFor(this.#_locationMatch)}`);
-            try
-            {
-                this.#_locationMatch && this.#internals.states.add(`${Symbol.keyFor(this.#_locationMatch)}`);
-            }
-            catch
-            {
-                this._internals.states.add(`--${Symbol.keyFor(this.#_locationMatch)}`);
-            }
+                this.#_locationMatch && this.#replaceCustomStateCSS(this.#_locationMatch, locationMatch);
+                this.#_locationMatch = locationMatch;
+                this.#url && console.debug("route", this, ` ${this.#url.href} : ${Symbol.keyFor(locationMatch)}`);
+
             switch(this.#_locationMatch)
             {
                 case namings.enums.locationMatch.exact:
@@ -91,6 +75,7 @@ export default class Route extends HTMLElement
             this.dataset.locationMatch = Symbol.keyFor(this.#_locationMatch);
         }
     }
+
     get #state()
     {
         return this.#_state;
@@ -210,7 +195,9 @@ export default class Route extends HTMLElement
             }
         );
 
-        
+        this.addEventListener(namings.events.navLoaded,
+            this.#onUnloaded
+        );
         this.addEventListener(namings.events.unloaded,
             this.#onUnloaded
         );
@@ -643,6 +630,31 @@ export default class Route extends HTMLElement
         else
         {
             console.debug("event message is : ", e)
+        }
+    }
+
+    #replaceCustomStateCSS(from, to)
+    {
+        //update customStateCSS
+        const keyFrom = Symbol.keyFor(from);
+        const keyTo = Symbol.keyFor(to);
+        try
+        {
+            this.#internals.states.delete(`${keyFrom}`);
+        }
+        catch
+        {
+            //legacy
+            this.#internals.states.delete(`--${keyFrom}`);
+        }
+        try
+        {
+            this.#internals.states.add(`${keyTo}`);
+        }
+        catch
+        {
+            //legacy
+            this.#internals.states.add(`--${keyTo}`);
         }
     }
 
