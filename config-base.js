@@ -7,17 +7,25 @@ export default
         {
             mode: "open"
         },
-        style: undefined,
+        shadowStyle: undefined,
+
+        staticRouting: false,
+        propagateStaticRouting: undefined,
+        subRoutesSelector: ":scope>route",
+
         localNav: false,
         staticNav: false,
-        staticRouting: false,
-        propagateStaticRouting: undefined
+        navSelector: ":scope>nav",
     },
     routeur:
     {
 
     },
     anchor:
+    {
+
+    },
+    form:
     {
 
     },
