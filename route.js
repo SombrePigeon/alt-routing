@@ -313,21 +313,16 @@ export default class Route extends HTMLElement
     {
         this.#state = namings.enums.state.unloading;
         //unloadData
-        let elementsToRemove=[];
-        for (const child of this.children)
+        const excludeSelector = [];
+        if(this.#localNav && this.#staticNav)
         {
-            const keep = 
-                //routes
-                this.#staticRouting && (child.tagName === namings.components.route.toLocaleUpperCase())
-                //nav 
-                || (this.#localNav && this.#staticNav && (child.tagName === "NAV"));
-
-            const remove = !keep;
-            if(remove)
-            {
-                elementsToRemove.push(child);
-            }
+            excludeSelector.push(navSelector)
         }
+        if(this.#staticRouting)
+        {
+            excludeSelector.push(subRoutesSelector)
+        }
+        let elementsToRemove = this.querySelectorAll(`:scope>*:not(:is(${excludeSelector}))`)
         for(let elementToRemove of elementsToRemove)
         {
             elementToRemove.remove();
