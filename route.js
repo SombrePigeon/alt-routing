@@ -43,7 +43,7 @@ export default class Route extends HTMLElement
                     switch(this.#state)
                     {
                         case namings.enums.state.unloaded:
-                            this.shadowRoot ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.beforeLoading, {bubbles: true, composed: true}))
+                            this.shadowRoot ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.loading, {bubbles: true, composed: true}))
                                 : this.dispatchEvent(new CustomEvent(namings.events.loading));
                             break;
                         case namings.enums.state.loaded:
@@ -60,12 +60,12 @@ export default class Route extends HTMLElement
                         case namings.enums.state.unloaded:
                             break;
                         case namings.enums.state.loaded:
-                            this.shadowRoot ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.beforeUnloading,{bubbles: true, composed: true}))
+                            this.shadowRoot ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.unloading,{bubbles: true, composed: true}))
                                 : this.dispatchEvent(new CustomEvent(namings.events.unloading));
                             break;
                         case namings.enums.state.loading:
                             //toDo add abort reason
-                            this.shadowRoot ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.beforeAbort,{bubbles: true, composed: true}))
+                            this.shadowRoot ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.abort,{bubbles: true, composed: true}))
                                 : this.dispatchEvent(new CustomEvent(namings.events.abort));
                             break;
                         case namings.enums.state.unloading:
@@ -169,25 +169,16 @@ export default class Route extends HTMLElement
         this.addEventListener(namings.events.unloaded,
             this.#onUnloaded
         );
-        this.addEventListener(namings.events.beforeLoading,
-            this.#onBeforeLoading
-        );
         this.addEventListener(namings.events.loading,
             this.#onLoading
         );
         this.addEventListener(namings.events.loaded,
             this.#onLoaded
         );
-        this.addEventListener(namings.events.beforeUnloading,
-            this.#onBeforeUnloading
-        );
         this.addEventListener(namings.events.unloading,
             this.#onUnloading
         );
 
-        this.addEventListener(namings.events.beforeAbort,
-            this.#onBeforeAbort
-        );
         this.addEventListener(namings.events.abort,
             this.#onAbort
         );
@@ -222,14 +213,9 @@ export default class Route extends HTMLElement
         console.debug("route ", this.#url.pathname, " ", e.type);
         this.#state = namings.enums.state.unloaded;
     }
-    #onBeforeLoading = (e) =>
-    {
-        console.debug("route ", this.#url.pathname, " ", e.type);
-        e.stopPropagation();
-        this.dispatchEvent(new CustomEvent(namings.events.loading));
-    }
     #onLoading = (e) =>
     {
+        e.stopPropagation();
         this.#state = namings.enums.state.loading;
         //load data
         const contentAbsolutePath = new URL(namings.files.content, this.#url);
@@ -303,26 +289,12 @@ export default class Route extends HTMLElement
         this.#state = namings.enums.state.loaded;
         this.updateTarget();
     }
-    #onBeforeUnloading = (e) =>
-    {
-        console.debug("route ", this.#url.pathname, " ", e.type);
-        e.stopPropagation();
-        this.dispatchEvent(new CustomEvent(namings.events.unloading));
-    }
     #onUnloading = (e) =>
     {
+        e.stopPropagation();
         this.#state = namings.enums.state.unloading;
         //unloadData
-        const excludeSelector = [];
-        if(this.#localNav && this.#staticNav)
-        {
-            excludeSelector.push(navSelector)
-        }
-        if(this.#staticRouting)
-        {
-            excludeSelector.push(subRoutesSelector)
-        }
-        let elementsToRemove = this.querySelectorAll(`:scope>*:not(:is(${excludeSelector}))`)
+        let elementsToRemove = this.querySelectorAll(`:scope>*:not(:is(${this.excludeRemoveSelector}))`)
         for(let elementToRemove of elementsToRemove)
         {
             elementToRemove.remove();
@@ -331,14 +303,9 @@ export default class Route extends HTMLElement
         console.debug("route ", this.#url.pathname, " ", e.type);
     }
 
-    #onBeforeAbort = (e) =>
-    {
-        console.debug("route ", this.#url.pathname, " ", e.type);
-        e.stopPropagation();
-        this.dispatchEvent(new CustomEvent(namings.events.abort));
-    }
     #onAbort = (e) =>
     {
+        e.stopPropagation();
         console.debug("route ", this.#url.pathname, " ", e.type);
         this.#abortController?.abort();
     }
@@ -431,6 +398,16 @@ export default class Route extends HTMLElement
         this.#url = e.detail.url;
         this.#routeur = e.detail.routeur;
         
+        this.excludeRemoveSelector = [];
+        if(this.#localNav && this.#staticNav)
+        {
+            excludeSelector.push(navSelector)
+        }
+        if(this.#staticRouting)
+        {
+            excludeSelector.push(subRoutesSelector)
+        }
+
         if(this.#localNav && this.#staticNav) 
         {
             this.loadNav();
