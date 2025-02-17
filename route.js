@@ -235,6 +235,8 @@ export default class Route extends HTMLElement
 
         const abortListener = this.#abortController.signal;
 
+        const navPromise = Promise.resolve();
+
         const contentPromise = fetch(contentAbsolutePath,
             {
                 signal: abortListener
@@ -251,21 +253,10 @@ export default class Route extends HTMLElement
                     this.#status = namings.enums.status.ko;
                 }
                 return response.text();
-            }).then((html) =>
-            {
-                const firstRoute = this.querySelector(":scope>alt-route:first-of-type");
-                if(firstRoute)
-                {
-                    firstRoute.insertAdjacentHTML("beforebegin", html);
-                }
-                else
-                {
-                    this.insertAdjacentHTML("beforeend", html);
-                }
-                this.dispatchEvent(new CustomEvent(namings.events.loaded));
             })
             .catch((error) =>
             {
+                //toDo something mais koi ...
                 this.#state = namings.enums.state.unloaded;
                 switch(error.name)
                 {
@@ -281,11 +272,52 @@ export default class Route extends HTMLElement
                 this.#abortController = null;
                 console.debug("route ", this.#url.pathname, " ", e.type);
             });
-        
+            
+            const routePromise = Promise.resolve();
+
+            const allPromise = Promise.all([navPromise, contentPromise, routePromise])
+            .then(promises =>
+            {
+                this.dispatchEvent(new CustomEvent(namings.events.loaded,
+                    {
+                        detail : 
+                            {
+                                nav: promises[0],
+                                content: promises[1],
+                                route: promises[2]
+                            }
+                    }
+                ));
+            }
+            )
     }
     #onLoaded = (e) =>
     {
+        const nav = e.detail.nav;
+        const content = e.detail.content;
+        const routes = e.detail.routes;
+
+        if(this.#localNav && !this.#staticNav)
+        {
+            //load da nav
+        }
+
+        if(!this.#staticRouting)
+        {
+            //load da route
+        }
+
+        const firstRoute = this.querySelector(`${config.subRoutesSelector}:first-of-type`);
+        if(firstRoute)
+        {
+            firstRoute.insertAdjacentHTML("beforebegin", content);
+        }
+        else
+        {
+            this.insertAdjacentHTML("beforeend", content);
+        }
         console.debug("route ", this.#url.pathname, " ", e.type);
+        debugger
         this.#state = namings.enums.state.loaded;
         this.updateTarget();
     }
