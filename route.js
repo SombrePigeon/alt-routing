@@ -223,19 +223,17 @@ export default class Route extends HTMLElement
         //set abort
         this.#abortController = new AbortController();
 
-        if(this.#localNav && !this.#staticNav) 
-        {
-            this.loadNav();
-        }
-
-        if(!this.#staticRouting) 
-        {
-            this.loadRoutes();
-        }
-
         const abortListener = this.#abortController.signal;
 
-        const navPromise = Promise.resolve();
+        const navPromise = (this.#localNav && !this.#staticNav) ?
+            fetch(new URL(namings.files.nav, this.#url))
+            .then((response) =>
+            {
+                return response.text();
+            })
+            :
+            Promise.resolve();
+        
 
         const contentPromise = fetch(contentAbsolutePath,
             {
@@ -273,8 +271,15 @@ export default class Route extends HTMLElement
                 console.debug("route ", this.#url.pathname, " ", e.type);
             });
             
-            const routePromise = Promise.resolve();
-
+            const routePromise = (!this.#staticRouting) ?
+                fetch(new URL(namings.files.route, this.#url))
+                .then((response) =>
+                {
+                    return response.text();
+                })
+                :
+                Promise.resolve();
+                
             const allPromise = Promise.all([navPromise, contentPromise, routePromise])
             .then(promises =>
             {
@@ -291,23 +296,25 @@ export default class Route extends HTMLElement
             }
             )
     }
+    //onLoaded
     #onLoaded = (e) =>
     {
         const nav = e.detail.nav;
         const content = e.detail.content;
-        const routes = e.detail.routes;
-
+        const routes = e.detail.route;
+        
         if(this.#localNav && !this.#staticNav)
         {
-            //load da nav
+            this.insertAdjacentHTML("afterbegin", nav);
         }
 
         if(!this.#staticRouting)
         {
-            //load da route
+            this.insertAdjacentHTML("beforeend", routes);
         }
+        //content after because it's after in static too
+        const firstRoute = this.querySelector(`${config.route.subRoutesSelector}:first-of-type`);
 
-        const firstRoute = this.querySelector(`${config.subRoutesSelector}:first-of-type`);
         if(firstRoute)
         {
             firstRoute.insertAdjacentHTML("beforebegin", content);
@@ -317,9 +324,8 @@ export default class Route extends HTMLElement
             this.insertAdjacentHTML("beforeend", content);
         }
         console.debug("route ", this.#url.pathname, " ", e.type);
-        debugger
         this.#state = namings.enums.state.loaded;
-        this.updateTarget();
+        this.updateTarget();//toDo listen loaded
     }
     #onUnloading = (e) =>
     {

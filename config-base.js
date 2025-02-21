@@ -1,3 +1,5 @@
+import namings from "./namings.js";
+
 export default 
 { 
     route:
@@ -11,7 +13,7 @@ export default
 
         staticRouting: false,
         propagateStaticRouting: undefined,
-        subRoutesSelector: ":scope>route",
+        subRoutesSelector: `:scope>${namings.components.route}`,
 
         localNav: false,
         staticNav: false,

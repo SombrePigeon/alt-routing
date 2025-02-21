@@ -1,17 +1,5 @@
 export default 
-{ 
-    attributes:
-    {
-        path: "path",//toDo remove
-        useShadow: "use-shadow",//toDo remove
-        locationMatching: "match",//toDo remove
-        locationMatchingValues://toDo move to enum
-        {
-            part: "part",
-            exact: "exact",
-            none: "none"
-        },
-    },
+{
     enums:
     {
         locationMatch:
@@ -50,12 +38,9 @@ export default
         //routing lifeCycle
         unloaded :"alt-unloaded",
         loaded :"alt-loaded",
-        beforeLoading :"alt-beforeLoading",
         loading :"alt-loading",
-        beforeUnloading :"alt-beforeUnloading",
         unloading :"alt-unloading",
         //abort request
-        beforeAbort: "alt-beforeAbort",
         abort: "alt-abort",
 
     },
