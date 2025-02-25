@@ -163,26 +163,55 @@ export default class Route extends HTMLElement
             }
         );
 
-        this.addEventListener(namings.events.navLoaded,
-            this.#onUnloaded
-        );
-        this.addEventListener(namings.events.unloaded,
-            this.#onUnloaded
+        ///stateChange events
+        //onLoading
+        this.addEventListener(namings.events.loading,
+            (e) => 
+            {
+                e.stopPropagation();
+                this.#state = namings.enums.state.loading;
+            }
         );
         this.addEventListener(namings.events.loading,
-            this.#onLoading
+            this.fetchContent
         );
         //onloaded
         this.addEventListener(namings.events.loaded,
-            this.#onLoaded
+            this.insertContent
+        );
+        this.addEventListener(namings.events.loaded,
+            (e) => 
+            {
+                e.stopPropagation();
+                this.#state = namings.enums.state.loaded;
+            }
         );
         this.addEventListener(namings.events.loaded,
             this.updateTarget
         );
+        //onUnloading
+        this.addEventListener(namings.events.unloading,
+            (e) => 
+            {
+                e.stopPropagation();
+                this.#state = namings.enums.state.unloading;
+            }
+        );
         this.addEventListener(namings.events.unloading,
             this.#onUnloading
         );
-
+        //onUnloaded
+        this.addEventListener(namings.events.unloaded,
+            (e) => 
+            {
+                e.stopPropagation();
+                this.#state = namings.enums.state.unloaded;
+            }
+        );
+        this.addEventListener(namings.events.unloaded,
+            this.#onUnloaded
+        );
+        //onAbort
         this.addEventListener(namings.events.abort,
             this.#onAbort
         );
@@ -213,15 +242,9 @@ export default class Route extends HTMLElement
     }
 
     //state listeners
-    #onUnloaded = (e) =>
+    //onLoading
+    fetchContent = (e) =>
     {
-        console.debug("route ", this.#url.pathname, " ", e.type);
-        this.#state = namings.enums.state.unloaded;
-    }
-    #onLoading = (e) =>
-    {
-        e.stopPropagation();
-        this.#state = namings.enums.state.loading;
         //load data
         const contentAbsolutePath = new URL(namings.files.content, this.#url);
         
@@ -302,7 +325,7 @@ export default class Route extends HTMLElement
             )
     }
     //onLoaded
-    #onLoaded = (e) =>
+    insertContent = (e) =>
     {
         const nav = e.detail.nav;
         const content = e.detail.content;
@@ -328,8 +351,6 @@ export default class Route extends HTMLElement
         {
             this.insertAdjacentHTML("beforeend", content);
         }
-        console.debug("route ", this.#url.pathname, " ", e.type);
-        this.#state = namings.enums.state.loaded;
     }
 
     updateTarget = () =>
@@ -351,16 +372,17 @@ export default class Route extends HTMLElement
     //onUnloading
     #onUnloading = (e) =>
     {
-        e.stopPropagation();
-        this.#state = namings.enums.state.unloading;
-        //unloadData
+        //nothing
+        this.dispatchEvent(new CustomEvent(namings.events.unloaded));
+    }
+    //onUnloaded
+    #onUnloaded = (e) =>
+    {
         let elementsToRemove = this.querySelectorAll(`:scope>*:not(:is(${this.excludeRemoveSelector}))`)
         for(let elementToRemove of elementsToRemove)
         {
             elementToRemove.remove();
         }
-        this.dispatchEvent(new CustomEvent(namings.events.unloaded));
-        console.debug("route ", this.#url.pathname, " ", e.type);
     }
 
     #onAbort = (e) =>
@@ -461,11 +483,11 @@ export default class Route extends HTMLElement
         this.excludeRemoveSelector = [];
         if(this.#localNav && this.#staticNav)
         {
-            excludeSelector.push(navSelector)
+            this.excludeSelector.push(navSelector)
         }
         if(this.#staticRouting)
         {
-            excludeSelector.push(subRoutesSelector)
+            this.excludeSelector.push(subRoutesSelector)
         }
 
         if(this.#localNav && this.#staticNav) 
