@@ -237,7 +237,7 @@ export default class Route extends HTMLElement
             window.removeEventListener("popstate", this.#popstateEventListener);
             window.removeEventListener("message", this.#messageNavigateEventListenner);
         }
-        this.#routeur.removeEventListener(namings.events.routeChange, this.#routeChangeEventListener);
+        this.#routeur.removeEventListener(namings.events.routeChange, this.updateLocationMatch);
         this.#routeur.removeEventListener(namings.events.routeChange, this.updateTarget);
     }
 
@@ -392,7 +392,7 @@ export default class Route extends HTMLElement
         this.#abortController?.abort();
     }
     //methods
-    updateLocationMatch()
+    updateLocationMatch = () =>
     {
         let match = namings.enums.locationMatch.none;
         //toDo try opti
@@ -503,15 +503,13 @@ export default class Route extends HTMLElement
         this.updateLocationMatch();
         //listen to route change
         this.#routeur.addEventListener(namings.events.routeChange,
-            this.#routeChangeEventListener);
+            this.updateLocationMatch);
         this.#routeur.addEventListener(namings.events.routeChange,
             this.updateTarget);
     };
 
-    #routeChangeEventListener = (e) =>
-    {
-        this.updateLocationMatch();
-    };
+ 
+
 
     #popstateEventListener = (e)=>
     {
