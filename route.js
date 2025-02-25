@@ -172,8 +172,12 @@ export default class Route extends HTMLElement
         this.addEventListener(namings.events.loading,
             this.#onLoading
         );
+        //onloaded
         this.addEventListener(namings.events.loaded,
             this.#onLoaded
+        );
+        this.addEventListener(namings.events.loaded,
+            this.updateTarget
         );
         this.addEventListener(namings.events.unloading,
             this.#onUnloading
@@ -205,6 +209,7 @@ export default class Route extends HTMLElement
             window.removeEventListener("message", this.#messageNavigateEventListenner);
         }
         this.#routeur.removeEventListener(namings.events.routeChange, this.#routeChangeEventListener);
+        this.#routeur.removeEventListener(namings.events.routeChange, this.updateTarget);
     }
 
     //state listeners
@@ -325,8 +330,25 @@ export default class Route extends HTMLElement
         }
         console.debug("route ", this.#url.pathname, " ", e.type);
         this.#state = namings.enums.state.loaded;
-        this.updateTarget();//toDo listen loaded
     }
+
+    updateTarget = () =>
+    {
+        if(this.#state === namings.enums.state.loaded)
+        {
+            const hash = location.hash.substring(1);
+            //recherche uniquement dans la route
+            let newTarget = this.querySelector(`:scope:state(${Symbol.keyFor(namings.enums.locationMatch.exact)}) [id="${hash}"]:not(:state(${Symbol.keyFor(namings.enums.locationMatch.exact)}) ${namings.components.route} [id="${hash}"])`);
+            const oldTarget = this.querySelector(`[data-target]:not(:scope ${namings.components.route} [data-target])`);
+            if(oldTarget && oldTarget !== newTarget)
+            {
+                delete oldTarget.dataset.target;
+            }
+            newTarget && (newTarget.dataset.target = "");
+        }
+    }
+
+    //onUnloading
     #onUnloading = (e) =>
     {
         e.stopPropagation();
@@ -460,12 +482,13 @@ export default class Route extends HTMLElement
         //listen to route change
         this.#routeur.addEventListener(namings.events.routeChange,
             this.#routeChangeEventListener);
+        this.#routeur.addEventListener(namings.events.routeChange,
+            this.updateTarget);
     };
 
     #routeChangeEventListener = (e) =>
     {
         this.updateLocationMatch();
-        this.updateTarget();
     };
 
     #popstateEventListener = (e)=>
@@ -636,22 +659,6 @@ export default class Route extends HTMLElement
         }
     }
 
-    updateTarget()
-    {
-        
-        if(this.#state === namings.enums.state.loaded)
-        {
-            const hash = location.hash.substring(1);
-            //recherche uniquement dans la route
-            let newTarget = this.querySelector(`:scope:state(${Symbol.keyFor(namings.enums.locationMatch.exact)}) [id="${hash}"]:not(:state(${Symbol.keyFor(namings.enums.locationMatch.exact)}) ${namings.components.route} [id="${hash}"])`);
-            const oldTarget = this.querySelector(`[data-target]:not(:scope ${namings.components.route} [data-target])`);
-            if(oldTarget && oldTarget !== newTarget)
-            {
-                delete oldTarget.dataset.target;
-            }
-            newTarget && (newTarget.dataset.target = "");
-        }
-    }
 }
 
 
