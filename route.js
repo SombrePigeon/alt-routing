@@ -18,7 +18,7 @@ export default class Route extends HTMLElement
     #path;
     #routeur;
     #url;
-    #abortController = null;
+    #abortController;
 
     #_locationMatch;
     #_state;
@@ -213,7 +213,7 @@ export default class Route extends HTMLElement
             }
         );
         this.addEventListener(namings.events.unloaded,
-            this.#onUnloaded
+            this.#removeContent
         );
         //onAbort
         this.addEventListener(namings.events.abort,
@@ -323,29 +323,27 @@ export default class Route extends HTMLElement
     //onLoaded
     insertContent = (e) =>
     {
-        const nav = e.detail.nav;
-        const content = e.detail.content;
-        const routes = e.detail.route;
-        
+        this.#removeContent();
+
         if(this.#localNav && !this.#staticNav)
         {
-            this.insertAdjacentHTML("afterbegin", nav);
+            this.insertAdjacentHTML("afterbegin", e.detail.nav);
         }
 
         if(!this.#staticRouting)
         {
-            this.insertAdjacentHTML("beforeend", routes);
+            this.insertAdjacentHTML("beforeend", e.detail.route);
         }
         //content after because it's after in static too
         const firstRoute = this.querySelector(`${config.route.subRoutesSelector}:first-of-type`);
 
         if(firstRoute)
         {
-            firstRoute.insertAdjacentHTML("beforebegin", content);
+            firstRoute.insertAdjacentHTML("beforebegin", e.detail.content);
         }
         else
         {
-            this.insertAdjacentHTML("beforeend", content);
+            this.insertAdjacentHTML("beforeend", e.detail.content);
         }
     }
 
@@ -372,7 +370,7 @@ export default class Route extends HTMLElement
         this.dispatchEvent(new CustomEvent(namings.events.unloaded));
     }
     //onUnloaded
-    #onUnloaded = (e) =>
+    #removeContent = (e) =>
     {
         let elementsToRemove = this.querySelectorAll(`:scope>*:not(:is(${this.excludeRemoveSelector}))`)
         for(let elementToRemove of elementsToRemove)
