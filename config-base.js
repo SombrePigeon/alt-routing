@@ -11,6 +11,8 @@ export default
         },
         shadowStyle: undefined,
 
+        loadOnPartMatching: false,
+
         staticRouting: false,
         propagateStaticRouting: undefined,
         subRoutesSelector: `:scope>${namings.components.route}`,

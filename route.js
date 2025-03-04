@@ -12,7 +12,9 @@ export default class Route extends HTMLElement
     #staticNav;
     #staticRouting;
     #propagateStaticRouting;
+    #loadOnPartMatching;
     
+    //attr
     #path;
     #routeur;
     #url;
@@ -38,8 +40,9 @@ export default class Route extends HTMLElement
 
             switch(this.#_locationMatch)
             {
-                case namings.enums.locationMatch.exact:
                 case namings.enums.locationMatch.part:
+                    if(!this.#loadOnPartMatching) break; 
+                case namings.enums.locationMatch.exact:
                     switch(this.#state)
                     {
                         case namings.enums.state.unloaded:
@@ -64,9 +67,6 @@ export default class Route extends HTMLElement
                                 : this.dispatchEvent(new CustomEvent(namings.events.unloading));
                             break;
                         case namings.enums.state.loading:
-                            //toDo add abort reason
-                            this.shadowRoot ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.abort,{bubbles: true, composed: true}))
-                                : this.dispatchEvent(new CustomEvent(namings.events.abort));
                             break;
                         case namings.enums.state.unloading:
                             break;
@@ -169,6 +169,8 @@ export default class Route extends HTMLElement
             (e) => 
             {
                 e.stopPropagation();
+                this.#abortController?.abort();
+                this.#abortController = new AbortController();
                 this.#state = namings.enums.state.loading;
             }
         );
@@ -194,6 +196,8 @@ export default class Route extends HTMLElement
             (e) => 
             {
                 e.stopPropagation();
+                this.#abortController?.abort();
+                this.#abortController = new AbortController();
                 this.#state = namings.enums.state.unloading;
             }
         );
@@ -247,9 +251,6 @@ export default class Route extends HTMLElement
     {
         //load data
         const contentAbsolutePath = new URL(namings.files.content, this.#url);
-        
-        //set abort
-        this.#abortController = new AbortController();
 
         const abortListener = this.#abortController.signal;
 
@@ -292,11 +293,6 @@ export default class Route extends HTMLElement
                     default:
                         throw error;
                 }
-            })
-            .finally(()=>
-            {
-                this.#abortController = null;
-                console.debug("route ", this.#url.pathname, " ", e.type);
             });
             
             const routePromise = (!this.#staticRouting) ?
@@ -477,6 +473,8 @@ export default class Route extends HTMLElement
         this.#localNav = this.dataset.localNav ?? config.route.localNav;
         this.#staticNav = this.dataset.staticNav ?? config.route.staticNav;
         this.#staticRouting = this.dataset.staticRouting ?? e.detail.staticRouting ?? config.route.staticRouting;
+        this.#loadOnPartMatching = this.dataset.loadOnPartMatching ?? config.route.loadOnPartMatching;
+
         this.#url = e.detail.url;
         this.#routeur = e.detail.routeur;
         
@@ -513,7 +511,7 @@ export default class Route extends HTMLElement
 
     #popstateEventListener = (e)=>
     {
-        console.log("browser navigation");
+        console.debug("browser navigation");
         this.updateRoutes();
     };
 
