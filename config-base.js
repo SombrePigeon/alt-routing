@@ -11,7 +11,7 @@ export default
         },
         shadowStyle: undefined,
 
-        loadOnPartMatching: false,
+        loadOnPartMatching: true,
 
         staticRouting: false,
         propagateStaticRouting: undefined,

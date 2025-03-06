@@ -37,43 +37,29 @@ export default class Route extends HTMLElement
                 this.dataset.locationMatch = Symbol.keyFor(locationMatch);
                 this.#_locationMatch = locationMatch;
                 console.debug("route", this, ` ${this.#url?.href} locationMatch changed to : ${Symbol.keyFor(locationMatch)}`);
-
-            switch(this.#_locationMatch)
-            {
-                case namings.enums.locationMatch.part:
-                    if(!this.#loadOnPartMatching) break; 
-                case namings.enums.locationMatch.exact:
-                    switch(this.#state)
-                    {
-                        case namings.enums.state.unloaded:
-                            this.shadowRoot ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.loading, {bubbles: true, composed: true}))
+                
+                if(this.#_locationMatch === namings.enums.locationMatch.exact 
+                    ||
+                    (
+                        this.#loadOnPartMatching &&
+                        this.#_locationMatch === namings.enums.locationMatch.part
+                    )
+                )
+                {
+                    this.shadowRoot ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.loading, {bubbles: true, composed: true}))
                                 : this.dispatchEvent(new CustomEvent(namings.events.loading));
-                            break;
-                        case namings.enums.state.loaded:
-                            break;
-                        case namings.enums.state.loading:
-                            break;
-                        case namings.enums.state.unloading:
-                            break;
-                    }
-                    break;
-                case namings.enums.locationMatch.none:
-                    switch(this.#state)
-                    {
-                        case namings.enums.state.unloaded:
-                            break;
-                        case namings.enums.state.loaded:
-                            this.shadowRoot ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.unloading,{bubbles: true, composed: true}))
+                }
+                else if(this.#_locationMatch === namings.enums.locationMatch.none
+                    ||
+                    (
+                        !this.#loadOnPartMatching &&
+                        this.#_locationMatch === namings.enums.locationMatch.part
+                    )
+                )
+                {
+                    this.shadowRoot ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.unloading,{bubbles: true, composed: true}))
                                 : this.dispatchEvent(new CustomEvent(namings.events.unloading));
-                            break;
-                        case namings.enums.state.loading:
-                            break;
-                        case namings.enums.state.unloading:
-                            break;
-                    }
-                break;
-            }
-            
+                }
         }
     }
 
@@ -252,7 +238,7 @@ export default class Route extends HTMLElement
         //load data
         const contentAbsolutePath = new URL(namings.files.content, this.#url);
 
-        const abortListener = this.#abortController.signal;
+        const abortController = this.#abortController;
 
         const navPromise = (this.#localNav && !this.#staticNav) ?
             fetch(new URL(namings.files.nav, this.#url))
@@ -263,10 +249,9 @@ export default class Route extends HTMLElement
             :
             Promise.resolve();
         
-
         const contentPromise = fetch(contentAbsolutePath,
             {
-                signal: abortListener
+                signal: abortController.signal
             })
             .then((response) =>
             {
@@ -307,16 +292,19 @@ export default class Route extends HTMLElement
             const allPromise = Promise.all([navPromise, contentPromise, routePromise])
             .then(promises =>
             {
-                this.dispatchEvent(new CustomEvent(namings.events.loaded,
-                    {
-                        detail : 
-                            {
-                                nav: promises[0],
-                                content: promises[1],
-                                route: promises[2]
-                            }
-                    }
-                ));
+                if(!abortController.signal.aborted)
+                {
+                    this.dispatchEvent(new CustomEvent(namings.events.loaded,
+                        {
+                            detail : 
+                                {
+                                    nav: promises[0],
+                                    content: promises[1],
+                                    route: promises[2]
+                                }
+                        }
+                    ));
+                }
             }
             )
     }
@@ -472,18 +460,17 @@ export default class Route extends HTMLElement
         this.#staticNav = this.dataset.staticNav ?? config.route.staticNav;
         this.#staticRouting = this.dataset.staticRouting ?? e.detail.staticRouting ?? config.route.staticRouting;
         this.#loadOnPartMatching = this.dataset.loadOnPartMatching ?? config.route.loadOnPartMatching;
-
         this.#url = e.detail.url;
         this.#routeur = e.detail.routeur;
         
         this.excludeRemoveSelector = [];
         if(this.#localNav && this.#staticNav)
         {
-            this.excludeSelector.push(navSelector)
+            this.excludeRemoveSelector.push(config.route.navSelector)
         }
         if(this.#staticRouting)
         {
-            this.excludeSelector.push(subRoutesSelector)
+            this.excludeRemoveSelector.push(config.route.subRoutesSelector)
         }
 
         if(this.#localNav && this.#staticNav) 
