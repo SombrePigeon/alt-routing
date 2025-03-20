@@ -315,12 +315,12 @@ export default class Route extends HTMLElement
 
         if(this.#localNav && !this.#staticNav)
         {
-            this.insertAdjacentHTML("afterbegin", e.detail.nav);
+            this.insertNav(e);
         }
 
         if(!this.#staticRouting)
         {
-            this.insertAdjacentHTML("beforeend", e.detail.route);
+            this.insertRouting(e);
         }
         //content after because it's after in static too
         const firstRoute = this.querySelector(`${config.route.subRoutesSelector}:first-of-type`);
@@ -333,6 +333,16 @@ export default class Route extends HTMLElement
         {
             this.insertAdjacentHTML("beforeend", e.detail.content);
         }
+    }
+
+    insertNav = (e) =>
+    {
+        this.insertAdjacentHTML("afterbegin", e.detail.nav);
+    }
+
+    insertRouting = (e) =>
+    {
+        this.insertAdjacentHTML("beforeend", e.detail.route);
     }
 
     updateTarget = () =>
@@ -391,41 +401,10 @@ export default class Route extends HTMLElement
         }
         this.#locationMatch = match;
     }
-    
-    loadNav()
-    {
-        const navAbsolutePath = new URL(namings.files.nav, this.#url);
-        fetch(navAbsolutePath)
-        .then((response) =>
-        {
-            return response.text();
-        })
-        .then((html) =>
-        {
-            this.insertAdjacentHTML("afterbegin", html);
-        });
-    }
-
-    loadRoutes()
-    {
-
-        const routeAbsolutePath = new URL(namings.files.route, this.#url);
-        fetch(routeAbsolutePath)
-        .then((response) =>
-        {
-            return response.text();
-        })
-        .then((html) =>
-        {
-            this.insertAdjacentHTML("beforeend", html);
-        });
-    }
 
     updateRoutes()
     {
-        this.dispatchEvent(
-            new CustomEvent(namings.events.routeChange)
-        );
+        this.dispatchEvent(new CustomEvent(namings.events.routeChange));
     }
 
     #routeurConstructionEventListener = (e) => 
@@ -463,6 +442,7 @@ export default class Route extends HTMLElement
         this.#url = e.detail.url;
         this.#routeur = e.detail.routeur;
         
+        //set selectors to remove on unloading
         this.excludeRemoveSelector = [];
         if(this.#localNav && this.#staticNav)
         {
@@ -475,11 +455,51 @@ export default class Route extends HTMLElement
 
         if(this.#localNav && this.#staticNav) 
         {
-            this.loadNav();
+            this.addEventListener(namings.events.navLoaded,
+                this.insertNav,
+                {
+                    once: true
+                }
+            );
+            fetch(new URL(namings.files.nav, this.#url))
+            .then(response => response.text())
+            .then((html) =>
+            {
+                this.dispatchEvent(
+                    new CustomEvent(namings.events.navLoaded,
+                        {
+                            detail: 
+                            {
+                                nav: html
+                            }
+                        }
+                    )
+                );
+            });
         }
         if(this.#staticRouting) 
         {
-            this.loadRoutes();
+            this.addEventListener(namings.events.routingLoaded,
+                this.insertRouting,
+                {
+                    once: true
+                }
+            );
+            fetch(new URL(namings.files.route, this.#url))
+            .then(response => response.text())
+            .then((html) =>
+            {
+                this.dispatchEvent(
+                    new CustomEvent(namings.events.routingLoaded,
+                        {
+                            detail: 
+                            {
+                                route: html
+                            }
+                        }
+                    )
+                );
+            });
         }
         this.#state = namings.enums.state.unloaded;
         //set for first time
