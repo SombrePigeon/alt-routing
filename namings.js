@@ -36,10 +36,13 @@ export default
         connectComponent:"alt-connect",
         disconnectComponent:"alt-disconnect",
         //routing lifeCycle
-        unloaded :"alt-unloaded",
-        loaded :"alt-loaded",
-        loading :"alt-loading",
-        unloading :"alt-unloading",
+        unloaded: "alt-unloaded",
+        loaded: "alt-loaded",
+        loading: "alt-loading",
+        unloading: "alt-unloading",
+        //routing infos
+        navLoaded: "alt-nav-loaded",
+        routingLoaded: "alt-route-loaded",
         //abort request
         abort: "alt-abort",
 
