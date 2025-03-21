@@ -15,7 +15,7 @@ export default
 
         staticRouting: false,
         propagateStaticRouting: undefined,
-        subRoutesSelector: `:scope>${namings.components.route}`,
+        routingSelector: `:scope>${namings.components.route}`,
 
         localNav: false,
         staticNav: false,

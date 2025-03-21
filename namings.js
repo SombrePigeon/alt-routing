@@ -59,7 +59,7 @@ export default
         template: "template.html",
         nav: "nav.html",
         content: "content.html",
-        route: "route.html",
+        routing: "route.html",
         title: "title.html",
         style: "style.css"
     }

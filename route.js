@@ -280,8 +280,8 @@ export default class Route extends HTMLElement
                 }
             });
             
-            const routePromise = (!this.#staticRouting) ?
-                fetch(new URL(namings.files.route, this.#url))
+            const routingPromise = (!this.#staticRouting) ?
+                fetch(new URL(namings.files.routing, this.#url))
                 .then((response) =>
                 {
                     return response.text();
@@ -289,7 +289,7 @@ export default class Route extends HTMLElement
                 :
                 Promise.resolve();
                 
-            const allPromise = Promise.all([navPromise, contentPromise, routePromise])
+            const allPromise = Promise.all([navPromise, contentPromise, routingPromise])
             .then(promises =>
             {
                 if(!abortController.signal.aborted)
@@ -300,7 +300,7 @@ export default class Route extends HTMLElement
                                 {
                                     nav: promises[0],
                                     content: promises[1],
-                                    route: promises[2]
+                                    routing: promises[2]
                                 }
                         }
                     ));
@@ -323,11 +323,11 @@ export default class Route extends HTMLElement
             this.insertRouting(e);
         }
         //content after because it's after in static too
-        const firstRoute = this.querySelector(`${config.route.subRoutesSelector}:first-of-type`);
+        const routingFirstElement = this.querySelector(`${config.route.routingSelector}:first-of-type`);
 
-        if(firstRoute)
+        if(routingFirstElement)
         {
-            firstRoute.insertAdjacentHTML("beforebegin", e.detail.content);
+            routingFirstElement.insertAdjacentHTML("beforebegin", e.detail.content);
         }
         else
         {
@@ -342,7 +342,7 @@ export default class Route extends HTMLElement
 
     insertRouting = (e) =>
     {
-        this.insertAdjacentHTML("beforeend", e.detail.route);
+        this.insertAdjacentHTML("beforeend", e.detail.routing);
     }
 
     updateTarget = () =>
@@ -450,7 +450,7 @@ export default class Route extends HTMLElement
         }
         if(this.#staticRouting)
         {
-            this.excludeRemoveSelector.push(config.route.subRoutesSelector)
+            this.excludeRemoveSelector.push(config.route.routingSelector)
         }
 
         if(this.#localNav && this.#staticNav) 
@@ -485,7 +485,7 @@ export default class Route extends HTMLElement
                     once: true
                 }
             );
-            fetch(new URL(namings.files.route, this.#url))
+            fetch(new URL(namings.files.routing, this.#url))
             .then(response => response.text())
             .then((html) =>
             {
@@ -494,7 +494,7 @@ export default class Route extends HTMLElement
                         {
                             detail: 
                             {
-                                route: html
+                                routing: html
                             }
                         }
                     )
