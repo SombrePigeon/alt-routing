@@ -450,7 +450,6 @@ export default class Route extends HTMLElement
         }
     };
 
-    //eventsListeners
     #connectionEventListener = (e) => 
     {
         //set absolute path
@@ -655,23 +654,23 @@ export default class Route extends HTMLElement
         
     }
 
-    #messageNavigateEventListenner = (e)=>
+    #messageNavigateEventListenner = (message)=>
     {
-        if(e.data.type === namings.events.navigate
-            && config.targetNavigation.origins.includes(e.origin))
+        if(message.data.type == namings.events.navigate
+            && config.targetNavigation.origins.includes(message.origin))
         {
             
-            e.source.postMessage(
+            message.source.postMessage(
                 namings.events.navigated,
-                e.origin);
+                message.origin);
             this.dispatchEvent(
                 new CustomEvent(namings.events.navigate,
                 {
                     detail:
                     {
-                        url: new URL(e.data.href),
-                        target: e.data.target,
-                        state: e.data.state,
+                        url: new URL(message.data.href),
+                        target: message.data.target,
+                        state: message.data.state,
                         rel: ""
                     }
                 }
@@ -680,7 +679,7 @@ export default class Route extends HTMLElement
         }
         else
         {
-            console.debug("event message is : ", e)
+            console.debug("event message is : ", message)
         }
     }
 
