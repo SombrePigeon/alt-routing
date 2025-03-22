@@ -241,7 +241,10 @@ export default class Route extends HTMLElement
         const abortController = this.#abortController;
 
         const navPromise = (this.#localNav && !this.#staticNav) ?
-            fetch(new URL(namings.files.nav, this.#url))
+            fetch(new URL(namings.files.nav, this.#url),
+            {
+                signal: abortController.signal
+            })
             .then((response) =>
             {
                 return response.text();
@@ -281,7 +284,10 @@ export default class Route extends HTMLElement
             });
             
             const routingPromise = (!this.#staticRouting) ?
-                fetch(new URL(namings.files.routing, this.#url))
+                fetch(new URL(namings.files.routing, this.#url),
+                {
+                    signal: abortController.signal
+                })
                 .then((response) =>
                 {
                     return response.text();
