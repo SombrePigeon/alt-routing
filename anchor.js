@@ -26,7 +26,7 @@ export default class Anchor extends HTMLAnchorElement
         super();
         this.#locationMatch = namings.enums.locationMatch.none;
         //init callback
-        this.addEventListener(namings.events.connectingRoutingComponent, 
+        this.addEventListener(namings.events.connectComponent, 
             this.connectionEventListener,
             {
                 once: true
@@ -38,7 +38,7 @@ export default class Anchor extends HTMLAnchorElement
     {
         console.debug("anchor is connecting " );
         this.dispatchEvent(
-            new CustomEvent(namings.events.connectingRoutingComponent,
+            new CustomEvent(namings.events.connectComponent,
                 {
                     composed: true,
                     detail: {}//must be initialized

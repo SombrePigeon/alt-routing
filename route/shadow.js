@@ -28,12 +28,12 @@ const connectShadow = (e) =>
     }
 }
 
-const connectingRoutingComponent = (e) =>
+const connectComponent = (e) =>
 {
     const element = e.target;
     if(element.tagName === namings.components.route.toLocaleUpperCase())
     {
-        e.target.addEventListener(namings.events.connectingRoutingComponent, 
+        e.target.addEventListener(namings.events.connectComponent, 
             connectShadow,
             {
                 once: true
@@ -43,8 +43,8 @@ const connectingRoutingComponent = (e) =>
 
 console.log("shadowRoutes module");
 console.debug("must appear before route module");
-document.body.addEventListener(namings.events.connectingRoutingComponent, 
-    connectingRoutingComponent,
+document.body.addEventListener(namings.events.connectComponent, 
+    connectComponent,
     {
         capture: true,
     });

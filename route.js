@@ -119,7 +119,7 @@ export default class Route extends HTMLElement
         if(this.#isRouteur)
         {
             console.info(`router alt-route activate`);
-            this.addEventListener(namings.events.connectingRoutingComponent,
+            this.addEventListener(namings.events.connectComponent,
                 this.#routeurConstructionEventListener,
                 {
                     capture: true
@@ -134,14 +134,14 @@ export default class Route extends HTMLElement
                 this.#navigateEventListener);
             window.addEventListener("message", this.#messageNavigateEventListenner);
         }
-        this.addEventListener(namings.events.connectingRoutingComponent,
+        this.addEventListener(namings.events.connectComponent,
             this.#constructionEventListener,
             {
                 capture: true
             }
         );
 
-        this.addEventListener(namings.events.connectingRoutingComponent,
+        this.addEventListener(namings.events.connectComponent,
             this.#connectionEventListener,
             {
                 once: true
@@ -209,7 +209,7 @@ export default class Route extends HTMLElement
 
         console.log("route is connecting");
         this.dispatchEvent(
-            new CustomEvent(namings.events.connectingRoutingComponent,
+            new CustomEvent(namings.events.connectComponent,
                 {
                     detail: {}//must be initialized
                 }

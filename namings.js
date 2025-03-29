@@ -30,7 +30,7 @@ export default
         navigate: "alt-navigate",
         navigated: "alt-navigated",
         routeChange: "alt-route-change",
-        connectingRoutingComponent: "alt-new-routing",
+        connectComponent: "alt-new-routing",
 
         //routing lifeCycle
         unloaded: "alt-unloaded",
