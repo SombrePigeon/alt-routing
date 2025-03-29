@@ -33,7 +33,7 @@ export default class Route extends HTMLElement
     {
         if(this.#_locationMatch !== locationMatch)
             {
-                this.#_locationMatch && this.#replaceCustomStateCSS(this.#_locationMatch, locationMatch);
+                this.#_locationMatch && this.#replaceCustomStateCSS(Symbol.keyFor(this.#_locationMatch), Symbol.keyFor(locationMatch));
                 this.dataset.locationMatch = Symbol.keyFor(locationMatch);
                 this.#_locationMatch = locationMatch;
                 console.debug("route", this, ` ${this.#url?.href} locationMatch changed to : ${Symbol.keyFor(locationMatch)}`);
@@ -74,7 +74,7 @@ export default class Route extends HTMLElement
         this.#url && console.debug("route", this, ` ${this.#url.href} state: ${Symbol.keyFor(state)}`);
         if(this.#_state !== state)
         {
-            this.#_state && this.#replaceCustomStateCSS(this.#_state, state)
+            this.#_state && this.#replaceCustomStateCSS(Symbol.keyFor(this.#_state), Symbol.keyFor(state))
             this.dataset.state = Symbol.keyFor(state);
             this.#_state = state;
             console.debug("route", this, ` ${this.#url?.pathname} state changed to : ${Symbol.keyFor(state)}`);
@@ -83,7 +83,7 @@ export default class Route extends HTMLElement
     
     get #status()
     {
-        return this.#_state;
+        return this.#_status;
     }
 
     set #status(status)
@@ -91,9 +91,8 @@ export default class Route extends HTMLElement
         if(this.#_status !== status)
         {
             this.#_status && this.#replaceCustomStateCSS(this.#_status, status)
-            this.dataset.status = Symbol.keyFor(status);
+            this.dataset.status = status;
             this.#_status = status;
-            console.debug("route", this, ` ${this.#url?.pathname} status changed to : ${Symbol.keyFor(status)}`);
         }
     }
 
@@ -107,7 +106,7 @@ export default class Route extends HTMLElement
         super();
         this.#internals = this.attachInternals();
         this.#state = namings.enums.state.init;
-        this.#status = namings.enums.status.ok;
+        this.#status = "";
         this.#locationMatch = namings.enums.locationMatch.none;
     }
     
@@ -258,29 +257,17 @@ export default class Route extends HTMLElement
             })
             .then((response) =>
             {
-                if(response.ok)
-                {
-                    //toDo status is aborted or http code
-                    this.#status = namings.enums.status.ok;
-                }
-                else
-                {
-                    this.#status = namings.enums.status.ko;
-                }
-                return response.text();
+                this.#status = response.status;
+                return Promise.all([response.text(),Promise.resolve(response.status)]);
             })
-            .catch((error) =>
+            .then(promises =>
             {
-                //toDo something mais koi ...
-                this.#state = namings.enums.state.unloaded;
-                switch(error.name)
+                const result = 
                 {
-                    case "AbortError":
-                        this.#status = namings.enums.status.aborted;
-                        break;
-                    default:
-                        throw error;
+                    html: promises[0],
+                    status: promises[1]
                 }
+                return result;
             });
             
             const routingPromise = (!this.#staticRouting) ?
@@ -305,7 +292,8 @@ export default class Route extends HTMLElement
                             detail : 
                                 {
                                     nav: promises[0],
-                                    content: promises[1],
+                                    content: promises[1].html,
+                                    status: promises[1].status,
                                     routing: promises[2]
                                 }
                         }
@@ -328,9 +316,10 @@ export default class Route extends HTMLElement
         {
             this.insertRouting(e);
         }
+        
         //content after because it's after in static too
         const routingFirstElement = this.querySelector(`${config.route.routingSelector}:first-of-type`);
-
+        
         if(routingFirstElement)
         {
             routingFirstElement.insertAdjacentHTML("beforebegin", e.detail.content);
@@ -339,6 +328,7 @@ export default class Route extends HTMLElement
         {
             this.insertAdjacentHTML("beforeend", e.detail.content);
         }
+        this.#status = e.detail.status;
     }
 
     insertNav = (e) =>
@@ -376,6 +366,7 @@ export default class Route extends HTMLElement
     //onUnloaded
     #removeContent = (e) =>
     {
+        this.#status = "";
         let elementsToRemove = this.querySelectorAll(`:scope>*:not(:is(${this.excludeRemoveSelector}))`)
         for(let elementToRemove of elementsToRemove)
         {
@@ -666,25 +657,23 @@ export default class Route extends HTMLElement
     #replaceCustomStateCSS(from, to)
     {
         //update customStateCSS
-        const keyFrom = Symbol.keyFor(from);
-        const keyTo = Symbol.keyFor(to);
         try
         {
-            this.#internals.states.delete(`${keyFrom}`);
+            this.#internals.states.delete(`${from}`);
         }
         catch
         {
             //legacy
-            this.#internals.states.delete(`--${keyFrom}`);
+            this.#internals.states.delete(`--${from}`);
         }
         try
         {
-            this.#internals.states.add(`${keyTo}`);
+            this.#internals.states.add(`${to}`);
         }
         catch
         {
             //legacy
-            this.#internals.states.add(`--${keyTo}`);
+            this.#internals.states.add(`--${to}`);
         }
     }
 
