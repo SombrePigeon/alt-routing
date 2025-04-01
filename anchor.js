@@ -6,7 +6,7 @@ export default class Anchor extends HTMLAnchorElement
 {
     #routeur;
     #_locationMatch;
-    //getters&setters
+    //private getters&setters
     get #locationMatch()
     {
         return this.#_locationMatch;
@@ -19,7 +19,7 @@ export default class Anchor extends HTMLAnchorElement
             this.dataset.locationMatch = Symbol.keyFor(this.#_locationMatch);
         }
     }
-    //plublic getters
+    //public getters
     get locationMatch()
     {
         return this.#_locationMatch;
