@@ -19,13 +19,18 @@ export default class Anchor extends HTMLAnchorElement
             this.dataset.locationMatch = Symbol.keyFor(this.#_locationMatch);
         }
     }
+    //plublic getters
+    get locationMatch()
+    {
+        return this.#_locationMatch;
+    }
+
 
     constructor() 
     {
         super();
-        //init callback
         this.addEventListener(namings.events.connectComponent, 
-            this.connectionEventListener,
+            this.#connectionEventListener,
             {
                 once: true
             });
@@ -108,11 +113,11 @@ export default class Anchor extends HTMLAnchorElement
         }
         this.#routeur = e.detail.routeur;
         if(config.anchor.showLocationMatch)
-            {
-                //set for first time
-                this.updateLocationMatch();
-                //listen to route change
-                this.#routeur.addEventListener(namings.events.routeChange,
+        {
+            //set for first time
+            this.#updateLocationMatch();
+            //listen to route change
+            this.#routeur.addEventListener(namings.events.routeChange,
                 this.#updateLocationMatch);
         }
         this.#initNavigationEvent();
