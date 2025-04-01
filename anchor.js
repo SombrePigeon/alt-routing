@@ -1,4 +1,5 @@
 import namings from "./namings.js"
+import config from "alt-routing/config"
 console.debug("anchor module");
 
 export default class Anchor extends HTMLAnchorElement
@@ -24,7 +25,6 @@ export default class Anchor extends HTMLAnchorElement
     constructor() 
     {
         super();
-        this.#locationMatch = namings.enums.locationMatch.none;
         //init callback
         this.addEventListener(namings.events.connectComponent, 
             this.connectionEventListener,
@@ -79,10 +79,9 @@ export default class Anchor extends HTMLAnchorElement
                 );
             });
         }
-        
     }
 
-    updateLocationMatch()
+    updateLocationMatch = () => 
     {
         let match = namings.enums.locationMatch.none;
         //toDo try opti
@@ -111,19 +110,18 @@ export default class Anchor extends HTMLAnchorElement
             this.href = new URL(href, e.detail.url);
         }
         this.#routeur = e.detail.routeur;
-        //set for first time
-        this.updateLocationMatch();
-        //listen to route change
-        this.#routeur?.addEventListener(namings.events.routeChange,
-            this.routeChangeEventListener);
+        if(config.anchor.showLocationMatch)
+            {
+                //set for first time
+                this.updateLocationMatch();
+                //listen to route change
+                this.#routeur.addEventListener(namings.events.routeChange,
+                this.updateLocationMatch);
+        }
         this.initNavigationEvent();
         console.debug(`anchor "${this.href}" is connected `);
     };
 
-    routeChangeEventListener = (e) =>
-    {
-        this.updateLocationMatch();
-    };
 }
 
 customElements.define(namings.components.anchor, Anchor, { extends: "a" });
