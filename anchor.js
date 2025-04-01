@@ -51,7 +51,7 @@ export default class Anchor extends HTMLAnchorElement
     }
 
     //methods
-    initNavigationEvent()
+    #initNavigationEvent()
     {
         if(!this.getAttribute(this.download))
         {
@@ -79,7 +79,7 @@ export default class Anchor extends HTMLAnchorElement
         }
     }
 
-    updateLocationMatch = () => 
+    #updateLocationMatch = () => 
     {
         let match = namings.enums.locationMatch.none;
         //toDo try opti
@@ -98,11 +98,10 @@ export default class Anchor extends HTMLAnchorElement
     }
 
     //eventsListeners
-    connectionEventListener = (e) => 
+    #connectionEventListener = (e) => 
     {
         //rewrite href(absolute) 
         let href = this.getAttribute("href");
-        //debugger
         if(e.detail.url)
         {
             this.href = new URL(href, e.detail.url);
@@ -114,9 +113,9 @@ export default class Anchor extends HTMLAnchorElement
                 this.updateLocationMatch();
                 //listen to route change
                 this.#routeur.addEventListener(namings.events.routeChange,
-                this.updateLocationMatch);
+                this.#updateLocationMatch);
         }
-        this.initNavigationEvent();
+        this.#initNavigationEvent();
         console.debug(`anchor "${this.href}" is connected `);
     };
 
