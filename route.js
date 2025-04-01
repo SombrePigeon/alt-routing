@@ -34,7 +34,10 @@ export default class Route extends HTMLElement
         if(this.#_locationMatch !== locationMatch)
             {
                 this.#_locationMatch && this.#replaceCustomStateCSS(Symbol.keyFor(this.#_locationMatch), Symbol.keyFor(locationMatch));
-                this.dataset.locationMatch = Symbol.keyFor(locationMatch);
+                if(config.route.showAttribute.locationMatch)
+                {
+                    this.dataset.locationMatch = Symbol.keyFor(locationMatch);
+                }
                 this.#_locationMatch = locationMatch;
                 console.debug("route", this, ` ${this.#url?.href} locationMatch changed to : ${Symbol.keyFor(locationMatch)}`);
                 
@@ -74,7 +77,10 @@ export default class Route extends HTMLElement
         if(this.#_state !== state)
         {
             this.#_state && this.#replaceCustomStateCSS(Symbol.keyFor(this.#_state), Symbol.keyFor(state))
-            this.dataset.state = Symbol.keyFor(state);
+            if(config.route.showAttribute.state)
+            {
+                this.dataset.state = Symbol.keyFor(state);
+            }
             this.#_state = state;
             console.debug("route", this, ` ${this.#url?.pathname} state changed to : ${Symbol.keyFor(state)}`);
         }
@@ -89,7 +95,10 @@ export default class Route extends HTMLElement
         if(this.#_status !== status)
         {
             this.#_status && this.#replaceCustomStateCSS(this.#_status, status)
-            this.dataset.status = status;
+            if(config.route.showAttribute.status)
+            {
+                this.dataset.status = status;
+            }
             this.#_status = status;
         }
     }
@@ -109,7 +118,7 @@ export default class Route extends HTMLElement
     {
         return this.#_status;
     }
-    
+
     get url()
     {
         return this.#url;

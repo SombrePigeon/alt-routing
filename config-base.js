@@ -20,6 +20,13 @@ export default
         localNav: false,
         staticNav: false,
         navSelector: ":scope>nav",
+
+        showAttribute:
+        {
+            locationMatch: false,
+            state: false,
+            status: false
+        }
     },
     routeur:
     {
@@ -27,7 +34,10 @@ export default
     },
     anchor:
     {
-        showLocationMatch: false
+        showAttribute:
+        {
+            locationMatch: false
+        }
     },
     form:
     {
