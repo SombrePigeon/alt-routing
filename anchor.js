@@ -19,6 +19,7 @@ export default class Anchor extends HTMLAnchorElement
             this.dataset.locationMatch = Symbol.keyFor(this.#_locationMatch);
         }
     }
+    
     //public getters
     get locationMatch()
     {

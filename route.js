@@ -24,11 +24,11 @@ export default class Route extends HTMLElement
     #_state;
     #_status;
 
+    //private getters&setters
     get #locationMatch()
     {
         return this.#_locationMatch;
     }
-
     set #locationMatch(locationMatch) 
     {
         if(this.#_locationMatch !== locationMatch)
@@ -67,7 +67,6 @@ export default class Route extends HTMLElement
     {
         return this.#_state;
     }
-
     set #state(state)
     {
         console.debug(`state for ${this.#url?.pathname} : try change to ${Symbol.keyFor(state)}`);
@@ -85,7 +84,6 @@ export default class Route extends HTMLElement
     {
         return this.#_status;
     }
-
     set #status(status)
     {
         if(this.#_status !== status)
@@ -96,6 +94,22 @@ export default class Route extends HTMLElement
         }
     }
 
+    //public getters
+    get locationMatch()
+    {
+        return this.#_locationMatch;
+    }
+
+    get state()
+    {
+        return this.#_state;
+    }
+
+    get status()
+    {
+        return this.#_status;
+    }
+    
     get url()
     {
         return this.#url;
