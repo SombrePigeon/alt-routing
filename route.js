@@ -12,7 +12,9 @@ export default class Route extends HTMLElement
     #staticNav;
     #staticRouting;
     #propagateStaticRouting;
-    #loadOnPartMatching;
+    #locationMatchExact
+    #locationMatchPart;
+    #locationMatchNone;
     
     //attr
     #path;
@@ -31,38 +33,54 @@ export default class Route extends HTMLElement
     }
     set #locationMatch(locationMatch) 
     {
-        if(this.#_locationMatch !== locationMatch)
-            {
-                this.#_locationMatch && this.#replaceCustomStateCSS(Symbol.keyFor(this.#_locationMatch), Symbol.keyFor(locationMatch));
-                if(config.route.showAttribute.locationMatch)
-                {
-                    this.dataset.locationMatch = Symbol.keyFor(locationMatch);
-                }
-                this.#_locationMatch = locationMatch;
-                console.debug("route", this, ` ${this.#url?.href} locationMatch changed to : ${Symbol.keyFor(locationMatch)}`);
-                
-                if(this.#_locationMatch === namings.enums.locationMatch.exact 
-                    ||
-                    (
-                        this.#loadOnPartMatching &&
-                        this.#_locationMatch === namings.enums.locationMatch.part
-                    )
+
+        if(this.#_locationMatch)
+        {
+            this.#replaceCustomStateCSS(Symbol.keyFor(this.#_locationMatch), Symbol.keyFor(locationMatch));
+        }
+        if(config.route.showAttribute.locationMatch)
+        {
+            this.dataset.locationMatch = Symbol.keyFor(locationMatch);
+        }
+        this.#_locationMatch = locationMatch;
+        console.debug("route", this, ` ${this.#url?.href} locationMatch changed to : ${Symbol.keyFor(locationMatch)}`);
+        
+        //loading policy
+        let locationMatchMode;
+        switch(this.#_locationMatch)
+        {
+            case namings.enums.locationMatch.exact:
+                locationMatchMode = this.#locationMatchExact;
+            break;
+            case namings.enums.locationMatch.part:
+                locationMatchMode = this.#locationMatchPart;
+            break;
+            case namings.enums.locationMatch.none:
+                locationMatchMode = this.#locationMatchNone;
+            break;
+        }
+        switch(locationMatchMode)
+        {
+            case "fresh":
+                this.shadowRoot
+                        ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.loading, {bubbles: true, composed: true}))
+                        : this.dispatchEvent(new CustomEvent(namings.events.loading));
+                break;
+            case "still":
+                if(this.#_state === namings.enums.state.unloading
+                    || this.#_state === namings.enums.state.unloaded
                 )
                 {
-                    this.shadowRoot ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.loading, {bubbles: true, composed: true}))
-                                : this.dispatchEvent(new CustomEvent(namings.events.loading));
+                    this.shadowRoot
+                        ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.loading, {bubbles: true, composed: true}))
+                        : this.dispatchEvent(new CustomEvent(namings.events.loading));
                 }
-                else if(this.#_locationMatch === namings.enums.locationMatch.none
-                    ||
-                    (
-                        !this.#loadOnPartMatching &&
-                        this.#_locationMatch === namings.enums.locationMatch.part
-                    )
-                )
-                {
-                    this.shadowRoot ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.unloading,{bubbles: true, composed: true}))
-                                : this.dispatchEvent(new CustomEvent(namings.events.unloading));
-                }
+                break;
+            case "hidden":
+                this.shadowRoot
+                    ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.unloading,{bubbles: true, composed: true}))
+                    : this.dispatchEvent(new CustomEvent(namings.events.unloading));
+                break;
         }
     }
 
@@ -458,7 +476,9 @@ export default class Route extends HTMLElement
         this.#localNav = this.dataset.localNav ?? config.route.localNav;
         this.#staticNav = this.dataset.staticNav ?? config.route.staticNav;
         this.#staticRouting = this.dataset.staticRouting ?? e.detail.staticRouting ?? config.route.staticRouting;
-        this.#loadOnPartMatching = this.dataset.loadOnPartMatching ?? config.route.loadOnPartMatching;
+        this.#locationMatchExact = this.dataset.locationMatchExact ?? config.route.locationMatchExact;
+        this.#locationMatchPart = this.dataset.locationMatchPart ?? config.route.locationMatchPart;
+        this.#locationMatchNone = this.dataset.locationMatchNone ?? config.route.locationMatchNone;
         this.#url = e.detail.url;
         this.#routeur = e.detail.routeur;
         
@@ -650,7 +670,7 @@ export default class Route extends HTMLElement
 
     #messageNavigateEventListenner = (e)=>
     {
-        if(e.data.type == namings.events.navigate
+        if(e.data.type === namings.events.navigate
             && config.targetNavigation.origins.includes(e.origin))
         {
             

@@ -10,11 +10,14 @@ export default
             mode: "open"
         },
         shadowStyle: undefined,
-
-        loadOnPartMatching: true,
+     
+        locationMatchExact: "fresh",
+        locationMatchPart: "still",
+        locationMatchNone: "hidden",
 
         staticRouting: false,
         propagateStaticRouting: undefined,
+        
         routingSelector: `:scope>${namings.components.route}`,
 
         localNav: false,
