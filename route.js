@@ -61,12 +61,12 @@ export default class Route extends HTMLElement
         }
         switch(locationMatchMode)
         {
-            case "fresh":
+            case namings.enums.locationMatchType.fresh:
                 this.shadowRoot
                         ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.loading, {bubbles: true, composed: true}))
                         : this.dispatchEvent(new CustomEvent(namings.events.loading));
                 break;
-            case "still":
+            case namings.enums.locationMatchType.still:
                 if(this.#_state === namings.enums.state.unloading
                     || this.#_state === namings.enums.state.unloaded
                 )
@@ -76,7 +76,7 @@ export default class Route extends HTMLElement
                         : this.dispatchEvent(new CustomEvent(namings.events.loading));
                 }
                 break;
-            case "hidden":
+            case namings.enums.locationMatchType.hidden:
                 this.shadowRoot
                     ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.unloading,{bubbles: true, composed: true}))
                     : this.dispatchEvent(new CustomEvent(namings.events.unloading));

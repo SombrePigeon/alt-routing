@@ -8,6 +8,12 @@ export default
             exact: Symbol.for("exact"),
             none: Symbol.for("none")
         },
+        locationMatchType:
+        {
+            fresh: "fresh",
+            still: "still",
+            hidden: "hidden"
+        },
         state: 
         {
             init: Symbol("init"),
@@ -16,12 +22,6 @@ export default
             loading: Symbol.for("loading"),
             unloading: Symbol.for("unloading"),
 
-        },
-        status:
-        {
-            ok: Symbol.for("ok"),
-            ko: Symbol.for("ko"),
-            aborted: Symbol.for("aborted"),
         }
 
     },
@@ -30,6 +30,7 @@ export default
         navigate: "alt-navigate",
         navigated: "alt-navigated",
         routeChange: "alt-route-change",
+        
         connectComponent: "alt-new-routing",
 
         //routing lifeCycle
