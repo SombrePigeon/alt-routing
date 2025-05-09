@@ -53,10 +53,14 @@ const connectComponent = (e) =>
     }
 }
 
+export function addStyleToConnectingRoutes(component)
+{
+    component.addEventListener(namings.events.connectComponent, 
+        connectComponent,
+        {
+            capture: true,
+        });
+}
+  
+
 console.debug("styleRoutes module");
-console.debug("must appear before route module");
-document.body.addEventListener(namings.events.connectComponent, 
-    connectComponent,
-    {
-        capture: true,
-    });

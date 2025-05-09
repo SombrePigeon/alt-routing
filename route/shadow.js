@@ -41,10 +41,13 @@ const connectComponent = (e) =>
     }
 }
 
+export function addShadowToConnectingRoutes(component)
+{
+    component.addEventListener(namings.events.connectComponent, 
+        connectComponent,
+        {
+            capture: true,
+        });
+}
+
 console.log("shadowRoutes module");
-console.debug("must appear before route module");
-document.body.addEventListener(namings.events.connectComponent, 
-    connectComponent,
-    {
-        capture: true,
-    });
