@@ -1,7 +1,7 @@
 import namings from "./namings.js"
 import Route from "./route.js";
-import {addShadowToConnectingRoutes} from "./route/shadow.js";
-import {addStyleToConnectingRoutes} from "./route/style.js"
+import {addShadowToConnectingRoutes} from "./features/shadow.js";
+import {addStyleToConnectingRoutes} from "./features/style.js"
 console.log("router module");;
 
 export default class Router extends HTMLElement
