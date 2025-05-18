@@ -32,6 +32,7 @@ export default
         routeChange: "alt-route-change",
         
         connectComponent: "alt-new-routing",
+        disconnectComponent: "alt-delete-routing",
 
         //routing lifeCycle
         unloaded: "alt-unloaded",
@@ -60,5 +61,9 @@ export default
         routing: "routing.html",
         title: "title.html",
         style: "style.css"
+    },
+    classes:
+    {
+        altTarget: "alt-target"
     }
 }

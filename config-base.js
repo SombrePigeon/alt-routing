@@ -33,7 +33,13 @@ export default
     },
     routeur:
     {
-
+        features:
+        {
+            shadowRouting: false,
+            styleShadowRouting:false,
+            updateTarget: false
+        }
+        
     },
     anchor:
     {
@@ -41,6 +47,10 @@ export default
         {
             locationMatch: false
         }
+    },
+    slot:
+    {
+
     },
     form:
     {
