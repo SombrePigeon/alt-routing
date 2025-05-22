@@ -464,6 +464,7 @@ export default class Route extends HTMLElement
         this.#locationMatchNone = this.dataset.locationMatchNone ?? config.route.locationMatchNone;
         this.#url = e.detail.url;
         this.#routeur = e.detail.routeur;
+        this.#lastRoute =location.href.split('#')[0];
         
         //set selectors to remove on unloading
         this.excludeRemoveSelector = [];

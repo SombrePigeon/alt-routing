@@ -9,7 +9,6 @@ const updateTarget = (route) =>
     {
         const hash = location.hash.substring(1);
         //recherche uniquement dans la route
-        //toDo is for --state syntax fallback
         const matchSelector = 
         [
             `:state(${Symbol.keyFor(namings.enums.locationMatch.exact)})`,
@@ -46,6 +45,7 @@ const connectToRoute = (e) =>
                 updateTarget(route)
             }
         );
+        
         const disconnectController = new AbortController(); 
         route.addEventListener(namings.events.disconnectComponent,
             (e) =>
@@ -53,7 +53,6 @@ const connectToRoute = (e) =>
                 disconnectController.abort();
             }
         );
-
         window.addEventListener("hashchange", 
             ()=> {updateTarget(route)},
             {
