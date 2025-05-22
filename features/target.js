@@ -11,7 +11,13 @@ const updateTarget = (e) =>
         const hash = location.hash.substring(1);
         //recherche uniquement dans la route
         //toDo is for --state syntax fallback
-        const newTarget = route.querySelector(`:scope:state(${Symbol.keyFor(namings.enums.locationMatch.exact)}) [id="${hash}"]:not(:state(${Symbol.keyFor(namings.enums.locationMatch.exact)}) ${namings.components.route} [id="${hash}"])`);
+        const matchSelector = 
+        [
+            `:state(${Symbol.keyFor(namings.enums.locationMatch.exact)})`,
+            `:--state(${Symbol.keyFor(namings.enums.locationMatch.exact)})`,
+            `[location-match="${Symbol.keyFor(namings.enums.locationMatch.exact)}"]`
+        ];
+        const newTarget = route.querySelector(`:scope:is(${matchSelector}) [id="${hash}"]:not(:is(${matchSelector}) ${namings.components.route} [id="${hash}"])`);
         const oldTarget = route.querySelector(`:scope .${namings.classes.altTarget}:not(:scope ${namings.components.route} *)`);
         
         if(oldTarget && oldTarget !== newTarget)
