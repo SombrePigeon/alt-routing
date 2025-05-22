@@ -2,9 +2,8 @@
 import namings from "../namings.js";
 import config from "alt-routing/config";
 
-const updateTarget = (e) =>
+const updateTarget = (route) =>
 {
-    const route = e.target;
     if(route.state === namings.enums.state.loaded
         || route.state === namings.enums.state.unloading)
     {
@@ -26,6 +25,7 @@ const updateTarget = (e) =>
         }
         newTarget && (newTarget.classList.add(namings.classes.altTarget));
         newTarget?.scrollIntoView();
+        console.log("scroll")
     }
 }
 
@@ -34,10 +34,18 @@ const connectToRoute = (e) =>
     const route = e.target;
     if(route.tagName === namings.components.route.toLocaleUpperCase())
     {
-        e.target.addEventListener(namings.events.loaded, 
-            updateTarget);
-        e.target.addEventListener(namings.events.routeChange, 
-            updateTarget);
+        route.addEventListener(namings.events.loaded, 
+            ()=> 
+            {
+                updateTarget(route)
+            }
+        );
+        route.addEventListener(namings.events.routeChange, 
+            ()=> 
+            {
+                updateTarget(route)
+            }
+        );
         const disconnectController = new AbortController(); 
         route.addEventListener(namings.events.disconnectComponent,
             (e) =>
@@ -45,9 +53,9 @@ const connectToRoute = (e) =>
                 disconnectController.abort();
             }
         );
-        //pas très beau
+
         window.addEventListener("hashchange", 
-            ()=> {updateTarget(e)},
+            ()=> {updateTarget(route)},
             {
                 signal: disconnectController.signal
             }
