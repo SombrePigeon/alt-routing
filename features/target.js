@@ -11,9 +11,9 @@ const updateTarget = (route) =>
         //recherche uniquement dans la route
         const matchSelector = 
         [
-            `:state(${Symbol.keyFor(namings.enums.locationMatch.exact)})`,
-            `:--state(${Symbol.keyFor(namings.enums.locationMatch.exact)})`,
-            `[location-match="${Symbol.keyFor(namings.enums.locationMatch.exact)}"]`
+            `:state(${namings.enums.locationMatch.exact})`,
+            `:--state(${namings.enums.locationMatch.exact})`,
+            `[location-match="${namings.enums.locationMatch.exact}"]`
         ];
         const newTarget = route.querySelector(`:scope:is(${matchSelector}) [id="${hash}"]:not(:is(${matchSelector}) ${namings.components.route} [id="${hash}"])`);
         const oldTarget = route.querySelector(`:scope .${namings.classes.altTarget}:not(:scope ${namings.components.route} *)`);
