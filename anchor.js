@@ -16,7 +16,7 @@ export default class Anchor extends HTMLAnchorElement
         if(this.#_locationMatch !== locationMatch)
         {
             this.#_locationMatch = locationMatch;
-            this.dataset.locationMatch = Symbol.keyFor(this.#_locationMatch);
+            this.dataset.locationMatch = this.#_locationMatch;
         }
     }
 

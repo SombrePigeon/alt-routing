@@ -4,9 +4,9 @@ export default
     {
         locationMatch:
         {
-            part: Symbol.for("part"),
-            exact: Symbol.for("exact"),
-            none: Symbol.for("none")
+            part: "part",
+            exact: "exact",
+            none: "none"
         },
         locationMatchType:
         {
@@ -16,11 +16,11 @@ export default
         },
         state: 
         {
-            init: Symbol("init"),
-            unloaded: Symbol.for("unloaded"),
-            loaded: Symbol.for("loaded"),
-            loading: Symbol.for("loading"),
-            unloading: Symbol.for("unloading"),
+            init: "init",
+            unloaded: "unloaded",
+            loaded: "loaded",
+            loading: "loading",
+            unloading: "unloading",
 
         }
 

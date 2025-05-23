@@ -37,14 +37,14 @@ export default class Route extends HTMLElement
 
         if(this.#_locationMatch)
         {
-            this.#replaceCustomStateCSS(Symbol.keyFor(this.#_locationMatch), Symbol.keyFor(locationMatch));
+            this.#replaceCustomStateCSS(this.#_locationMatch, locationMatch);
         }
         if(config.route.showAttribute.locationMatch)
         {
-            this.dataset.locationMatch = Symbol.keyFor(locationMatch);
+            this.dataset.locationMatch = locationMatch;
         }
         this.#_locationMatch = locationMatch;
-        console.debug("route", this, ` ${this.#url?.href} locationMatch changed to : ${Symbol.keyFor(locationMatch)}`);
+        console.debug("route", this, ` ${this.#url?.href} locationMatch changed to : ${locationMatch}`);
         
         //loading policy
         let locationMatchMode;
@@ -91,17 +91,17 @@ export default class Route extends HTMLElement
     }
     set #state(state)
     {
-        console.debug(`state for ${this.#url?.pathname} : try change to ${Symbol.keyFor(state)}`);
-        this.#url && console.debug("route", this, ` ${this.#url.href} state: ${Symbol.keyFor(state)}`);
+        console.debug(`state for ${this.#url?.pathname} : try change to ${state}`);
+        this.#url && console.debug("route", this, ` ${this.#url.href} state: ${state}`);
         if(this.#_state !== state)
         {
-            this.#_state && this.#replaceCustomStateCSS(Symbol.keyFor(this.#_state), Symbol.keyFor(state))
+            this.#_state && this.#replaceCustomStateCSS(this.#_state, state)
             if(config.route.showAttribute.state)
             {
-                this.dataset.state = Symbol.keyFor(state);
+                this.dataset.state = state;
             }
             this.#_state = state;
-            console.debug("route", this, ` ${this.#url?.pathname} state changed to : ${Symbol.keyFor(state)}`);
+            console.debug("route", this, ` ${this.#url?.pathname} state changed to : ${state}`);
         }
     }
     
