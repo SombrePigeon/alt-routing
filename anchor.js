@@ -1,11 +1,12 @@
 import namings from "./namings.js"
+import config from "alt-routing/config"
 console.debug("anchor module");
 
 export default class Anchor extends HTMLAnchorElement
 {
     #routeur;
     #_locationMatch;
-    //getters&setters
+    //private getters&setters
     get #locationMatch()
     {
         return this.#_locationMatch;
@@ -14,20 +15,23 @@ export default class Anchor extends HTMLAnchorElement
     {
         if(this.#_locationMatch !== locationMatch)
         {
-            //this.#_locationMatch && this.#internals.states.delete(`${Symbol.keyFor(this.#_locationMatch)}`);
             this.#_locationMatch = locationMatch;
-            //this.#_locationMatch && this.#internals.states.add(`${Symbol.keyFor(this.#_locationMatch)}`);
-            this.dataset.locationMatch = Symbol.keyFor(this.#_locationMatch);
+            this.dataset.locationMatch = this.#_locationMatch;
         }
     }
+
+    //public getters
+    get locationMatch()
+    {
+        return this.#_locationMatch;
+    }
+
 
     constructor() 
     {
         super();
-        this.#locationMatch = namings.enums.locationMatch.none;
-        //init callback
-        this.addEventListener(namings.events.connectingRoutingComponent, 
-            this.connectionEventListener,
+        this.addEventListener(namings.events.connectComponent, 
+            this.#connectionEventListener,
             {
                 once: true
             });
@@ -38,7 +42,7 @@ export default class Anchor extends HTMLAnchorElement
     {
         console.debug("anchor is connecting " );
         this.dispatchEvent(
-            new CustomEvent(namings.events.connectingRoutingComponent,
+            new CustomEvent(namings.events.connectComponent,
                 {
                     composed: true,
                     detail: {}//must be initialized
@@ -53,7 +57,7 @@ export default class Anchor extends HTMLAnchorElement
     }
 
     //methods
-    initNavigationEvent()
+    #initNavigationEvent()
     {
         if(!this.getAttribute(this.download))
         {
@@ -79,10 +83,9 @@ export default class Anchor extends HTMLAnchorElement
                 );
             });
         }
-        
     }
 
-    updateLocationMatch()
+    #updateLocationMatch = () => 
     {
         let match = namings.enums.locationMatch.none;
         //toDo try opti
@@ -101,29 +104,28 @@ export default class Anchor extends HTMLAnchorElement
     }
 
     //eventsListeners
-    connectionEventListener = (e) => 
+    #connectionEventListener = (e) => 
     {
         //rewrite href(absolute) 
         let href = this.getAttribute("href");
-        //debugger
         if(e.detail.url)
         {
             this.href = new URL(href, e.detail.url);
         }
+        
         this.#routeur = e.detail.routeur;
-        //set for first time
-        this.updateLocationMatch();
-        //listen to route change
-        this.#routeur?.addEventListener(namings.events.routeChange,
-            this.routeChangeEventListener);
-        this.initNavigationEvent();
+        if(config.anchor.showAttribute.locationMatch)
+        {
+            //set for first time
+            this.#updateLocationMatch();
+            //listen to route change
+            this.#routeur?.addEventListener(namings.events.routeChange,
+                this.#updateLocationMatch);
+        }
+        this.#initNavigationEvent();
         console.debug(`anchor "${this.href}" is connected `);
     };
 
-    routeChangeEventListener = (e) =>
-    {
-        this.updateLocationMatch();
-    };
 }
 
 customElements.define(namings.components.anchor, Anchor, { extends: "a" });
