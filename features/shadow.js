@@ -1,6 +1,8 @@
 import namings from "../namings.js";
 import config from "alt-routing/config";
 
+console.info("alt-routing module init : feature/shadow");
+
 const connectShadow = (e) =>
 {
     const element = e.target;
@@ -49,5 +51,3 @@ export function addShadowToConnectingRoutes(component)
             capture: true,
         });
 }
-
-console.log("shadowRoutes module");

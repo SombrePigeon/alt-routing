@@ -1,6 +1,8 @@
-import "./shadow.js"
+import "./shadow.js";
 import namings from "../namings.js";
 import config from "alt-routing/config";
+
+console.info("alt-routing module init : feature/style");
 
 const routesStyleSheet = new CSSStyleSheet();
 
@@ -61,6 +63,3 @@ export function addStyleToConnectingRoutes(component)
             capture: true,
         });
 }
-  
-
-console.debug("styleRoutes module");

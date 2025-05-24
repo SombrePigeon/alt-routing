@@ -1,11 +1,18 @@
-import namings from "./namings.js"
-console.log("slot module");
+import namings from "./namings.js";
+import config from "alt-routing/config";
+
+console.info("alt-routing module init : slot");
+
+if(config.route.shadowRootInit.slotAssignment !== "manual")
+{
+    console.error("alt-routing slot require config 'route.shadowsRootInit.slotAssignment !== 'manual'");
+}
 
 export default class Slot extends HTMLSlotElement
 {
     #host;
     #query;
-    //callbacks
+
     connectedCallback()
     {
         this.#host = this.getRootNode().host;

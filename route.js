@@ -1,6 +1,7 @@
 import namings from "./namings.js";
 import config from "alt-routing/config";
-console.log("route module");
+
+console.info("alt-routing module init : route");
 
 export default class Route extends HTMLElement
 {
@@ -44,7 +45,6 @@ export default class Route extends HTMLElement
             this.dataset.locationMatch = locationMatch;
         }
         this.#_locationMatch = locationMatch;
-        console.debug("route", this, ` ${this.#url?.href} locationMatch changed to : ${locationMatch}`);
         
         //loading policy
         let locationMatchMode;
@@ -91,8 +91,6 @@ export default class Route extends HTMLElement
     }
     set #state(state)
     {
-        console.debug(`state for ${this.#url?.pathname} : try change to ${state}`);
-        this.#url && console.debug("route", this, ` ${this.#url.href} state: ${state}`);
         if(this.#_state !== state)
         {
             this.#_state && this.#replaceCustomStateCSS(this.#_state, state)
@@ -101,7 +99,6 @@ export default class Route extends HTMLElement
                 this.dataset.state = state;
             }
             this.#_state = state;
-            console.debug("route", this, ` ${this.#url?.pathname} state changed to : ${state}`);
         }
     }
     
@@ -143,35 +140,27 @@ export default class Route extends HTMLElement
         return this.#url;
     }
     
-    constructor()
+    //callbacks
+    connectedCallback()
     {
-        super();
         this.#internals = this.attachInternals();
         this.#state = namings.enums.state.init;
         this.#status = "";
         this.#locationMatch = namings.enums.locationMatch.none;
-    }
-    
-    //callbacks
-    connectedCallback()
-    {
+        
         this.#path = this.dataset.path;
         this.#isRouteur = this.#path.startsWith('/');
         this.#propagateStaticRouting = this.dataset.propagateStaticRouting ?? config.route.propagateStaticRouting;
         if(this.#isRouteur)
         {
-            console.info(`router alt-route activate`);
             this.addEventListener(namings.events.connectComponent,
                 this.#routeurConstructionEventListener,
                 {
                     capture: true
                 }
             );
-            //generate navigation event
-            ///when popstate event
             window.addEventListener("popstate",
             this.#popstateEventListener);
-            ///when click internal navigation
             this.addEventListener(namings.events.navigate,
                 this.#navigateEventListener);
             window.addEventListener("message", this.#messageNavigateEventListenner);
@@ -244,9 +233,6 @@ export default class Route extends HTMLElement
             this.#onAbort
         );
 
-
-
-        console.log("route is connecting");
         this.dispatchEvent(
             new CustomEvent(namings.events.connectComponent,
                 {
@@ -258,8 +244,6 @@ export default class Route extends HTMLElement
 
     disconnectedCallback()
     {
-        console.log("disconnect" + this.#url);
-        //disconnect window eventListenners
         if(this.#isRouteur)
         {
             window.removeEventListener("popstate", this.#popstateEventListener);
@@ -356,7 +340,7 @@ export default class Route extends HTMLElement
             this.insertRouting(e);
         }
         
-        //content after because it's after in static too
+        //content after because it's after in static routing too
         const routingFirstElement = this.querySelector(`${config.route.routingSelector}:first-of-type`);
         
         if(routingFirstElement)
@@ -383,7 +367,7 @@ export default class Route extends HTMLElement
     //onUnloading
     #onUnloading = (e) =>
     {
-        //nothing
+        //noop
         this.dispatchEvent(new CustomEvent(namings.events.unloaded));
     }
     //onUnloaded
@@ -400,9 +384,9 @@ export default class Route extends HTMLElement
     #onAbort = (e) =>
     {
         e.stopPropagation();
-        console.debug("route ", this.#url.pathname, " ", e.type);
         this.#abortController?.abort();
     }
+
     //methods
     updateLocationMatch = () =>
     {
@@ -425,7 +409,6 @@ export default class Route extends HTMLElement
     updateRoutes()
     {
         this.dispatchEvent(new CustomEvent(namings.events.routeChange));
-        
     }
 
     #routeurConstructionEventListener = (e) => 
@@ -452,8 +435,6 @@ export default class Route extends HTMLElement
 
     #connectionEventListener = (e) => 
     {
-        //set absolute path
-        console.log("route connected !");
         //config
         this.#localNav = this.dataset.localNav ?? config.route.localNav;
         this.#staticNav = this.dataset.staticNav ?? config.route.staticNav;
@@ -537,7 +518,6 @@ export default class Route extends HTMLElement
 
     #popstateEventListener = (e)=>
     {
-        console.debug("browser navigation");
         const currentRoute = location.href.split('#')[0];
         if(this.#lastRoute !== currentRoute)
         {
@@ -575,14 +555,11 @@ export default class Route extends HTMLElement
                 }
                 else if(location.href === destinationURL.href)
                 {
-                    console.log("refresh")
                     //just reload
                     history.go()
-                    
                 }
                 else
                 {
-                    console.log("navigate")
                     history.pushState(destinationState, null, destinationURL);
                     this.updateRoutes();
                 }
@@ -591,7 +568,6 @@ export default class Route extends HTMLElement
             {
                 location.href = destinationURL.href;
             }
-            
         }
         else
         {
@@ -600,6 +576,7 @@ export default class Route extends HTMLElement
             if(target === "_blank" || rel !== "")
             {
                 window.open(destinationURL, target, rel);
+                console.info(`alt-routing open window : '${target}'`);
             }
             else
             {
@@ -629,10 +606,11 @@ export default class Route extends HTMLElement
                     if(abortTimeout.aborted)
                     {
                         window.open(destinationURL, target);
+                        console.info(`alt-routing : target window '${target}' has navigated forcefully`);
                     }
                     else
                     {
-                        console.log(`${target} window has navigated successfully`);
+                        console.info(`alt-routing : target window '${target}' has navigated gracefully`);
                     }
                 });
                 window.addEventListener("message",
@@ -677,22 +655,16 @@ export default class Route extends HTMLElement
                 )
             );
         }
-        else
-        {
-            console.debug("event message is : ", message)
-        }
     }
 
     #replaceCustomStateCSS(from, to)
     {
-        //update customStateCSS
         try
         {
             this.#internals.states.delete(`${from}`);
         }
         catch
         {
-            //legacy
             this.#internals.states.delete(`--${from}`);
         }
         try
@@ -701,13 +673,10 @@ export default class Route extends HTMLElement
         }
         catch
         {
-            //legacy
             this.#internals.states.add(`--${to}`);
         }
     }
 
 }
-
-
 
 customElements.define(namings.components.route, Route);

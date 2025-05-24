@@ -1,6 +1,7 @@
 
 import namings from "../namings.js";
-import config from "alt-routing/config";
+
+console.info("alt-routing module init : feature/target");
 
 const updateTarget = (route) =>
 {
@@ -22,9 +23,8 @@ const updateTarget = (route) =>
         {
             oldTarget.classList.remove(namings.classes.altTarget)
         }
-        newTarget && (newTarget.classList.add(namings.classes.altTarget));
+        newTarget?.classList.add(namings.classes.altTarget);
         newTarget?.scrollIntoView();
-        console.log("scroll")
     }
 }
 
@@ -71,5 +71,3 @@ export function addUpdateTarget(component)
             capture: true,
         });
 };
-
-console.debug("styleRoutes module");
