@@ -26,21 +26,15 @@ export default class Anchor extends HTMLAnchorElement
         return this.#_locationMatch;
     }
 
-
-    constructor() 
+    //callbacks
+    connectedCallback()
     {
-        super();
+        console.debug("anchor is connecting " );
         this.addEventListener(namings.events.connectComponent, 
             this.#connectionEventListener,
             {
                 once: true
             });
-    }
-
-    //callbacks
-    connectedCallback()
-    {
-        console.debug("anchor is connecting " );
         this.dispatchEvent(
             new CustomEvent(namings.events.connectComponent,
                 {

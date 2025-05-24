@@ -8,11 +8,6 @@ console.log("router module");;
 
 export default class Router extends HTMLElement
 {
-    constructor()
-    {
-        super();
-    }
-
     connectedCallback()
     {
         console.log("routeur is connected");

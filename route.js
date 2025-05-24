@@ -143,18 +143,14 @@ export default class Route extends HTMLElement
         return this.#url;
     }
     
-    constructor()
+    //callbacks
+    connectedCallback()
     {
-        super();
         this.#internals = this.attachInternals();
         this.#state = namings.enums.state.init;
         this.#status = "";
         this.#locationMatch = namings.enums.locationMatch.none;
-    }
-    
-    //callbacks
-    connectedCallback()
-    {
+        
         this.#path = this.dataset.path;
         this.#isRouteur = this.#path.startsWith('/');
         this.#propagateStaticRouting = this.dataset.propagateStaticRouting ?? config.route.propagateStaticRouting;
