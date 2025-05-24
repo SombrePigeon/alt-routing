@@ -1,39 +1,27 @@
 export default 
-{ 
-    attributes:
+{
+    enums:
     {
-        path: "path",//toDo remove
-        useShadow: "use-shadow",//toDo remove
-        locationMatching: "match",//toDo remove
-        locationMatchingValues://toDo move to enum
+        locationMatch:
         {
             part: "part",
             exact: "exact",
             none: "none"
         },
-    },
-    enums:
-    {
-        locationMatch:
+        locationMatchType:
         {
-            part: Symbol.for("part"),
-            exact: Symbol.for("exact"),
-            none: Symbol.for("none")
+            fresh: "fresh",
+            still: "still",
+            hidden: "hidden"
         },
         state: 
         {
-            init: Symbol("init"),
-            unloaded: Symbol.for("unloaded"),
-            loaded: Symbol.for("loaded"),
-            loading: Symbol.for("loading"),
-            unloading: Symbol.for("unloading"),
+            init: "init",
+            unloaded: "unloaded",
+            loaded: "loaded",
+            loading: "loading",
+            unloading: "unloading",
 
-        },
-        status:
-        {
-            ok: Symbol.for("ok"),
-            ko: Symbol.for("ko"),
-            aborted: Symbol.for("aborted"),
         }
 
     },
@@ -42,20 +30,19 @@ export default
         navigate: "alt-navigate",
         navigated: "alt-navigated",
         routeChange: "alt-route-change",
-        connectingRoutingComponent: "alt-new-routing",
+        
+        connectComponent: "alt-new-routing",
+        disconnectComponent: "alt-delete-routing",
 
-        //routingconnecting
-        connectComponent:"alt-connect",
-        disconnectComponent:"alt-disconnect",
         //routing lifeCycle
-        unloaded :"alt-unloaded",
-        loaded :"alt-loaded",
-        beforeLoading :"alt-beforeLoading",
-        loading :"alt-loading",
-        beforeUnloading :"alt-beforeUnloading",
-        unloading :"alt-unloading",
+        unloaded: "alt-unloaded",
+        loaded: "alt-loaded",
+        loading: "alt-loading",
+        unloading: "alt-unloading",
+        //routing infos
+        navLoaded: "alt-nav-loaded",
+        routingLoaded: "alt-route-loaded",
         //abort request
-        beforeAbort: "alt-beforeAbort",
         abort: "alt-abort",
 
     },
@@ -64,15 +51,20 @@ export default
         route: "alt-route",
         router: "alt-router",
         anchor: "alt-a",
-        title: "alt-title"
+        title: "alt-title",
+        slot: "alt-slot"
     },
     files:
     {
         template: "template.html",
         nav: "nav.html",
         content: "content.html",
-        route: "route.html",
+        routing: "routing.html",
         title: "title.html",
         style: "style.css"
+    },
+    classes:
+    {
+        altTarget: "alt-target"
     }
 }

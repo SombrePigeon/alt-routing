@@ -2,177 +2,145 @@ import namings from "./namings.js";
 import config from "alt-routing/config";
 console.log("route module");
 
-
-const routesStyleSheet = new CSSStyleSheet();
-
-if (config.route.style)
-{
-    fetch(config.route.style)
-    .then((response) => 
-    {
-        return response.text();
-    })
-    .then((style) =>
-    {
-        routesStylePromise.replace(style);
-    });
-}
-
 export default class Route extends HTMLElement
 {
     #internals;
 
     //config
     #isRouteur;
-    #useShadow;
     #localNav;
     #staticNav;
     #staticRouting;
     #propagateStaticRouting;
+    #locationMatchExact
+    #locationMatchPart;
+    #locationMatchNone;
     
+    //attr
     #path;
     #routeur;
     #url;
-    #abortController = null;
+    #abortController;
+    #lastRoute
 
     #_locationMatch;
     #_state;
     #_status;
 
+    //private getters&setters
     get #locationMatch()
     {
         return this.#_locationMatch;
     }
-
     set #locationMatch(locationMatch) 
     {
-        this.#url && console.debug("location match", this.#url.href, " : ", Symbol.keyFor(locationMatch));
-        
-        if(this.#_locationMatch !== locationMatch)
+
+        if(this.#_locationMatch)
         {
-            try
-            {
-                this.#_locationMatch && this.#internals.states.delete(`${Symbol.keyFor(this.#_locationMatch)}`);
-            }
-            catch
-            {
-                this._internals.states.delete(`--${Symbol.keyFor(this.#_locationMatch)}`);
-            }
-            this.#_locationMatch = locationMatch;
-            this.#_locationMatch && this.#internals.states.add(`${Symbol.keyFor(this.#_locationMatch)}`);
-            try
-            {
-                this.#_locationMatch && this.#internals.states.add(`${Symbol.keyFor(this.#_locationMatch)}`);
-            }
-            catch
-            {
-                this._internals.states.add(`--${Symbol.keyFor(this.#_locationMatch)}`);
-            }
-            switch(this.#_locationMatch)
-            {
-                case namings.enums.locationMatch.exact:
-                case namings.enums.locationMatch.part:
-                    switch(this.#state)
-                    {
-                        case namings.enums.state.unloaded:
-                            this.shadowRoot ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.beforeLoading, {bubbles: true, composed: true}))
-                                : this.dispatchEvent(new CustomEvent(namings.events.loading));
-                            break;
-                        case namings.enums.state.loaded:
-                            break;
-                        case namings.enums.state.loading:
-                            break;
-                        case namings.enums.state.unloading:
-                            break;
-                    }
-                    break;
-                case namings.enums.locationMatch.none:
-                    switch(this.#state)
-                    {
-                        case namings.enums.state.unloaded:
-                            break;
-                        case namings.enums.state.loaded:
-                            this.shadowRoot ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.beforeUnloading,{bubbles: true, composed: true}))
-                                : this.dispatchEvent(new CustomEvent(namings.events.unloading));
-                            break;
-                        case namings.enums.state.loading:
-                            //toDo add abort reason
-                            this.shadowRoot ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.beforeAbort,{bubbles: true, composed: true}))
-                                : this.dispatchEvent(new CustomEvent(namings.events.abort));
-                            break;
-                        case namings.enums.state.unloading:
-                            break;
-                    }
+            this.#replaceCustomStateCSS(this.#_locationMatch, locationMatch);
+        }
+        if(config.route.showAttribute.locationMatch)
+        {
+            this.dataset.locationMatch = locationMatch;
+        }
+        this.#_locationMatch = locationMatch;
+        console.debug("route", this, ` ${this.#url?.href} locationMatch changed to : ${locationMatch}`);
+        
+        //loading policy
+        let locationMatchMode;
+        switch(this.#_locationMatch)
+        {
+            case namings.enums.locationMatch.exact:
+                locationMatchMode = this.#locationMatchExact;
+            break;
+            case namings.enums.locationMatch.part:
+                locationMatchMode = this.#locationMatchPart;
+            break;
+            case namings.enums.locationMatch.none:
+                locationMatchMode = this.#locationMatchNone;
+            break;
+        }
+        switch(locationMatchMode)
+        {
+            case namings.enums.locationMatchType.fresh:
+                this.shadowRoot
+                        ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.loading, {bubbles: true, composed: true}))
+                        : this.dispatchEvent(new CustomEvent(namings.events.loading));
                 break;
-            }
-            this.dataset.locationMatch = Symbol.keyFor(this.#_locationMatch);
+            case namings.enums.locationMatchType.still:
+                if(this.#_state === namings.enums.state.unloading
+                    || this.#_state === namings.enums.state.unloaded
+                )
+                {
+                    this.shadowRoot
+                        ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.loading, {bubbles: true, composed: true}))
+                        : this.dispatchEvent(new CustomEvent(namings.events.loading));
+                }
+                break;
+            case namings.enums.locationMatchType.hidden:
+                this.shadowRoot
+                    ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.unloading,{bubbles: true, composed: true}))
+                    : this.dispatchEvent(new CustomEvent(namings.events.unloading));
+                break;
         }
     }
+
     get #state()
     {
         return this.#_state;
     }
-
     set #state(state)
     {
-        console.debug(`state for ${this.#url?.pathname} : try change to ${Symbol.keyFor(state)}`);
+        console.debug(`state for ${this.#url?.pathname} : try change to ${state}`);
+        this.#url && console.debug("route", this, ` ${this.#url.href} state: ${state}`);
         if(this.#_state !== state)
         {
-            try
+            this.#_state && this.#replaceCustomStateCSS(this.#_state, state)
+            if(config.route.showAttribute.state)
             {
-                this.#_state && this.#internals.states.delete(`${Symbol.keyFor(this.#_state)}`);
-            }
-            catch
-            {
-                this.#internals.states.delete(`--${Symbol.keyFor(this.#_state)}`);
+                this.dataset.state = state;
             }
             this.#_state = state;
-            try
-            {
-                this.#_state && this.#internals.states.add(`${Symbol.keyFor(this.#_state)}`);
-            }
-            catch
-            {
-                this.#internals.states.add(`--${Symbol.keyFor(this.#_state)}`);
-            }
-            this.dataset.state = Symbol.keyFor(this.#_state);
+            console.debug("route", this, ` ${this.#url?.pathname} state changed to : ${state}`);
         }
-        console.group(`states for route "${this.#path}" : `)
-            this.#internals.states.forEach(state => {
-                console.debug(state)
-            });
-            console.groupEnd()
     }
     
     get #status()
     {
-        return this.#_state;
+        return this.#_status;
     }
-
     set #status(status)
     {
         if(this.#_status !== status)
         {
-            try
+            this.#_status && this.#replaceCustomStateCSS(this.#_status, status)
+            if(config.route.showAttribute.status)
             {
-                this.#_status && this.#internals.states.delete(`${Symbol.keyFor(this.#_status)}`);
-            }
-            catch
-            {
-                this.#internals.states.delete(`--${Symbol.keyFor(this.#_status)}`);
+                this.dataset.status = status;
             }
             this.#_status = status;
-            this.#_status && this.#internals.states.add(`${Symbol.keyFor(this.#_status)}`);
-            try
-            {
-                this.#_status && this.#internals.states.add(`${Symbol.keyFor(this.#_status)}`);
-            }
-            catch
-            {
-                this.#internals.states.add(`--${Symbol.keyFor(this.#_status)}`);
-            }
-            this.dataset.status = Symbol.keyFor(this.#_status);
         }
+    }
+
+    //public getters
+    get locationMatch()
+    {
+        return this.#_locationMatch;
+    }
+
+    get state()
+    {
+        return this.#_state;
+    }
+
+    get status()
+    {
+        return this.#_status;
+    }
+
+    get url()
+    {
+        return this.#url;
     }
     
     constructor()
@@ -180,7 +148,7 @@ export default class Route extends HTMLElement
         super();
         this.#internals = this.attachInternals();
         this.#state = namings.enums.state.init;
-        this.#status = namings.enums.status.ok;
+        this.#status = "";
         this.#locationMatch = namings.enums.locationMatch.none;
     }
     
@@ -193,7 +161,7 @@ export default class Route extends HTMLElement
         if(this.#isRouteur)
         {
             console.info(`router alt-route activate`);
-            this.addEventListener(namings.events.connectingRoutingComponent,
+            this.addEventListener(namings.events.connectComponent,
                 this.#routeurConstructionEventListener,
                 {
                     capture: true
@@ -208,43 +176,70 @@ export default class Route extends HTMLElement
                 this.#navigateEventListener);
             window.addEventListener("message", this.#messageNavigateEventListenner);
         }
-        this.addEventListener(namings.events.connectingRoutingComponent,
+        this.addEventListener(namings.events.connectComponent,
             this.#constructionEventListener,
             {
                 capture: true
             }
         );
 
-        this.addEventListener(namings.events.connectingRoutingComponent,
+        this.addEventListener(namings.events.connectComponent,
             this.#connectionEventListener,
             {
                 once: true
             }
         );
 
-        
-        this.addEventListener(namings.events.unloaded,
-            this.#onUnloaded
-        );
-        this.addEventListener(namings.events.beforeLoading,
-            this.#onBeforeLoading
+        ///stateChange events
+        //onLoading
+        this.addEventListener(namings.events.loading,
+            (e) => 
+            {
+                e.stopPropagation();
+                this.#abortController?.abort();
+                this.#abortController = new AbortController();
+                this.#state = namings.enums.state.loading;
+            }
         );
         this.addEventListener(namings.events.loading,
-            this.#onLoading
+            this.fetchContent
+        );
+        //onloaded
+        this.addEventListener(namings.events.loaded,
+            this.insertContent
         );
         this.addEventListener(namings.events.loaded,
-            this.#onLoaded
+            (e) => 
+            {
+                e.stopPropagation();
+                this.#state = namings.enums.state.loaded;
+            }
         );
-        this.addEventListener(namings.events.beforeUnloading,
-            this.#onBeforeUnloading
+        //onUnloading
+        this.addEventListener(namings.events.unloading,
+            (e) => 
+            {
+                e.stopPropagation();
+                this.#abortController?.abort();
+                this.#abortController = new AbortController();
+                this.#state = namings.enums.state.unloading;
+            }
         );
         this.addEventListener(namings.events.unloading,
             this.#onUnloading
         );
-
-        this.addEventListener(namings.events.beforeAbort,
-            this.#onBeforeAbort
+        //onUnloaded
+        this.addEventListener(namings.events.unloaded,
+            (e) => 
+            {
+                e.stopPropagation();
+                this.#state = namings.enums.state.unloaded;
+            }
         );
+        this.addEventListener(namings.events.unloaded,
+            this.#removeContent
+        );
+        //onAbort
         this.addEventListener(namings.events.abort,
             this.#onAbort
         );
@@ -253,7 +248,7 @@ export default class Route extends HTMLElement
 
         console.log("route is connecting");
         this.dispatchEvent(
-            new CustomEvent(namings.events.connectingRoutingComponent,
+            new CustomEvent(namings.events.connectComponent,
                 {
                     detail: {}//must be initialized
                 }
@@ -270,142 +265,146 @@ export default class Route extends HTMLElement
             window.removeEventListener("popstate", this.#popstateEventListener);
             window.removeEventListener("message", this.#messageNavigateEventListenner);
         }
-        this.#routeur.removeEventListener(namings.events.routeChange, this.#routeChangeEventListener);
+        this.#routeur.removeEventListener(namings.events.routeChange, this.updateLocationMatch);
+        this.dispatchEvent(namings.events.disconnectComponent);
     }
 
     //state listeners
-    #onUnloaded = (e) =>
+    //onLoading
+    fetchContent = (e) =>
     {
-        console.debug("route ", this.#url.pathname, " ", e.type);
-        this.#state = namings.enums.state.unloaded;
-    }
-    #onBeforeLoading = (e) =>
-    {
-        console.debug("route ", this.#url.pathname, " ", e.type);
-        e.stopPropagation();
-        this.dispatchEvent(new CustomEvent(namings.events.loading));
-    }
-    #onLoading = (e) =>
-    {
-        this.#state = namings.enums.state.loading;
         //load data
         const contentAbsolutePath = new URL(namings.files.content, this.#url);
-        
-        //set abort
-        this.#abortController = new AbortController();
 
-        if(this.#localNav && !this.#staticNav) 
-        {
-            this.loadNav();
-        }
+        const abortController = this.#abortController;
 
-        if(!this.#staticRouting) 
-        {
-            this.loadRoutes();
-        }
-
-        const abortListener = this.#abortController.signal;
-
-        const contentPromise = fetch(contentAbsolutePath,
+        const navPromise = (this.#localNav && !this.#staticNav) ?
+            fetch(new URL(namings.files.nav, this.#url),
             {
-                signal: abortListener
+                signal: abortController.signal
             })
             .then((response) =>
             {
-                if(response.ok)
-                {
-                    //toDo status is aborted or http code
-                    this.#status = namings.enums.status.ok;
-                }
-                else
-                {
-                    this.#status = namings.enums.status.ko;
-                }
                 return response.text();
-            }).then((html) =>
-            {
-                const firstRoute = this.querySelector(":scope>alt-route:first-of-type");
-                if(firstRoute)
-                {
-                    firstRoute.insertAdjacentHTML("beforebegin", html);
-                }
-                else
-                {
-                    this.insertAdjacentHTML("beforeend", html);
-                }
-                this.dispatchEvent(new CustomEvent(namings.events.loaded));
             })
-            .catch((error) =>
-            {
-                this.#state = namings.enums.state.unloaded;
-                switch(error.name)
-                {
-                    case "AbortError":
-                        this.#status = namings.enums.status.aborted;
-                        break;
-                    default:
-                        throw error;
-                }
-            })
-            .finally(()=>
-            {
-                this.#abortController = null;
-                console.debug("route ", this.#url.pathname, " ", e.type);
-            });
+            :
+            Promise.resolve();
         
+        const contentPromise = fetch(contentAbsolutePath,
+            {
+                signal: abortController.signal
+            })
+            .then((response) =>
+            {
+                this.#status = response.status;
+                return Promise.all([response.text(),Promise.resolve(response.status)]);
+            })
+            .then(promises =>
+            {
+                const result = 
+                {
+                    html: promises[0],
+                    status: promises[1]
+                }
+                return result;
+            });
+            
+            const routingPromise = (!this.#staticRouting) ?
+                fetch(new URL(namings.files.routing, this.#url),
+                {
+                    signal: abortController.signal
+                })
+                .then((response) =>
+                {
+                    return response.text();
+                })
+                :
+                Promise.resolve();
+                
+            const allPromise = Promise.all([navPromise, contentPromise, routingPromise])
+            .then(promises =>
+            {
+                if(!abortController.signal.aborted)
+                {
+                    this.dispatchEvent(new CustomEvent(namings.events.loaded,
+                        {
+                            detail : 
+                                {
+                                    nav: promises[0],
+                                    content: promises[1].html,
+                                    status: promises[1].status,
+                                    routing: promises[2]
+                                }
+                        }
+                    ));
+                }
+            }
+            )
     }
-    #onLoaded = (e) =>
+    //onLoaded
+    insertContent = (e) =>
     {
-        console.debug("route ", this.#url.pathname, " ", e.type);
-        this.#state = namings.enums.state.loaded;
-        this.updateTarget();
+        this.#removeContent();
+
+        if(this.#localNav && !this.#staticNav)
+        {
+            this.insertNav(e);
+        }
+
+        if(!this.#staticRouting)
+        {
+            this.insertRouting(e);
+        }
+        
+        //content after because it's after in static too
+        const routingFirstElement = this.querySelector(`${config.route.routingSelector}:first-of-type`);
+        
+        if(routingFirstElement)
+        {
+            routingFirstElement.insertAdjacentHTML("beforebegin", e.detail.content);
+        }
+        else
+        {
+            this.insertAdjacentHTML("beforeend", e.detail.content);
+        }
+        this.#status = e.detail.status;
     }
-    #onBeforeUnloading = (e) =>
+
+    insertNav = (e) =>
     {
-        console.debug("route ", this.#url.pathname, " ", e.type);
-        e.stopPropagation();
-        this.dispatchEvent(new CustomEvent(namings.events.unloading));
+        this.insertAdjacentHTML("afterbegin", e.detail.nav);
     }
+
+    insertRouting = (e) =>
+    {
+        this.insertAdjacentHTML("beforeend", e.detail.routing);
+    }
+
+    //onUnloading
     #onUnloading = (e) =>
     {
-        this.#state = namings.enums.state.unloading;
-        //unloadData
-        let elementsToRemove=[];
-        for (const child of this.children)
-        {
-            const keep = 
-                //routes
-                this.#staticRouting && (child.tagName === namings.components.route.toLocaleUpperCase())
-                //nav 
-                || (this.#localNav && this.#staticNav && (child.tagName === "NAV"));
-
-            const remove = !keep;
-            if(remove)
-            {
-                elementsToRemove.push(child);
-            }
-        }
+        //nothing
+        this.dispatchEvent(new CustomEvent(namings.events.unloaded));
+    }
+    //onUnloaded
+    #removeContent = (e) =>
+    {
+        this.#status = "";
+        let elementsToRemove = this.querySelectorAll(`:scope>*:not(:is(${this.excludeRemoveSelector}))`)
         for(let elementToRemove of elementsToRemove)
         {
             elementToRemove.remove();
         }
-        this.dispatchEvent(new CustomEvent(namings.events.unloaded));
-        console.debug("route ", this.#url.pathname, " ", e.type);
     }
 
-    #onBeforeAbort = (e) =>
-    {
-        console.debug("route ", this.#url.pathname, " ", e.type);
-        e.stopPropagation();
-        this.dispatchEvent(new CustomEvent(namings.events.abort));
-    }
     #onAbort = (e) =>
     {
+        e.stopPropagation();
         console.debug("route ", this.#url.pathname, " ", e.type);
         this.#abortController?.abort();
     }
     //methods
-    updateLocationMatch()
+    updateLocationMatch = () =>
     {
         let match = namings.enums.locationMatch.none;
         //toDo try opti
@@ -422,75 +421,11 @@ export default class Route extends HTMLElement
         }
         this.#locationMatch = match;
     }
-    
-    loadNav()
-    {
-        const navAbsolutePath = new URL(namings.files.nav, this.#url);
-        fetch(navAbsolutePath)
-        .then((response) =>
-        {
-            return response.text();
-        })
-        .then((html) =>
-        {
-            this.insertAdjacentHTML("afterbegin", html);
-        });
-    }
-
-    loadRoutes()
-    {
-
-        const routeAbsolutePath = new URL(namings.files.route, this.#url);
-        fetch(routeAbsolutePath)
-        .then((response) =>
-        {
-            return response.text();
-        })
-        .then((html) =>
-        {
-            this.insertAdjacentHTML("beforeend", html);
-        });
-    }
-
-    loadShadow()
-    {
-        if(this.#useShadow)
-        {
-            this.shadowRoot ?? this.attachShadow(config.route.shadowRootInit);
-            const componentAbsoluteTemplatePath = new URL(namings.files.template, this.#url);
-            console.log("path is " + componentAbsoluteTemplatePath)
-            fetch(componentAbsoluteTemplatePath)
-                .then(response =>
-                {
-                    return response.text();
-                })
-                .then((html) =>
-                {
-                    this.shadowRoot.innerHTML = html;
-                }
-            );
-            const componentAbsoluteStylePath = new URL(namings.files.style, this.#url);
-
-            const localSheet = new CSSStyleSheet();
-            this.shadowRoot.adoptedStyleSheets = [routesStyleSheet, localSheet];
-            fetch(componentAbsoluteStylePath)
-                .then(response =>
-                {
-                    return response.text();
-                })
-                .then((css) =>
-                {
-                    localSheet.replace(css);
-                }
-            );
-        }
-    }
 
     updateRoutes()
     {
-        this.dispatchEvent(
-            new CustomEvent(namings.events.routeChange)
-        );
+        this.dispatchEvent(new CustomEvent(namings.events.routeChange));
+        
     }
 
     #routeurConstructionEventListener = (e) => 
@@ -515,47 +450,100 @@ export default class Route extends HTMLElement
         }
     };
 
-    //eventsListeners
     #connectionEventListener = (e) => 
     {
         //set absolute path
         console.log("route connected !");
         //config
-        this.#useShadow = this.dataset.useShadow ?? config.route.useShadow;
         this.#localNav = this.dataset.localNav ?? config.route.localNav;
         this.#staticNav = this.dataset.staticNav ?? config.route.staticNav;
         this.#staticRouting = this.dataset.staticRouting ?? e.detail.staticRouting ?? config.route.staticRouting;
+        this.#locationMatchExact = this.dataset.locationMatchExact ?? config.route.locationMatchExact;
+        this.#locationMatchPart = this.dataset.locationMatchPart ?? config.route.locationMatchPart;
+        this.#locationMatchNone = this.dataset.locationMatchNone ?? config.route.locationMatchNone;
         this.#url = e.detail.url;
         this.#routeur = e.detail.routeur;
-        //init
-        this.loadShadow();
+        this.#lastRoute =location.href.split('#')[0];
         
+        //set selectors to remove on unloading
+        this.excludeRemoveSelector = [];
+        if(this.#localNav && this.#staticNav)
+        {
+            this.excludeRemoveSelector.push(config.route.navSelector)
+        }
+        if(this.#staticRouting)
+        {
+            this.excludeRemoveSelector.push(config.route.routingSelector)
+        }
+
         if(this.#localNav && this.#staticNav) 
         {
-            this.loadNav();
+            this.addEventListener(namings.events.navLoaded,
+                this.insertNav,
+                {
+                    once: true
+                }
+            );
+            fetch(new URL(namings.files.nav, this.#url))
+            .then(response => response.text())
+            .then((html) =>
+            {
+                this.dispatchEvent(
+                    new CustomEvent(namings.events.navLoaded,
+                        {
+                            detail: 
+                            {
+                                nav: html
+                            }
+                        }
+                    )
+                );
+            });
         }
         if(this.#staticRouting) 
         {
-            this.loadRoutes();
+            this.addEventListener(namings.events.routingLoaded,
+                this.insertRouting,
+                {
+                    once: true
+                }
+            );
+            fetch(new URL(namings.files.routing, this.#url))
+            .then(response => response.text())
+            .then((html) =>
+            {
+                this.dispatchEvent(
+                    new CustomEvent(namings.events.routingLoaded,
+                        {
+                            detail: 
+                            {
+                                routing: html
+                            }
+                        }
+                    )
+                );
+            });
         }
         this.#state = namings.enums.state.unloaded;
         //set for first time
         this.updateLocationMatch();
         //listen to route change
         this.#routeur.addEventListener(namings.events.routeChange,
-            this.#routeChangeEventListener);
+            this.updateLocationMatch);
     };
 
-    #routeChangeEventListener = (e) =>
-    {
-        this.updateLocationMatch();
-        this.updateTarget();
-    };
+ 
+
 
     #popstateEventListener = (e)=>
     {
-        console.log("browser navigation");
-        this.updateRoutes();
+        console.debug("browser navigation");
+        const currentRoute = location.href.split('#')[0];
+        if(this.#lastRoute !== currentRoute)
+        {
+            this.#lastRoute = currentRoute;
+            this.updateRoutes();
+        }
     };
 
     //navigation event listener
@@ -666,23 +654,23 @@ export default class Route extends HTMLElement
         
     }
 
-    #messageNavigateEventListenner = (e)=>
+    #messageNavigateEventListenner = (message)=>
     {
-        if(e.data.type == namings.events.navigate
-            && config.targetNavigation.origins.includes(e.origin))
+        if(message.data.type == namings.events.navigate
+            && config.targetNavigation.origins.includes(message.origin))
         {
             
-            e.source.postMessage(
+            message.source.postMessage(
                 namings.events.navigated,
-                e.origin);
+                message.origin);
             this.dispatchEvent(
                 new CustomEvent(namings.events.navigate,
                 {
                     detail:
                     {
-                        url: new URL(e.data.href),
-                        target: e.data.target,
-                        state: e.data.state,
+                        url: new URL(message.data.href),
+                        target: message.data.target,
+                        state: message.data.state,
                         rel: ""
                     }
                 }
@@ -691,26 +679,33 @@ export default class Route extends HTMLElement
         }
         else
         {
-            console.debug("event message is : ", e)
+            console.debug("event message is : ", message)
         }
     }
 
-    updateTarget()
+    #replaceCustomStateCSS(from, to)
     {
-        
-        if(this.#state === namings.enums.state.loaded)
+        //update customStateCSS
+        try
         {
-            const hash = location.hash.substring(1);
-            //recherche uniquement dans la route
-            let newTarget = this.querySelector(`:scope:state(${Symbol.keyFor(namings.enums.locationMatch.exact)}) [id="${hash}"]:not(:state(${Symbol.keyFor(namings.enums.locationMatch.exact)}) ${namings.components.route} [id="${hash}"])`);
-            const oldTarget = this.querySelector(`[data-target]:not(:scope ${namings.components.route} [data-target])`);
-            if(oldTarget && oldTarget !== newTarget)
-            {
-                delete oldTarget.dataset.target;
-            }
-            newTarget && (newTarget.dataset.target = "");
+            this.#internals.states.delete(`${from}`);
+        }
+        catch
+        {
+            //legacy
+            this.#internals.states.delete(`--${from}`);
+        }
+        try
+        {
+            this.#internals.states.add(`${to}`);
+        }
+        catch
+        {
+            //legacy
+            this.#internals.states.add(`--${to}`);
         }
     }
+
 }
 
 

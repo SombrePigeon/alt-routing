@@ -1,3 +1,5 @@
+import namings from "./namings.js";
+
 export default 
 { 
     route:
@@ -7,17 +9,50 @@ export default
         {
             mode: "open"
         },
-        style: undefined,
+        shadowStyle: undefined,
+     
+        locationMatchExact: "fresh",
+        locationMatchPart: "still",
+        locationMatchNone: "hidden",
+
+        staticRouting: false,
+        propagateStaticRouting: undefined,
+        
+        routingSelector: `:scope>${namings.components.route}`,
+
         localNav: false,
         staticNav: false,
-        staticRouting: false,
-        propagateStaticRouting: undefined
+        navSelector: ":scope>nav",
+
+        showAttribute:
+        {
+            locationMatch: false,
+            state: false,
+            status: false
+        }
     },
     routeur:
     {
-
+        features:
+        {
+            shadowRouting: false,
+            styleShadowRouting:false,
+            updateTarget: false
+        }
+        
     },
     anchor:
+    {
+        showAttribute:
+        {
+            locationMatch: false
+        }
+    },
+    slot:
+    {
+
+    },
+    form:
     {
 
     },
