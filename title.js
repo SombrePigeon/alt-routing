@@ -1,5 +1,6 @@
-import namings from "./namings.js"
-console.log("title module");
+import namings from "./namings.js";
+
+console.info("alt-routing module init : title");
 
 export default class Title extends HTMLTitleElement
 {
@@ -7,7 +8,6 @@ export default class Title extends HTMLTitleElement
     //callbacks
     connectedCallback()
     {
-        console.log("title is listening " );
         document.body.addEventListener(namings.events.routeChange, 
             this.routeChangeEventListener,
             {
@@ -41,7 +41,6 @@ export default class Title extends HTMLTitleElement
             .finally(()=>
             {
                 this.#abortController = null;
-                console.log(`title update : ${this.text}`);
             });
         
     };

@@ -20,10 +20,8 @@ export default
             unloaded: "unloaded",
             loaded: "loaded",
             loading: "loading",
-            unloading: "unloading",
-
+            unloading: "unloading"
         }
-
     },
     events:
     {
@@ -44,7 +42,6 @@ export default
         routingLoaded: "alt-route-loaded",
         //abort request
         abort: "alt-abort",
-
     },
     components:
     {

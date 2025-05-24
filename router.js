@@ -1,21 +1,16 @@
-import namings from "./namings.js"
-import Route from "./route.js";
+import namings from "./namings.js";
+import Route from "./route.js";//required
 import {addShadowToConnectingRoutes} from "./features/shadow.js";
 import {addStyleToConnectingRoutes} from "./features/style.js"
-import {addUpdateTarget} from "./features/target.js"
+import {addUpdateTarget} from "./features/target.js";
 import config from "alt-routing/config";
-console.log("router module");;
+
+console.info("alt-routing module init : router");
 
 export default class Router extends HTMLElement
 {
-    constructor()
-    {
-        super();
-    }
-
     connectedCallback()
     {
-        console.log("routeur is connected");
         if(config.routeur.features.shadowRouting)
         {
             addShadowToConnectingRoutes(this);
@@ -28,12 +23,11 @@ export default class Router extends HTMLElement
         {
             addUpdateTarget(this);
         }
-        this.innerHTML = `
-                <${namings.components.route} data-path="/">
-                </${namings.components.route}>
-            `;
-        
-        
+        this.innerHTML = 
+        `
+            <${namings.components.route} data-path="/">
+            </${namings.components.route}>
+        `;
     }
 }
 
