@@ -1,12 +1,13 @@
-import namings from "./namings.js"
-import config from "alt-routing/config"
-console.debug("anchor module");
+import namings from "./namings.js";
+import config from "alt-routing/config";
+
+console.info("alt-routing module init : anchor");
 
 export default class Anchor extends HTMLAnchorElement
 {
     #routeur;
     #_locationMatch;
-    //private getters&setters
+
     get #locationMatch()
     {
         return this.#_locationMatch;
@@ -20,16 +21,13 @@ export default class Anchor extends HTMLAnchorElement
         }
     }
 
-    //public getters
     get locationMatch()
     {
         return this.#_locationMatch;
     }
 
-    //callbacks
     connectedCallback()
     {
-        console.debug("anchor is connecting " );
         this.addEventListener(namings.events.connectComponent, 
             this.#connectionEventListener,
             {
@@ -50,7 +48,6 @@ export default class Anchor extends HTMLAnchorElement
         this.#routeur?.removeEventListener(namings.events.routeChange, this.routeChangeEventListener);
     }
 
-    //methods
     #initNavigationEvent()
     {
         if(!this.getAttribute(this.download))
@@ -59,7 +56,6 @@ export default class Anchor extends HTMLAnchorElement
             (e) => 
             {
                 e.preventDefault();
-                console.log("cancel natural navigation, go to : " + this.href + " or "+ this.getAttribute("href"));
                 this.#routeur.dispatchEvent(
                     new CustomEvent(namings.events.navigate,
                     {
@@ -97,10 +93,9 @@ export default class Anchor extends HTMLAnchorElement
         this.#locationMatch = match;
     }
 
-    //eventsListeners
     #connectionEventListener = (e) => 
     {
-        //rewrite href(absolute) 
+        //rewrite href(absolute)
         let href = this.getAttribute("href");
         if(e.detail.url)
         {
@@ -110,14 +105,11 @@ export default class Anchor extends HTMLAnchorElement
         this.#routeur = e.detail.routeur;
         if(config.anchor.showAttribute.locationMatch)
         {
-            //set for first time
             this.#updateLocationMatch();
-            //listen to route change
             this.#routeur?.addEventListener(namings.events.routeChange,
                 this.#updateLocationMatch);
         }
         this.#initNavigationEvent();
-        console.debug(`anchor "${this.href}" is connected `);
     };
 
 }
