@@ -20,6 +20,22 @@ export default class Slot extends HTMLSlotElement
         this.assignWithQuery();
         this.#host.addEventListener(namings.events.loaded, 
             this.assignWithQuery);
+        if(this.#host.staticNav)
+        {
+            this.#host.addEventListener(namings.events.navLoaded, 
+            this.assignWithQuery,
+            {
+                once: true
+            });
+        }
+        if(this.#host.staticRouting)
+        {
+            this.#host.addEventListener(namings.events.routingLoaded, 
+            this.assignWithQuery,
+            {
+                once: true
+            });
+        }
     }
 
     disconnectedCallback()
