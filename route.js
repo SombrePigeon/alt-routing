@@ -437,8 +437,20 @@ export default class Route extends HTMLElement
     {
         //config
         this.#localNav = this.dataset.localNav ?? config.route.localNav;
+        if(this.#localNav)
+        {
+            this.#replaceCustomStateCSS(undefined, "localNav");
+        }
         this.#staticNav = this.dataset.staticNav ?? config.route.staticNav;
+        if(this.#staticNav)
+        {
+            this.#replaceCustomStateCSS(undefined, "staticNav");
+        }
         this.#staticRouting = this.dataset.staticRouting ?? e.detail.staticRouting ?? config.route.staticRouting;
+        if(this.#staticRouting)
+        {
+            this.#replaceCustomStateCSS(undefined, "staticRouting");
+        }
         this.#locationMatchExact = this.dataset.locationMatchExact ?? config.route.locationMatchExact;
         this.#locationMatchPart = this.dataset.locationMatchPart ?? config.route.locationMatchPart;
         this.#locationMatchNone = this.dataset.locationMatchNone ?? config.route.locationMatchNone;
