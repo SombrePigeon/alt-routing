@@ -8,7 +8,7 @@ export default class Route extends HTMLElement
     #internals;
 
     //config
-    #isRouteur;
+    #isRouter;
     #localNav;
     #staticNav;
     #staticRouting;
@@ -19,7 +19,7 @@ export default class Route extends HTMLElement
     
     //attr
     #path;
-    #routeur;
+    #router;
     #url;
     #abortController;
     #lastRoute
@@ -140,6 +140,11 @@ export default class Route extends HTMLElement
         return this.#url;
     }
 
+    get router()
+    {
+        return this.#router;
+    }
+
     get staticNav()
     {
         return this.#staticNav;
@@ -159,12 +164,12 @@ export default class Route extends HTMLElement
         this.#locationMatch = namings.enums.locationMatch.none;
         
         this.#path = this.dataset.path;
-        this.#isRouteur = this.#path.startsWith('/');
+        this.#isRouter = this.#path.startsWith('/');
         this.#propagateStaticRouting = this.dataset.propagateStaticRouting ?? config.route.propagateStaticRouting;
-        if(this.#isRouteur)
+        if(this.#isRouter)
         {
             this.addEventListener(namings.events.connectComponent,
-                this.#routeurConstructionEventListener,
+                this.#routerConstructionEventListener,
                 {
                     capture: true
                 }
@@ -254,12 +259,12 @@ export default class Route extends HTMLElement
 
     disconnectedCallback()
     {
-        if(this.#isRouteur)
+        if(this.#isRouter)
         {
             window.removeEventListener("popstate", this.#popstateEventListener);
             window.removeEventListener("message", this.#messageNavigateEventListenner);
         }
-        this.#routeur.removeEventListener(namings.events.routeChange, this.updateLocationMatch);
+        this.#router.removeEventListener(namings.events.routeChange, this.updateLocationMatch);
         this.dispatchEvent(namings.events.disconnectComponent);
     }
 
@@ -421,9 +426,9 @@ export default class Route extends HTMLElement
         this.dispatchEvent(new CustomEvent(namings.events.routeChange));
     }
 
-    #routeurConstructionEventListener = (e) => 
+    #routerConstructionEventListener = (e) => 
     {
-        e.detail.routeur = this;
+        e.detail.router = this;
         e.detail.url = new URL(location.origin);
     };
 
@@ -465,7 +470,7 @@ export default class Route extends HTMLElement
         this.#locationMatchPart = this.dataset.locationMatchPart ?? config.route.locationMatchPart;
         this.#locationMatchNone = this.dataset.locationMatchNone ?? config.route.locationMatchNone;
         this.#url = e.detail.url;
-        this.#routeur = e.detail.routeur;
+        this.#router = e.detail.router;
         this.#lastRoute =location.href.split('#')[0];
         
         //set selectors to remove on unloading
@@ -531,7 +536,7 @@ export default class Route extends HTMLElement
         //set for first time
         this.updateLocationMatch();
         //listen to route change
-        this.#routeur.addEventListener(namings.events.routeChange,
+        this.#router.addEventListener(namings.events.routeChange,
             this.updateLocationMatch);
     };
 

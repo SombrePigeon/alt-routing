@@ -31,6 +31,7 @@ const updateTarget = (route) =>
 const connectToRoute = (e) =>
 {
     const route = e.target;
+    const router = route.router;
     if(route.tagName === namings.components.route.toLocaleUpperCase())
     {
         route.addEventListener(namings.events.loaded, 
@@ -39,13 +40,6 @@ const connectToRoute = (e) =>
                 updateTarget(route)
             }
         );
-        route.addEventListener(namings.events.routeChange, 
-            ()=> 
-            {
-                updateTarget(route)
-            }
-        );
-        
         const disconnectController = new AbortController(); 
         route.addEventListener(namings.events.disconnectComponent,
             (e) =>
@@ -53,8 +47,20 @@ const connectToRoute = (e) =>
                 disconnectController.abort();
             }
         );
+        router.addEventListener(namings.events.routeChange, 
+            ()=> 
+            {
+                updateTarget(route)
+            },
+            {
+                signal: disconnectController.signal
+            }
+        );
         window.addEventListener("hashchange", 
-            ()=> {updateTarget(route)},
+            ()=> 
+            {
+                updateTarget(route)
+            },
             {
                 signal: disconnectController.signal
             }
@@ -66,7 +72,15 @@ const connectToRoute = (e) =>
 export function addUpdateTarget(component)
 {
     component.addEventListener(namings.events.connectComponent, 
-        connectToRoute,
+        (e)=>
+        {
+            const route = e.target;
+            route.addEventListener(namings.events.connectComponent, 
+                connectToRoute,
+                {
+                    once: true
+                });
+        },
         {
             capture: true,
         });
