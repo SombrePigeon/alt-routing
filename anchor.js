@@ -5,7 +5,7 @@ console.info("alt-routing module init : anchor");
 
 export default class Anchor extends HTMLAnchorElement
 {
-    #routeur;
+    #router;
     #_locationMatch;
 
     get #locationMatch()
@@ -45,7 +45,7 @@ export default class Anchor extends HTMLAnchorElement
 
     disconnectedCallback()
     {
-        this.#routeur?.removeEventListener(namings.events.routeChange, this.routeChangeEventListener);
+        this.#router?.removeEventListener(namings.events.routeChange, this.routeChangeEventListener);
     }
 
     #initNavigationEvent()
@@ -56,7 +56,7 @@ export default class Anchor extends HTMLAnchorElement
             (e) => 
             {
                 e.preventDefault();
-                this.#routeur.dispatchEvent(
+                this.#router.dispatchEvent(
                     new CustomEvent(namings.events.navigate,
                     {
                         detail:
@@ -102,11 +102,11 @@ export default class Anchor extends HTMLAnchorElement
             this.href = new URL(href, e.detail.url);
         }
         
-        this.#routeur = e.detail.routeur;
+        this.#router = e.detail.router;
         if(config.anchor.showAttribute.locationMatch)
         {
             this.#updateLocationMatch();
-            this.#routeur?.addEventListener(namings.events.routeChange,
+            this.#router?.addEventListener(namings.events.routeChange,
                 this.#updateLocationMatch);
         }
         this.#initNavigationEvent();
