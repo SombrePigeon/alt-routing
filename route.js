@@ -139,6 +139,16 @@ export default class Route extends HTMLElement
     {
         return this.#url;
     }
+
+    get staticNav()
+    {
+        return this.#staticNav;
+    }
+
+    get staticRouting()
+    {
+        return this.#staticRouting;
+    }
     
     //callbacks
     connectedCallback()
