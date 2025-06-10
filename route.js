@@ -11,6 +11,7 @@ export default class Route extends HTMLElement
     #isRouter;
     #localNav;
     #staticNav;
+    #propagateStaticNav;
     #staticRouting;
     #propagateStaticRouting;
     #locationMatchExact
@@ -165,7 +166,17 @@ export default class Route extends HTMLElement
         
         this.#path = this.dataset.path;
         this.#isRouter = this.#path.startsWith('/');
+        //init attributes
         this.#propagateStaticRouting = this.dataset.propagateStaticRouting ?? config.route.propagateStaticRouting;
+        this.#locationMatchExact = this.dataset.locationMatchExact ?? config.route.locationMatchExact;
+        this.#locationMatchPart = this.dataset.locationMatchPart ?? config.route.locationMatchPart;
+        this.#locationMatchNone = this.dataset.locationMatchNone ?? config.route.locationMatchNone;
+        this.#localNav = this.dataset.localNav ?? config.route.localNav;
+        if(this.#localNav)
+        {
+            this.#replaceCustomStateCSS(undefined, "localNav");
+        }
+
         if(this.#isRouter)
         {
             this.addEventListener(namings.events.connectComponent,
@@ -193,8 +204,31 @@ export default class Route extends HTMLElement
                 once: true
             }
         );
+        
+        this.#initStateChangesEvents();
 
-        ///stateChange events
+        this.dispatchEvent(
+            new CustomEvent(namings.events.connectComponent,
+                {
+                    detail: {}//must be initialized
+                }
+            )
+        );
+    }
+
+    disconnectedCallback()
+    {
+        if(this.#isRouter)
+        {
+            window.removeEventListener("popstate", this.#popstateEventListener);
+            window.removeEventListener("message", this.#messageNavigateEventListenner);
+        }
+        this.#router.removeEventListener(namings.events.routeChange, this.updateLocationMatch);
+        this.dispatchEvent(namings.events.disconnectComponent);
+    }
+
+    #initStateChangesEvents = () =>
+    {
         //onLoading
         this.addEventListener(namings.events.loading,
             (e) => 
@@ -247,25 +281,6 @@ export default class Route extends HTMLElement
         this.addEventListener(namings.events.abort,
             this.#onAbort
         );
-
-        this.dispatchEvent(
-            new CustomEvent(namings.events.connectComponent,
-                {
-                    detail: {}//must be initialized
-                }
-            )
-        );
-    }
-
-    disconnectedCallback()
-    {
-        if(this.#isRouter)
-        {
-            window.removeEventListener("popstate", this.#popstateEventListener);
-            window.removeEventListener("message", this.#messageNavigateEventListenner);
-        }
-        this.#router.removeEventListener(namings.events.routeChange, this.updateLocationMatch);
-        this.dispatchEvent(namings.events.disconnectComponent);
     }
 
     //state listeners
@@ -446,17 +461,23 @@ export default class Route extends HTMLElement
                 delete e.detail.staticRouting;
             }
         }
+        if(this.#propagateStaticNav != null)
+        {
+            if(this.#propagateStaticNav)
+            {
+                e.detail.staticNav = this.#staticNav;
+            }
+            else
+            {
+                delete e.detail.staticNav;
+            }
+        }
     };
 
     #connectionEventListener = (e) => 
     {
-        //config
-        this.#localNav = this.dataset.localNav ?? config.route.localNav;
-        if(this.#localNav)
-        {
-            this.#replaceCustomStateCSS(undefined, "localNav");
-        }
-        this.#staticNav = this.dataset.staticNav ?? config.route.staticNav;
+        //init propagatable attributes
+        this.#staticNav = this.dataset.staticNav ?? e.detail.staticNav?? config.route.staticNav;
         if(this.#staticNav)
         {
             this.#replaceCustomStateCSS(undefined, "staticNav");
@@ -466,9 +487,7 @@ export default class Route extends HTMLElement
         {
             this.#replaceCustomStateCSS(undefined, "staticRouting");
         }
-        this.#locationMatchExact = this.dataset.locationMatchExact ?? config.route.locationMatchExact;
-        this.#locationMatchPart = this.dataset.locationMatchPart ?? config.route.locationMatchPart;
-        this.#locationMatchNone = this.dataset.locationMatchNone ?? config.route.locationMatchNone;
+        
         this.#url = e.detail.url;
         this.#router = e.detail.router;
         this.#lastRoute =location.href.split('#')[0];
