@@ -7,10 +7,15 @@ import config from "alt-routing/config";
 
 console.info("alt-routing module init : router");
 
-export default class Router extends HTMLElement
+const ParentClass = document.createElement(config.routeur.extends).constructor;
+
+export default class Router extends ParentClass
 {
+    #path;
     connectedCallback()
     {
+        this.#path = this.dataset.path;
+
         if(config.routeur.features.shadowRouting)
         {
             addShadowToConnectingRoutes(this);
@@ -25,10 +30,10 @@ export default class Router extends HTMLElement
         }
         this.innerHTML = 
         `
-            <${namings.components.route} data-path="/">
+            <${namings.components.route} data-path="${this.#path}">
             </${namings.components.route}>
         `;
     }
 }
 
-customElements.define(namings.components.router, Router, { extends: "main" });
+customElements.define(namings.components.router, Router, { extends: config.routeur.extends });

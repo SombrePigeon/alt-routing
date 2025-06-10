@@ -38,7 +38,8 @@ export default
             shadowRouting: false,
             styleShadowRouting:false,
             updateTarget: false
-        }
+        },
+        extends: "main"
         
     },
     anchor:
