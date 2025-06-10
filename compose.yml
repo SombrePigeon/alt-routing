@@ -1,26 +1,20 @@
 services:
     alt-routing:
-        image: release-repository
+        image: sombrepigeon/releases:js
         profiles: [prod]
         environment:
             SOURCE: "https://github.com/SombrePigeon/alt-routing"
             VIRTUAL_HOST: "alt-routing.releases.sombrepigeon.fr"
             LETSENCRYPT_HOST: "alt-routing.releases.sombrepigeon.fr"
-        depends_on:
-            release-repository:
-                condition: service_completed_successfully
         networks:
             proxy:
                 aliases: [alt-routing.releases.sombrepigeon.fr]
 
     alt-routing.dev:
-        image: release-repository.dev
+        image: sombrepigeon/releases:js-dev
         profiles: [dev]
         volumes:
             - ./:/usr/local/apache2/htdocs/:ro
-        depends_on:
-            release-repository.dev:
-                condition: service_completed_successfully
         networks:
             proxy:
                 aliases: [alt-routing.dev.releases.sombrepigeon.fr]
