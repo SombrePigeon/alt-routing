@@ -14,7 +14,7 @@ export default class Router extends ParentClass
     #path;
     connectedCallback()
     {
-        this.#path = this.dataset.path;
+        this.#path = this.dataset.path ?? '/';
 
         if(config.routeur.features.shadowRouting)
         {
