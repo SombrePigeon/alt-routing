@@ -65,8 +65,8 @@ export default class Route extends HTMLElement
         {
             case namings.enums.locationMatchType.fresh:
                 this.shadowRoot
-                        ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.loading, {detail: { url: new URL(location)}, bubbles: true, composed: true}))
-                        : this.dispatchEvent(new CustomEvent(namings.events.loading, {detail: { url: new URL(location)}}));
+                        ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.loading, {detail: { search: location.search}, bubbles: true, composed: true}))
+                        : this.dispatchEvent(new CustomEvent(namings.events.loading, {detail: { search: location.search}}));
                 break;
             case namings.enums.locationMatchType.still:
                 if(this.#_state === namings.enums.state.unloading
@@ -74,8 +74,8 @@ export default class Route extends HTMLElement
                 )
                 {
                     this.shadowRoot
-                        ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.loading, {detail: { url: new URL(location)}, bubbles: true, composed: true}))
-                        : this.dispatchEvent(new CustomEvent(namings.events.loading, {detail: { url: new URL(location)}}));
+                        ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.loading, {detail: { search: location.search}, bubbles: true, composed: true}))
+                        : this.dispatchEvent(new CustomEvent(namings.events.loading, {detail: { search: location.search}}));
                 }
                 break;
             case namings.enums.locationMatchType.hidden:
@@ -288,8 +288,8 @@ export default class Route extends HTMLElement
     fetchContent = (e) =>
     {
         //load data
-        const contentAbsolutePath = new URL(e.detail.url);
-        contentAbsolutePath.pathname += namings.files.content;
+        const contentAbsolutePath = new URL(namings.files.content, this.#url);
+        contentAbsolutePath.search = e.detail.search;
         
         const abortController = this.#abortController;
 
