@@ -234,6 +234,14 @@ export default class Route extends HTMLElement
             window.removeEventListener("popstate", this.#popstateEventListener);
             window.removeEventListener("message", this.#messageNavigateEventListenner);
         }
+        if(this.popover)
+        {
+            this.#router.removeEventListener(namings.events.navigate,
+                this.#navigatePopoverEventListener,
+            {
+                capture:true
+            });
+        }
         this.#router.removeEventListener(namings.events.routeChange, this.updateLocationMatch);
         this.dispatchEvent(namings.events.disconnectComponent);
     }
@@ -504,6 +512,17 @@ export default class Route extends HTMLElement
         this.#router = e.detail.router;
         this.#lastRoute =location.href.split('#')[0];
         
+        if(this.popover)
+        {
+            this.#router.addEventListener(namings.events.navigate,
+                this.#navigatePopoverEventListener,
+                {
+                    capture: true
+                });
+            this.addEventListener("toggle",
+                this.#closePopoverUnloading);
+        }
+
         //set selectors to remove on unloading
         this.excludeRemoveSelector = [];
         if(this.#localNav && this.#staticNav)
@@ -659,6 +678,18 @@ export default class Route extends HTMLElement
         }
     }
 
+    /*popover captpured inserted a route is popover*/
+    #navigatePopoverEventListener = (e)=>
+    {
+        if(e.detail.url.pathname === this.#url.pathname)
+        {
+            e.stopImmediatePropagation();
+            this.showPopover();
+            this.shadowRoot
+                ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.loading, {detail: { search: e.detail.url.search}, bubbles: true, composed: true}))
+                : this.dispatchEvent(new CustomEvent(namings.events.loading, {detail: { search: e.detail.url.search}}));
+        }
+    }
     /*end capture phase*/
     /*navigate to */
 
@@ -720,6 +751,16 @@ export default class Route extends HTMLElement
                     }
                 )
             );
+        }
+    }
+
+    #closePopoverUnloading = (e)=>
+    {
+        if(e.newState === "closed")
+        {
+            this.shadowRoot
+                ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.unloading,{bubbles: true, composed: true}))
+                : this.dispatchEvent(new CustomEvent(namings.events.unloading));
         }
     }
 
