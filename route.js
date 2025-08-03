@@ -61,28 +61,25 @@ export default class Route extends HTMLElement
                 locationMatchMode = this.#locationMatchNone;
             break;
         }
-        switch(locationMatchMode)
+        if(!this.popover)
         {
-            case namings.enums.locationMatchType.fresh:
-                this.shadowRoot
-                        ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.loading, {detail: { search: location.search}, bubbles: true, composed: true}))
-                        : this.dispatchEvent(new CustomEvent(namings.events.loading, {detail: { search: location.search}}));
-                break;
-            case namings.enums.locationMatchType.still:
-                if(this.#_state === namings.enums.state.unloading
-                    || this.#_state === namings.enums.state.unloaded
-                )
-                {
-                    this.shadowRoot
-                        ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.loading, {detail: { search: location.search}, bubbles: true, composed: true}))
-                        : this.dispatchEvent(new CustomEvent(namings.events.loading, {detail: { search: location.search}}));
-                }
-                break;
-            case namings.enums.locationMatchType.hidden:
-                this.shadowRoot
-                    ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.unloading,{bubbles: true, composed: true}))
-                    : this.dispatchEvent(new CustomEvent(namings.events.unloading));
-                break;
+            switch(locationMatchMode)
+            {
+                case namings.enums.locationMatchType.fresh:
+                    this.#load(location.search);
+                    break;
+                case namings.enums.locationMatchType.still:
+                    if(this.#_state === namings.enums.state.unloading
+                        || this.#_state === namings.enums.state.unloaded
+                    )
+                    {
+                        this.#load(location.search);
+                    }
+                    break;
+                case namings.enums.locationMatchType.hidden:
+                        this.#unload();
+                    break;
+            }
         }
     }
 
@@ -188,9 +185,20 @@ export default class Route extends HTMLElement
             window.addEventListener("popstate",
             this.#popstateEventListener);
             this.addEventListener(namings.events.navigate,
+                this.#navigateRequalifyTargetEventListener,
+                {
+                    capture: true
+                });
+            this.addEventListener(namings.events.navigate,
+                this.#navigateOnOtherTargetEventListener,
+                {
+                    capture: true
+                });
+            this.addEventListener(namings.events.navigate,
                 this.#navigateEventListener);
             window.addEventListener("message", this.#messageNavigateEventListenner);
         }
+        
         this.addEventListener(namings.events.connectComponent,
             this.#constructionEventListener,
             {
@@ -222,6 +230,14 @@ export default class Route extends HTMLElement
         {
             window.removeEventListener("popstate", this.#popstateEventListener);
             window.removeEventListener("message", this.#messageNavigateEventListenner);
+        }
+        if(this.popover)
+        {
+            this.#router.removeEventListener(namings.events.navigate,
+                this.#navigatePopoverEventListener,
+            {
+                capture:true
+            });
         }
         this.#router.removeEventListener(namings.events.routeChange, this.updateLocationMatch);
         this.dispatchEvent(namings.events.disconnectComponent);
@@ -434,6 +450,10 @@ export default class Route extends HTMLElement
                 match = namings.enums.locationMatch.part;
             }
         }
+        if(this.popover)
+        {
+            this.hidePopover();
+        }
         this.#locationMatch = match;
     }
 
@@ -493,6 +513,21 @@ export default class Route extends HTMLElement
         this.#router = e.detail.router;
         this.#lastRoute =location.href.split('#')[0];
         
+        if(this.popover)
+        {
+            this.#router.addEventListener(namings.events.navigate,
+                this.#navigatePopoverEventListener,
+                {
+                    capture: true
+                });
+            this.addEventListener(namings.events.loading,
+                ()=> {this.showPopover()});
+            this.addEventListener(namings.events.unloaded,
+                ()=> {this.hidePopover()});
+            this.addEventListener("toggle",
+                this.#closePopoverUnloading);
+        }
+
         //set selectors to remove on unloading
         this.excludeRemoveSelector = [];
         if(this.#localNav && this.#staticNav)
@@ -574,51 +609,21 @@ export default class Route extends HTMLElement
     };
 
     //navigation event listener
-
-    #navigateEventListener = (e)=>
+    /*toDo start capture  */
+    /*requalify target as self if it is*/
+    #navigateRequalifyTargetEventListener = (e)=>
     {
-        const destinationURL = e.detail.url;
-        const destinationState = e.detail.state;
-        let target = e.detail.target;
-
-        if(target === "" || target === window.name)
+        if(e.detail.target === "" || e.detail.target === window.name)
         {
-            target = "_self";
+            e.detail.target = "_self";
         }
-
-        if(target === "_self")
+    }
+    /*cancel if not local  */
+    #navigateOnOtherTargetEventListener = (e)=>
+    {
+        if(e.detail.target !== "_self")
         {
-            if(location.origin === destinationURL.origin)
-            {
-                if(location.pathname === destinationURL.pathname
-                    && location.search === destinationURL.search
-                    && (destinationURL.hash !== "" || destinationURL.href.endsWith("#"))
-                    && history.state === destinationState)
-                {
-                    if(location.hash !== destinationURL.hash)
-                    {
-                        location.hash = destinationURL.hash;
-                    }
-                }
-                else if(location.href === destinationURL.href)
-                {
-                    //just reload
-                    history.go()
-                }
-                else
-                {
-                    history.pushState(destinationState, null, destinationURL);
-                    this.updateRoutes();
-                }
-            }
-            else
-            {
-                location.href = destinationURL.href;
-            }
-        }
-        else
-        {
-            const targetOrigin = destinationURL.origin;
+            e.stopImmediatePropagation();
             const rel = e.detail.rel;
             if(target === "_blank" || rel !== "")
             {
@@ -676,7 +681,70 @@ export default class Route extends HTMLElement
                 );
             }
         }
-        
+    }
+
+    /*popover captpured inserted a route is */
+    #navigatePopoverEventListener = (e)=>
+    {
+        if(e.detail.url.pathname === this.#url.pathname)
+        {
+            e.stopImmediatePropagation();
+            this.#load(e.detail.url.search);
+        }
+        else
+        {
+            this.#unload();
+        }
+    }
+    /*end capture phase*/
+    /*navigate to */
+
+    #load(search = undefined)
+    {
+        this.shadowRoot
+            ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.loading, {detail: { search: search}, bubbles: true, composed: true}))
+            : this.dispatchEvent(new CustomEvent(namings.events.loading, {detail: { search: search}}));
+    }
+    #unload()
+    {
+        this.shadowRoot
+            ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.unloading,{bubbles: true, composed: true}))
+            : this.dispatchEvent(new CustomEvent(namings.events.unloading));
+    }
+    
+    #navigateEventListener = (e)=>
+    {
+        const destinationURL = e.detail.url;
+        const destinationState = e.detail.state;
+        let target = e.detail.target;
+
+        if(location.origin === destinationURL.origin)
+        {
+            if(location.pathname === destinationURL.pathname
+                && location.search === destinationURL.search
+                && (destinationURL.hash !== "" || destinationURL.href.endsWith("#"))
+                && history.state === destinationState)
+            {
+                if(location.hash !== destinationURL.hash)
+                {
+                    location.hash = destinationURL.hash;
+                }
+            }
+            else if(location.href === destinationURL.href)
+            {
+                //just reload
+                history.go()
+            }
+            else
+            {
+                history.pushState(destinationState, null, destinationURL);
+                this.updateRoutes();
+            }
+        }
+        else
+        {
+            location.href = destinationURL.href;
+        }
     }
 
     #messageNavigateEventListenner = (message)=>
@@ -690,17 +758,25 @@ export default class Route extends HTMLElement
                 message.origin);
             this.dispatchEvent(
                 new CustomEvent(namings.events.navigate,
-                {
-                    detail:
                     {
-                        url: new URL(message.data.href),
-                        target: message.data.target,
-                        state: message.data.state,
-                        rel: ""
+                        detail:
+                        {
+                            url: new URL(message.data.href),
+                            target: message.data.target,
+                            state: message.data.state,
+                            rel: ""
+                        }
                     }
-                }
                 )
             );
+        }
+    }
+
+    #closePopoverUnloading = (e)=>
+    {
+        if(e.newState === "closed")
+        {
+            this.#unload();
         }
     }
 

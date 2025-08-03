@@ -1,6 +1,6 @@
 services:
     alt-routing:
-        image: sombrepigeon/releases:js
+        image: sombrepigeon/releases:2.0-onbluid
         profiles: [prod]
         environment:
             SOURCE: "https://github.com/SombrePigeon/alt-routing"
@@ -11,7 +11,10 @@ services:
                 aliases: [alt-routing.releases.sombrepigeon.fr]
 
     alt-routing.dev:
-        image: sombrepigeon/releases:js-dev
+        build:
+            dockerfile_inline: FROM sombrepigeon/releases:2.0-mounted
+            args:
+                EXT: js
         profiles: [dev]
         volumes:
             - ./:/usr/local/apache2/htdocs/:ro
@@ -25,3 +28,7 @@ services:
                     path: .
                     target: /usr/local/apache2/htdocs/
 
+networks:
+    proxy:
+        name: nginxproxygitdeploy_proxy
+        external: true
