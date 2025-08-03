@@ -61,28 +61,25 @@ export default class Route extends HTMLElement
                 locationMatchMode = this.#locationMatchNone;
             break;
         }
-        switch(locationMatchMode)
+        if(!this.popover)
         {
-            case namings.enums.locationMatchType.fresh:
-                this.shadowRoot
-                        ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.loading, {detail: { search: location.search}, bubbles: true, composed: true}))
-                        : this.dispatchEvent(new CustomEvent(namings.events.loading, {detail: { search: location.search}}));
-                break;
-            case namings.enums.locationMatchType.still:
-                if(this.#_state === namings.enums.state.unloading
-                    || this.#_state === namings.enums.state.unloaded
-                )
-                {
-                    this.shadowRoot
-                        ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.loading, {detail: { search: location.search}, bubbles: true, composed: true}))
-                        : this.dispatchEvent(new CustomEvent(namings.events.loading, {detail: { search: location.search}}));
-                }
-                break;
-            case namings.enums.locationMatchType.hidden:
-                this.shadowRoot
-                    ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.unloading,{bubbles: true, composed: true}))
-                    : this.dispatchEvent(new CustomEvent(namings.events.unloading));
-                break;
+            switch(locationMatchMode)
+            {
+                case namings.enums.locationMatchType.fresh:
+                    this.#load(location.search);
+                    break;
+                case namings.enums.locationMatchType.still:
+                    if(this.#_state === namings.enums.state.unloading
+                        || this.#_state === namings.enums.state.unloaded
+                    )
+                    {
+                        this.#load(location.search);
+                    }
+                    break;
+                case namings.enums.locationMatchType.hidden:
+                        this.#unload();
+                    break;
+            }
         }
     }
 
@@ -453,6 +450,10 @@ export default class Route extends HTMLElement
                 match = namings.enums.locationMatch.part;
             }
         }
+        if(this.popover)
+        {
+            this.hidePopover();
+        }
         this.#locationMatch = match;
     }
 
@@ -519,6 +520,10 @@ export default class Route extends HTMLElement
                 {
                     capture: true
                 });
+            this.addEventListener(namings.events.loading,
+                ()=> {this.showPopover()});
+            this.addEventListener(namings.events.unloaded,
+                ()=> {this.hidePopover()});
             this.addEventListener("toggle",
                 this.#closePopoverUnloading);
         }
@@ -678,21 +683,34 @@ export default class Route extends HTMLElement
         }
     }
 
-    /*popover captpured inserted a route is popover*/
+    /*popover captpured inserted a route is */
     #navigatePopoverEventListener = (e)=>
     {
         if(e.detail.url.pathname === this.#url.pathname)
         {
             e.stopImmediatePropagation();
-            this.showPopover();
-            this.shadowRoot
-                ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.loading, {detail: { search: e.detail.url.search}, bubbles: true, composed: true}))
-                : this.dispatchEvent(new CustomEvent(namings.events.loading, {detail: { search: e.detail.url.search}}));
+            this.#load(e.detail.url.search);
+        }
+        else
+        {
+            this.#unload();
         }
     }
     /*end capture phase*/
     /*navigate to */
 
+    #load(search = undefined)
+    {
+        this.shadowRoot
+            ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.loading, {detail: { search: search}, bubbles: true, composed: true}))
+            : this.dispatchEvent(new CustomEvent(namings.events.loading, {detail: { search: search}}));
+    }
+    #unload()
+    {
+        this.shadowRoot
+            ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.unloading,{bubbles: true, composed: true}))
+            : this.dispatchEvent(new CustomEvent(namings.events.unloading));
+    }
     
     #navigateEventListener = (e)=>
     {
@@ -758,9 +776,7 @@ export default class Route extends HTMLElement
     {
         if(e.newState === "closed")
         {
-            this.shadowRoot
-                ? this.shadowRoot.dispatchEvent(new CustomEvent(namings.events.unloading,{bubbles: true, composed: true}))
-                : this.dispatchEvent(new CustomEvent(namings.events.unloading));
+            this.#unload();
         }
     }
 
