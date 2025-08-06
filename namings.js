@@ -49,7 +49,8 @@ export default
         router: "alt-router",
         anchor: "alt-a",
         title: "alt-title",
-        slot: "alt-slot"
+        slot: "alt-slot",
+        form: "alt-form"
     },
     files:
     {
