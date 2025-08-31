@@ -56,40 +56,50 @@ export default class Form extends HTMLFormElement
             {
                 if(this.reportValidity())
                 {
-                    if(this.method === "get")
+                    const method = e.submitter.formmethod ?? this.method;
+                    if(method !== "dialog")
                     {
+                        e.preventDefault();
+
                         const action = e.submitter.formaction ?? this.action;
                         const target = e.submitter.formtarget ?? this.target;
-                        e.preventDefault();
-                        const url = new URL(action, this.#base);
-                        const formData = new FormData(this);
-                        const search = new URLSearchParams(formData);
-                        url.search = search;
+                        const enctype = e.submitter.formenctype ?? this.enctype;
+                        
+                        const detail = {
+                                            method: method,
+                                            target: target,
+                                            state: null,
+                                            rel: this.rel.split(',')
+                                                .filter(r => r === "noopener" || r === "noreferrer")
+                                                .join(',')
+                                        };
+
+                        detail.url = new URL(action, this.#base);
+
+                        const formData = new FormData(this, e.submitter);
+                        
+                        if(enctype === "application/x-www-form-urlencoded")
+                        {
+                            detail.url.search = new URLSearchParams(formData);
+                            detail.headers["Content-Type"] = "application/x-www-form-urlencoded";//toDo test if usefull
+                        }
+                        else if(enctype === "multipart/form-data")
+                        {
+                            detail.formData = formData;
+                        }
+                        else
+                        {
+                            //throw error
+                        }
+
+
                         this.#router.dispatchEvent(
                             new CustomEvent(namings.events.navigate,
                                 {
-                                    detail:
-                                    {
-                                        url: url,
-                                        target: target,
-                                        state: null,
-                                        rel: this.rel.split(',')
-                                            .filter(r => r === "noopener" || r === "noreferrer")
-                                            .join(',')
-                                    }
+                                    detail: detail
                                 }
                             )
                         );
-                    }
-                    else if(this.method === "post")
-                    {
-                        //native post but use modified action ? hard and not interesting or reliable
-                        //or
-                        //fetch emmit alt-form-post-response, if final redirect is get : navigate, else let something use it(notif, popover,...)
-                    }
-                    else//dialog
-                    {
-                        //let the submit goes
                     }
                 }
             });
