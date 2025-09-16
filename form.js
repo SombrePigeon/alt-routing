@@ -54,10 +54,10 @@ export default class Form extends HTMLFormElement
         this.addEventListener("submit", 
             (e) => 
             {
-                if(this.reportValidity())
+                const method = e.submitter.formmethod ?? this.method;
+                if(method !== "dialog")
                 {
-                    const method = e.submitter.formmethod ?? this.method;
-                    if(method !== "dialog")
+                    if(this.reportValidity())
                     {
                         e.preventDefault();
 
@@ -75,9 +75,9 @@ export default class Form extends HTMLFormElement
                                         };
 
                         detail.url = new URL(action, this.#base);
-
-                        const formData = new FormData(this, e.submitter);
                         
+                        const formData = new FormData(this, e.submitter);
+                    
                         if(enctype === "application/x-www-form-urlencoded")
                         {
                             detail.url.search = new URLSearchParams(formData);
