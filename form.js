@@ -81,7 +81,7 @@ export default class Form extends HTMLFormElement
                         if(enctype === "application/x-www-form-urlencoded")
                         {
                             detail.url.search = new URLSearchParams(formData);
-                            detail.headers["Content-Type"] = "application/x-www-form-urlencoded";//toDo test if usefull
+                            detail.headers = { "Content-Type" : "application/x-www-form-urlencoded"};//toDo test if usefull
                         }
                         else if(enctype === "multipart/form-data")
                         {
