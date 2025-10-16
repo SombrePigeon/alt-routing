@@ -16,7 +16,12 @@ export default class Router extends ParentClass
     connectedCallback()
     {
         this.#path = this.dataset.path ?? '/';
+        if(!this.#path.startsWith('/'))
+        {
+            throw new Error("Router path must be absolute");
+        }
 
+        //init features
         if(config.routeur.features.shadowRouting)
         {
             addShadowToConnectingRoutes(this);
@@ -29,12 +34,8 @@ export default class Router extends ParentClass
         {
             addUpdateTarget(this);
         }
-        this.innerHTML = 
-        `
-            <${namings.components.route} data-path="${this.#path}">
-            </${namings.components.route}>
-        `;
-
+        
+        //navigations event
         window.addEventListener("popstate", this.#popstateEventListener);
         this.addEventListener(namings.events.navigate,
             this.#navigateRequalifyTargetEventListener);
@@ -43,7 +44,23 @@ export default class Router extends ParentClass
         this.addEventListener(namings.events.navigate,
             this.#navigateEventListener);
         window.addEventListener("message", this.#messageNavigateEventListenner);
+        
+        //add router ref to routing components on connection
+        this.addEventListener(namings.events.connectComponent,
+            this.#routeConstructionEventListener,
+            {
+                capture: true
+            }
+        );
 
+
+        //toDo get innerHTML and send it in an event
+        //add base route
+        this.innerHTML = 
+        `
+            <${namings.components.route} data-path="${this.#path}">
+            </${namings.components.route}>
+        `;
     }
 
     disconnectedCallback()
@@ -52,14 +69,19 @@ export default class Router extends ParentClass
         window.removeEventListener("message", this.#messageNavigateEventListenner);
     }
 
+    #routeConstructionEventListener = (e) => 
+    {
+        e.detail.router = this;
+    };
 
     //handle popstate
     #popstateEventListener = (e)=>
     {
         const currentRoute = location.href.split('#')[0];
+        const referer = this.#referer;
         if(this.#referer !== currentRoute)
         {
-            this.#referer = currentRoute;// not set in back navigation ??
+            this.#referer = currentRoute;//toDo check if not set in back navigation ??
         }
         this.dispatchEvent(
             new CustomEvent(namings.events.navigate,
@@ -67,7 +89,7 @@ export default class Router extends ParentClass
                     detail:
                         {
                             url: new URL(location.href),
-                            source: "popstate"
+                            source: "popstate",
                         }
                 }
             )

@@ -45,7 +45,7 @@ export default class Anchor extends HTMLAnchorElement
 
     disconnectedCallback()
     {
-        this.#router?.removeEventListener(namings.events.routeChange, this.routeChangeEventListener);
+        this.#router.removeEventListener(namings.events.navigate, this.routeChangeEventListener);
     }
 
     #initNavigationEvent()
@@ -75,13 +75,13 @@ export default class Anchor extends HTMLAnchorElement
         }
     }
 
-    #updateLocationMatch = () => 
+    #updateLocationMatch = (href) => 
     {
         let match = namings.enums.locationMatch.none;
         //toDo try opti
-        if(location.href.startsWith(this.href))
+        if(href.startsWith(this.href))
         {
-            if(location.href === this.href)
+            if(href === this.href)
             {
                 match = namings.enums.locationMatch.exact;
             }
@@ -105,9 +105,13 @@ export default class Anchor extends HTMLAnchorElement
         this.#router = e.detail.router;
         if(config.anchor.showAttribute.locationMatch)
         {
-            this.#updateLocationMatch();
-            this.#router?.addEventListener(namings.events.routeChange,
-                this.#updateLocationMatch);
+            this.#updateLocationMatch(location.href);
+            this.#router.addEventListener(namings.events.navigate,
+                (e)=>
+                {
+                    this.#updateLocationMatch(e.detail.url.href);
+                }
+            );
         }
         this.#initNavigationEvent();
     };
