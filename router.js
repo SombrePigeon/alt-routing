@@ -38,11 +38,19 @@ export default class Router extends ParentClass
         //navigations event
         window.addEventListener("popstate", this.#popstateEventListener);
         this.addEventListener(namings.events.navigate,
-            this.#navigateRequalifyTargetEventListener);
+            this.#navigateRequalifyTargetEventListener,
+            {
+                capture: true
+            });
         this.addEventListener(namings.events.navigate,
-            this.#navigateOnOtherTargetEventListener);
+            this.#navigateOnOtherTargetEventListener,
+            {
+                capture: true
+            });
         this.addEventListener(namings.events.navigate,
             this.#navigateEventListener);
+        
+        
         window.addEventListener("message", this.#messageNavigateEventListenner);
         
         //add router ref to routing components on connection
@@ -61,6 +69,18 @@ export default class Router extends ParentClass
             <${namings.components.route} data-path="${this.#path}">
             </${namings.components.route}>
         `;
+        //toDo when routing init end, add navigate write
+        const baseRoute = this.children[0];
+        baseRoute.addEventListener(namings.events.routingReady, (e) =>
+        {
+            this.addEventListener(namings.events.navigate, 
+                this.#startViewTransition
+            )
+        },
+        {
+            once: true
+        });
+        
     }
 
     disconnectedCallback()
@@ -205,6 +225,8 @@ export default class Router extends ParentClass
                 location.href = destinationURL.href;
             }
         }
+        e.detail.domChanges = [];
+        e.detail.writeDom = Promise.withResolvers();
     }
 
     #messageNavigateEventListenner = (message)=>
@@ -228,6 +250,23 @@ export default class Router extends ParentClass
                     }
                 )
             );
+        }
+    }
+
+    #startViewTransition = (e) =>
+    {
+        const domChanges = Promise.all(e.detail.domChanges);
+        if(!document.startViewTransition)
+        {
+            e.detail.writeDom.resolve();
+        }
+        else
+        {
+            document.startViewTransition(async ()=>
+            {
+                e.detail.writeDom.resolve();
+                await domChanges;
+            });//toDo add param with type alt-routing
         }
     }
 }
