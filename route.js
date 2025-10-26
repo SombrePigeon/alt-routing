@@ -8,12 +8,11 @@ export default class Route extends HTMLElement
     #internals;
 
     //config
-    #isRouter;
+    #isBaseRoute;
     #localNav;
     #staticNav;
     #propagateStaticNav;
-    #staticRouting;
-    #propagateStaticRouting;
+
     #locationMatchExact
     #locationMatchPart;
     #locationMatchNone;
@@ -147,11 +146,6 @@ export default class Route extends HTMLElement
     {
         return this.#staticNav;
     }
-
-    get staticRouting()
-    {
-        return this.#staticRouting;
-    }
     
     //callbacks
     connectedCallback()
@@ -162,9 +156,8 @@ export default class Route extends HTMLElement
         this.#locationMatch = namings.enums.locationMatch.none;
         
         this.#path = this.dataset.path;
-        this.#isRouter = this.#path.startsWith('/');
+        this.#isBaseRoute = this.#path.startsWith('/');
         //init attributes
-        this.#propagateStaticRouting = this.dataset.propagateStaticRouting ?? config.route.propagateStaticRouting;
         this.#locationMatchExact = this.dataset.locationMatchExact ?? config.route.locationMatchExact;
         this.#locationMatchPart = this.dataset.locationMatchPart ?? config.route.locationMatchPart;
         this.#locationMatchNone = this.dataset.locationMatchNone ?? config.route.locationMatchNone;
@@ -174,7 +167,7 @@ export default class Route extends HTMLElement
             this.#replaceCustomStateCSS(undefined, "localNav");
         }
 
-        if(this.#isRouter)
+        if(this.#isBaseRoute)
         {
             this.addEventListener(namings.events.connectComponent,
                 this.#routerConstructionEventListener,
@@ -182,21 +175,6 @@ export default class Route extends HTMLElement
                     capture: true
                 }
             );
-            window.addEventListener("popstate",
-            this.#popstateEventListener);
-            this.addEventListener(namings.events.navigate,
-                this.#navigateRequalifyTargetEventListener,
-                {
-                    capture: true
-                });
-            this.addEventListener(namings.events.navigate,
-                this.#navigateOnOtherTargetEventListener,
-                {
-                    capture: true
-                });
-            this.addEventListener(namings.events.navigate,
-                this.#navigateEventListener);
-            window.addEventListener("message", this.#messageNavigateEventListenner);
         }
         
         this.addEventListener(namings.events.connectComponent,
@@ -226,11 +204,6 @@ export default class Route extends HTMLElement
 
     disconnectedCallback()
     {
-        if(this.#isRouter)
-        {
-            window.removeEventListener("popstate", this.#popstateEventListener);
-            window.removeEventListener("message", this.#messageNavigateEventListenner);
-        }
         if(this.popover)
         {
             this.#router.removeEventListener(namings.events.navigate,
@@ -340,19 +313,7 @@ export default class Route extends HTMLElement
                 return result;
             });
             
-            const routingPromise = (!this.#staticRouting) ?
-                fetch(new URL(namings.files.routing, this.#url),
-                {
-                    signal: abortController.signal
-                })
-                .then((response) =>
-                {
-                    return response.text();
-                })
-                :
-                Promise.resolve();
-                
-            const allPromise = Promise.all([navPromise, contentPromise, routingPromise])
+            const allPromise = Promise.all([navPromise, contentPromise])
             .then(promises =>
             {
                 if(!abortController.signal.aborted)
@@ -363,8 +324,7 @@ export default class Route extends HTMLElement
                                 {
                                     nav: promises[0],
                                     content: promises[1].html,
-                                    status: promises[1].status,
-                                    routing: promises[2]
+                                    status: promises[1].status
                                 }
                         }
                     ));
@@ -380,11 +340,6 @@ export default class Route extends HTMLElement
         if(this.#localNav && !this.#staticNav)
         {
             this.insertNav(e);
-        }
-
-        if(!this.#staticRouting)
-        {
-            this.insertRouting(e);
         }
         
         //content after because it's after in static routing too
@@ -409,6 +364,25 @@ export default class Route extends HTMLElement
     insertRouting = (e) =>
     {
         this.insertAdjacentHTML("beforeend", e.detail.routing);
+        const routes = this.querySelectorAll(namings.components.route);
+        const routesReady = [];
+        for(const route of routes)
+        {
+            const {promise, resolve} = Promise.withResolvers();
+            routesReady.push(promise);
+            route.addEventListener(namings.events.routingReady,
+                ()=>
+                {
+                    resolve();
+                },
+                {
+                    once: true
+                }
+            );
+        }
+        Promise.all(routesReady)
+        .then(()=> this.dispatchEvent(new CustomEvent(namings.events.routingReady)));
+
     }
 
     //onUnloading
@@ -464,24 +438,12 @@ export default class Route extends HTMLElement
 
     #routerConstructionEventListener = (e) => 
     {
-        e.detail.router = this;
         e.detail.url = new URL(location.origin);
     };
 
     #constructionEventListener = (e) => 
     {
         e.detail.url = new URL(this.#path, e.detail.url);
-        if(this.#propagateStaticRouting != null)
-        {
-            if(this.#propagateStaticRouting)
-            {
-                e.detail.staticRouting = this.#staticRouting;
-            }
-            else
-            {
-                delete e.detail.staticRouting;
-            }
-        }
         if(this.#propagateStaticNav != null)
         {
             if(this.#propagateStaticNav)
@@ -502,11 +464,6 @@ export default class Route extends HTMLElement
         if(this.#staticNav)
         {
             this.#replaceCustomStateCSS(undefined, "staticNav");
-        }
-        this.#staticRouting = this.dataset.staticRouting ?? e.detail.staticRouting ?? config.route.staticRouting;
-        if(this.#staticRouting)
-        {
-            this.#replaceCustomStateCSS(undefined, "staticRouting");
         }
         
         this.#url = e.detail.url;
@@ -534,10 +491,7 @@ export default class Route extends HTMLElement
         {
             this.excludeRemoveSelector.push(config.route.navSelector)
         }
-        if(this.#staticRouting)
-        {
-            this.excludeRemoveSelector.push(config.route.routingSelector)
-        }
+        this.excludeRemoveSelector.push(config.route.routingSelector)
 
         if(this.#localNav && this.#staticNav) 
         {
@@ -563,30 +517,29 @@ export default class Route extends HTMLElement
                 );
             });
         }
-        if(this.#staticRouting) 
-        {
-            this.addEventListener(namings.events.routingLoaded,
-                this.insertRouting,
-                {
-                    once: true
-                }
-            );
-            fetch(new URL(namings.files.routing, this.#url))
-            .then(response => response.text())
-            .then((html) =>
+        //
+        this.addEventListener(namings.events.routingLoaded,
+            this.insertRouting,
             {
-                this.dispatchEvent(
-                    new CustomEvent(namings.events.routingLoaded,
+                once: true
+            }
+        );
+        fetch(new URL(namings.files.routing, this.#url))
+        .then(response => response.text())
+        .then((html) =>
+        {
+            this.dispatchEvent(
+                new CustomEvent(namings.events.routingLoaded,
+                    {
+                        detail: 
                         {
-                            detail: 
-                            {
-                                routing: html
-                            }
+                            routing: html
                         }
-                    )
-                );
-            });
-        }
+                    }
+                )
+            );
+        });
+
         this.#state = namings.enums.state.unloaded;
         //set for first time
         this.updateLocationMatch();
@@ -594,94 +547,6 @@ export default class Route extends HTMLElement
         this.#router.addEventListener(namings.events.routeChange,
             this.updateLocationMatch);
     };
-
- 
-
-
-    #popstateEventListener = (e)=>
-    {
-        const currentRoute = location.href.split('#')[0];
-        if(this.#lastRoute !== currentRoute)
-        {
-            this.#lastRoute = currentRoute;
-            this.updateRoutes();
-        }
-    };
-
-    //navigation event listener
-    /*toDo start capture  */
-    /*requalify target as self if it is*/
-    #navigateRequalifyTargetEventListener = (e)=>
-    {
-        if(e.detail.target === "" || e.detail.target === window.name)
-        {
-            e.detail.target = "_self";
-        }
-    }
-    /*cancel if not local  */
-    #navigateOnOtherTargetEventListener = (e)=>
-    {
-        if(e.detail.target !== "_self")
-        {
-            e.stopImmediatePropagation();
-            const rel = e.detail.rel;
-            if(target === "_blank" || rel !== "")
-            {
-                window.open(destinationURL, target, rel);
-                console.info(`alt-routing open window : '${target}'`);
-            }
-            else
-            {
-                const targetWindow = window.open("", target);
-                const authorizedTargetsOrigins = config.targetNavigation.targets;
-                const message = 
-                {
-                    type: namings.events.navigate,
-                    href: destinationURL.href,
-                    target: target,
-                    state: destinationState
-                }
-                
-                for(const origin of authorizedTargetsOrigins)
-                {
-                    
-                    targetWindow.postMessage(
-                        message,
-                        origin);
-                }
-                const abortTimeout = AbortSignal.timeout(config.targetNavigation.timeout);
-                const abortListener = new AbortController();
-                const abortSignal = AbortSignal.any([abortTimeout,abortListener.signal]);
-                abortSignal.addEventListener("abort", 
-                (abort)=>
-                {
-                    if(abortTimeout.aborted)
-                    {
-                        window.open(destinationURL, target);
-                        console.info(`alt-routing : target window '${target}' has navigated forcefully`);
-                    }
-                    else
-                    {
-                        console.info(`alt-routing : target window '${target}' has navigated gracefully`);
-                    }
-                });
-                window.addEventListener("message",
-                (response)=>
-                {
-                    if(response.data === namings.events.navigated)
-                    {
-                        response.stopImmediatePropagation();
-                        abortListener.abort();
-                    }
-                },
-                {
-                    capture:true,
-                    signal: abortSignal
-                }
-                );
-            }
-        }
-    }
 
     /*popover captpured inserted a route is */
     #navigatePopoverEventListener = (e)=>
@@ -712,65 +577,9 @@ export default class Route extends HTMLElement
             : this.dispatchEvent(new CustomEvent(namings.events.unloading));
     }
     
-    #navigateEventListener = (e)=>
-    {
-        const destinationURL = e.detail.url;
-        const destinationState = e.detail.state;
-        let target = e.detail.target;
+    
 
-        if(location.origin === destinationURL.origin)
-        {
-            if(location.pathname === destinationURL.pathname
-                && location.search === destinationURL.search
-                && (destinationURL.hash !== "" || destinationURL.href.endsWith("#"))
-                && history.state === destinationState)
-            {
-                if(location.hash !== destinationURL.hash)
-                {
-                    location.hash = destinationURL.hash;
-                }
-            }
-            else if(location.href === destinationURL.href)
-            {
-                //just reload
-                history.go()
-            }
-            else
-            {
-                history.pushState(destinationState, null, destinationURL);
-                this.updateRoutes();
-            }
-        }
-        else
-        {
-            location.href = destinationURL.href;
-        }
-    }
-
-    #messageNavigateEventListenner = (message)=>
-    {
-        if(message.data.type == namings.events.navigate
-            && config.targetNavigation.origins.includes(message.origin))
-        {
-            
-            message.source.postMessage(
-                namings.events.navigated,
-                message.origin);
-            this.dispatchEvent(
-                new CustomEvent(namings.events.navigate,
-                    {
-                        detail:
-                        {
-                            url: new URL(message.data.href),
-                            target: message.data.target,
-                            state: message.data.state,
-                            rel: ""
-                        }
-                    }
-                )
-            );
-        }
-    }
+    
 
     #closePopoverUnloading = (e)=>
     {
