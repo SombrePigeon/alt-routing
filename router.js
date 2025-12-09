@@ -75,7 +75,20 @@ export default class Router extends ParentClass
         {
             this.addEventListener(namings.events.navigate, 
                 this.#startViewTransition
+            );
+            this.dispatchEvent(
+            new CustomEvent(namings.events.navigate,
+                {
+                    detail:
+                        {
+                            url: new URL(location.href),
+                            type: "initial",
+                            target: "_self",
+                            rel: ""
+                        }
+                }
             )
+        );
         },
         {
             once: true
@@ -109,7 +122,9 @@ export default class Router extends ParentClass
                     detail:
                         {
                             url: new URL(location.href),
-                            source: "popstate",
+                            type: "popstate",
+                            target: "_self",
+                            rel: ""
                         }
                 }
             )
@@ -128,10 +143,13 @@ export default class Router extends ParentClass
     /*cancel if not local  */
     #navigateOnOtherTargetEventListener = (e)=>
     {
-        if(e.detail.target !== "_self")
+        const target = e.detail.target;
+        if(target !== "_self")
         {
             e.stopImmediatePropagation();
             const rel = e.detail.rel;
+            const destinationURL = e.detail.url;
+            const destinationState = e.detail.state;
             if(target === "_blank" || rel !== "")
             {
                 window.open(destinationURL, target, rel);
@@ -140,6 +158,7 @@ export default class Router extends ParentClass
             else
             {
                 const targetWindow = window.open("", target);
+                debugger
                 const authorizedTargetsOrigins = config.targetNavigation.targets;
                 const message = 
                 {
@@ -192,8 +211,12 @@ export default class Router extends ParentClass
 
     #navigateEventListener = (e)=>
     {
-        const source = e.detail.source; 
-        if(source !== "popstate")//add firstLoad
+        const type = e.detail.type; 
+        const navigate = type === "popstate" || type === "initial";
+
+        let updateRoutes = false;
+        
+        if(!navigate)
         {
             const destinationURL = e.detail.url;
             const destinationState = e.detail.state;
@@ -218,6 +241,7 @@ export default class Router extends ParentClass
                 else
                 {
                     history.pushState(destinationState, null, destinationURL);
+                    updateRoutes = true;
                 }
             }
             else
@@ -225,8 +249,16 @@ export default class Router extends ParentClass
                 location.href = destinationURL.href;
             }
         }
-        e.detail.domChanges = [];
-        e.detail.writeDom = Promise.withResolvers();
+        else
+        {
+            updateRoutes = true;
+        }
+        if(updateRoutes)
+        {
+            e.detail.domChanges = [];
+            e.detail.writeDom = Promise.withResolvers();
+            e.detail.abortController = new AbortController();
+        }
     }
 
     #messageNavigateEventListenner = (message)=>
@@ -262,11 +294,14 @@ export default class Router extends ParentClass
         }
         else
         {
+            const viewTransition =
             document.startViewTransition(async ()=>
             {
                 e.detail.writeDom.resolve();
                 await domChanges;
             });//toDo add param with type alt-routing
+
+            e.detail.viewTransition = viewTransition;
         }
     }
 }
