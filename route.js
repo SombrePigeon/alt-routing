@@ -276,19 +276,17 @@ export default class Route extends HTMLElement
     }
 
 
-    #load = (navigation) =>
+    #load = (routingEvent) =>
     {
         //write on dom when routeur resolve
-        const fetchPromise = this.fetchContent(navigation);
-        const source = navigation.detail.source;
-        const canWrite = Promise.all([fetchPromise, source, navigation.detail.writeDom.promise]);
+        const fetchPromise = this.fetchContent(routingEvent);
+        const source = routingEvent.detail.source;
+        const canWrite = Promise.all([fetchPromise, routingEvent.detail.writeDom.promise]);
         let writen = canWrite.then(this.insertContent);
         if(this.popover)
         {
             writen = writen.then(e => 
                 {
-
-                    const source = navigation.source;
                     this.showPopover({ source: source});
                 }
             );
@@ -305,7 +303,7 @@ export default class Route extends HTMLElement
             {
 
                 once: true,
-                signal: navigation.abortSignal
+                signal: routingEvent.abortSignal //what if no navigation ?
             }
         );
 
@@ -321,22 +319,25 @@ export default class Route extends HTMLElement
             }
         );
         
-        navigation.detail.domChanges.push(loaded.promise);
+        routingEvent.detail.domChanges.push(loaded.promise);
     }
     //state listeners
     //onLoading
-    fetchContent = (e) =>
+    fetchContent = (routingEvent) =>
     {
         //request setup
-        const abortSignal = e.detail.abortSignal;
+        const abortSignal = routingEvent.detail.abortSignal;
+        const navigationEvent = routingEvent.detail.navigation;
+        //toDo check if locations is already modified 
         const requestInit = 
             {   
-                referrer: e.detail.referrer,
+                referrer: routingEvent.detail.referrer,
                 signal: abortSignal
             };
 
+        const url = navigationEvent ? navigationEvent.destination.url : location.href;
         const navURL = new URL(namings.files.nav, this.#url);
-        navURL.search = e.detail.url.search;
+        navURL.search = routingEvent.detail.url.search;
         const navRequest = new Request(navURL.href, requestInit);
         const navPromise = (this.#localNav && !this.#staticNav) ?
             fetch(navRequest)
@@ -347,7 +348,7 @@ export default class Route extends HTMLElement
             ) : Promise.resolve();
 
         const contentURL = new URL(namings.files.content, this.#url);
-        contentURL.search = e.detail.url.search;
+        contentURL.search = routingEvent.detail.url.search;
         const contentRequest = new Request(contentURL, requestInit);
         const contentPromise = 
             fetch(contentRequest)
