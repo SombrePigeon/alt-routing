@@ -220,6 +220,7 @@ export default class Route extends HTMLElement
         const update = this.popover
         || (!this.popover && !e.detail.popover)
         || e.detail.type === "initial";
+
         if(update)
         {
             //attach callback to navigate
@@ -285,54 +286,85 @@ export default class Route extends HTMLElement
         if(this.popover)
         {
             writen = writen.then(e => 
+                {
+
+                    const source = navigation.source;
+                    this.showPopover({ source: source});
+                }
+            );
+        }
+
+        //laoded event setup 
+        const loaded = Promise.withResolvers();
+        
+        this.addEventListener(namings.events.loaded, e =>
+            {
+                e.stopPropagation();
+                loaded.resolve();
+            },
             {
 
-                const source = navigation.source;
-                this.showPopover({ source: source});
+                once: true,
+                signal: navigation.abortSignal
             }
-            )
-        }
-        navigation.detail.domChanges.push(writen);
+        );
+
+        const target = this.shadowRoot ?? this;
+        writen.then(e => 
+            {
+                target.dispatchEvent(new CustomEvent(namings.events.loaded,
+                    {
+                        bubbles: true,
+                        composed: true
+                    }
+                ));
+            }
+        );
+        
+        navigation.detail.domChanges.push(loaded.promise);
     }
     //state listeners
     //onLoading
     fetchContent = (e) =>
     {
-        //load data
-        const contentAbsolutePath = new URL(namings.files.content, this.#url);
-        contentAbsolutePath.search = e.detail.url.search;
-        
-        const abortController = e.detail.abortController;
+        //request setup
+        const abortSignal = e.detail.abortSignal;
+        const requestInit = 
+            {   
+                referrer: e.detail.referrer,
+                signal: abortSignal
+            };
+
+        const navURL = new URL(namings.files.nav, this.#url);
+        navURL.search = e.detail.url.search;
+        const navRequest = new Request(navURL.href, requestInit);
         const navPromise = (this.#localNav && !this.#staticNav) ?
-            fetch(new URL(namings.files.nav, this.#url),
-            {
-                signal: abortController.signal
-            })
+            fetch(navRequest)
             .then((response) =>
-            {
-                return response.text();
-            })
-            :
-            Promise.resolve();
-        
-        const contentPromise = fetch(contentAbsolutePath,
-            {
-                signal: abortController.signal
-            })
-            .then((response) =>
-            {
-                this.#status = response.status;
-                return Promise.all([response.text(),Promise.resolve(response.status)]);
-            })
-            .then(promises =>
-            {
-                const result = 
                 {
-                    html: promises[0],
-                    status: promises[1]
+                    return response.text();
                 }
-                return result;
-            });
+            ) : Promise.resolve();
+
+        const contentURL = new URL(namings.files.content, this.#url);
+        contentURL.search = e.detail.url.search;
+        const contentRequest = new Request(contentURL, requestInit);
+        const contentPromise = 
+            fetch(contentRequest)
+            .then((response) =>
+                {
+                    this.#status = response.status;
+                    return Promise.all([response.text(),Promise.resolve(response.status)]);
+                })
+            .then(promises =>
+                {
+                    const result = 
+                    {
+                        html: promises[0],
+                        status: promises[1]
+                    }
+                    return result;
+                });
             
             const allPromise = Promise.all([navPromise, contentPromise]);
             return allPromise;
