@@ -275,7 +275,84 @@ export default class Route extends HTMLElement
         }
     }
 
+    load(navigationEvent)//optionnal param
+    {
+        const fetchPromise = this.#fetchContent(navigationEvent);
 
+        const canWrite = Promise.all([fetchPromise, navigationEvent.altRouting.writeDom.promise]);
+        let writen = canWrite.then(this.insertContent);
+        if(this.popover)
+        {
+            writen = writen.then(e => 
+                {
+                    this.showPopover({ source: navigationEvent?.sourceElement});
+                }
+            );
+        }
+
+        //laoded event setup 
+        const loaded = Promise.withResolvers();
+        
+        this.addEventListener(namings.events.loaded, e =>
+            {
+                e.stopPropagation();
+                loaded.resolve();
+            },
+            {
+
+                once: true,
+                signal: navigationEvent?.abortSignal 
+            }
+        );
+
+        const target = this.shadowRoot ?? this;
+        writen.then(e => 
+            {
+                target.dispatchEvent(new CustomEvent(namings.events.loaded,
+                    {
+                        bubbles: true,
+                        composed: true
+                    }
+                ));
+            }
+        );
+        
+        navigationEvent.altRouting.domChanges.push(loaded.promise);
+
+
+        const precommitHandler = 
+            async (controller) =>
+            {
+                const response = await fetchPromise;
+                //if exact match
+                const exactRoute = navigationEvent.destination.url.pathname == this.#url.pathname;
+                if(response.redirected)
+                {
+
+                }
+                
+            };
+
+        const handler =
+            async _ =>
+            {
+
+            }
+
+        navigationEvent?.intercept(
+            {
+                precommitHandler,
+                handler
+                
+            }
+        );
+    }
+
+    #fetch(navigationEvent)
+    {
+
+    }
+    
     #load = (routingEvent) =>
     {
         //write on dom when routeur resolve

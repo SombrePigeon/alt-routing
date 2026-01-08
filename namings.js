@@ -42,7 +42,9 @@ export default
         routingLoaded: "alt-route-loaded",
         //abort request
         abort: "alt-abort",
-        routingReady: "alt-routing-ready"
+        routingReady: "alt-routing-ready",
+        startRouting: "alt-start-routing",
+        routingComplete: ""
     },
     components:
     {

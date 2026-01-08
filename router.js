@@ -37,6 +37,13 @@ export default class Router extends ParentClass
         
         //navigations event
         window.addEventListener("popstate", this.#popstateEventListener);
+        
+        this.addEventListener(namings.events.navigate,
+            this.#navigateSetReferrerEventListenner,
+            {
+                capture: true
+            });
+        
         this.addEventListener(namings.events.navigate,
             this.#navigateRequalifyTargetEventListener,
             {
@@ -93,6 +100,9 @@ export default class Router extends ParentClass
         {
             once: true
         });
+
+        navigation?.addEventListener("navigate", this.#navigateApiEventListener);
+        //this.startRouting();
         
     }
 
@@ -100,6 +110,89 @@ export default class Router extends ParentClass
     {
         window.removeEventListener("popstate", this.#popstateEventListener);
         window.removeEventListener("message", this.#messageNavigateEventListenner);
+    }
+
+    #navigateApiEventListener = (navigateEvent) =>
+    {
+        //this.startRouting(navigateEvent);
+        navigateEvent.intercept(
+            {
+                //handler: async (e) => console.log("coucou1"),
+                precommitHandler: async (e) => console.log("prout1")
+            }
+        )
+        navigateEvent.intercept(
+            {
+                //handler: async (e) => console.log("coucou2"),
+                precommitHandler: async (e) => console.log("prout2")
+            }
+        )
+    }
+/*
+    async startRouting(navigateEvent)
+    {
+        console.log("routing on ", navigateEvent?.destination ?? location);
+
+        const domChanges = [];
+        const domLoaded = Promise.all(e.detail.domChanges);
+        const writeDom = Promise.withResolvers();
+        const abortController = new AbortController();
+
+        const routingEvent = new CustomEvent(namings.events.startRouting,
+            {
+                detail:
+                    {
+                        navigateEvent,
+                        domchanges: [],
+
+                    }
+            }
+        );
+
+        const precommitHandler = navigationPrecommitController =>
+            {
+                e.detail.navigationPrecommitController = navigationPrecommitController;
+                this.dispatchEvent(routingEvent);
+            };
+        const handler = _ =>
+            {
+
+            };
+
+
+
+
+        const {promise, resolve} = Promise.withResolvers();
+        /*this.addEventListener(namings.events.routingDone,
+
+        );*/
+/*
+        const updateRoutes = navigateEvent?.canIntercept
+            && !navigateEvent?.hashChange
+            && !navigateEvent?.downlaodRequest
+            ;
+
+        if(updateRoutes)
+        {
+            navigateEvent.detail.domChanges = [];
+            navigateEvent.detail.domLoaded = Promise.all(e.detail.domChanges);
+
+            navigateEvent.detail.writeDom = Promise.withResolvers();
+            navigateEvent.detail.abortController = new AbortController();
+
+            navigateEvent.detail.domLoaded.then(e=>
+                {
+                    this.dispatchEvent(new CustomEvent(namings.events.navigated));
+                }
+            );
+        }
+
+        await promise;
+    }*/
+
+    #startRoutingEventListenner = (routingEvent) =>
+    {
+        Promise.all(routingEvent.detail.domChanges)
     }
 
     #routeConstructionEventListener = (e) => 
@@ -130,6 +223,11 @@ export default class Router extends ParentClass
             )
         );
     };
+
+    #navigateSetReferrerEventListenner = (e) =>
+    {
+        e.detail.referrer = location.href;
+    }
 
     //navigation event listener
     /*requalify target as self if it is*/
@@ -256,8 +354,15 @@ export default class Router extends ParentClass
         if(updateRoutes)
         {
             e.detail.domChanges = [];
+            e.detail.domLoaded = Promise.all(e.detail.domChanges);
             e.detail.writeDom = Promise.withResolvers();
             e.detail.abortController = new AbortController();
+
+            e.detail.domLoaded.then(e=>
+                {
+                    this.dispatchEvent(new CustomEvent(namings.events.navigated));
+                }
+            );
         }
     }
 
@@ -287,7 +392,7 @@ export default class Router extends ParentClass
 
     #startViewTransition = (e) =>
     {
-        const domChanges = Promise.all(e.detail.domChanges);
+        const domLoaded = e.detail.domLoaded;
         if(!document.startViewTransition)
         {
             e.detail.writeDom.resolve();
@@ -298,8 +403,8 @@ export default class Router extends ParentClass
             document.startViewTransition(async ()=>
             {
                 e.detail.writeDom.resolve();
-                await domChanges;
-            });//toDo add param with type alt-routing
+                await domLoaded;
+            });//toDo add param with type alt-routing (param from navigation)
 
             e.detail.viewTransition = viewTransition;
         }
