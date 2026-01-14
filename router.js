@@ -114,16 +114,20 @@ export default class Router extends ParentClass
 
     #navigateApiEventListener = (navigateEvent) =>
     {
+        //aggremente l'event avec alt-routing
+        navigateEvent.altRouting = {};
+        navigateEvent.altRouting.writeDom = Promise.withResolvers();
+        navigateEvent.altRouting.referrer = location.href;
         //this.startRouting(navigateEvent);
         navigateEvent.intercept(
             {
-                //handler: async (e) => console.log("coucou1"),
+                handler: async (e) => console.log("coucou1"),
                 precommitHandler: async (e) => console.log("prout1")
             }
         )
         navigateEvent.intercept(
             {
-                //handler: async (e) => console.log("coucou2"),
+                handler: async (e) => console.log("coucou2"),
                 precommitHandler: async (e) => console.log("prout2")
             }
         )

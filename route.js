@@ -277,9 +277,9 @@ export default class Route extends HTMLElement
 
     load(navigationEvent)//optionnal param
     {
-        const fetchPromise = this.#fetchContent(navigationEvent);
+        const fetchPromise = this.fetch(navigationEvent);
 
-        const canWrite = Promise.all([fetchPromise, navigationEvent.altRouting.writeDom.promise]);
+        const canWrite = Promise.all([fetchPromise, navigationEvent?.altRouting.writeDom.promise]);
         let writen = canWrite.then(this.insertContent);
         if(this.popover)
         {
@@ -317,22 +317,8 @@ export default class Route extends HTMLElement
             }
         );
         
-        navigationEvent.altRouting.domChanges.push(loaded.promise);
-
-
-        const precommitHandler = 
-            async (controller) =>
-            {
-                const response = await fetchPromise;
-                //if exact match
-                const exactRoute = navigationEvent.destination.url.pathname == this.#url.pathname;
-                if(response.redirected)
-                {
-
-                }
-                
-            };
-
+        navigationEvent?.altRouting.domChanges.push(loaded.promise);
+        /*
         const handler =
             async _ =>
             {
@@ -341,16 +327,60 @@ export default class Route extends HTMLElement
 
         navigationEvent?.intercept(
             {
-                precommitHandler,
                 handler
-                
             }
-        );
+        );*/
     }
 
-    #fetch(navigationEvent)
+    fetch(navigationEvent)
     {
+        //request setup
+        const abortSignal = navigationEvent?.signal;
+        const referrer = navigationEvent?.altRouting.referrer ?? document.referrer
+        //toDo check if locations is already modified 
+        const requestInit = 
+            {   
+                //toDo try not using data added to navigateEvent.altRouting
+                referrer,
+                signal: abortSignal
+            };
 
+        const url = navigationEvent?.destination.url ?? new URL(location.href);
+
+        const navURL = new URL(namings.files.nav, this.#url);
+        navURL.search = url.search;
+        const navRequest = new Request(navURL.href, requestInit);
+        const navPromise = (this.#localNav && !this.#staticNav) ?
+            fetch(navRequest)
+            .then((response) =>
+                {
+                    return response.text();
+                }
+            ) : Promise.resolve();
+
+        const contentURL = new URL(namings.files.content, this.#url);
+        contentURL.search = url.search;
+        const contentRequest = new Request(contentURL, requestInit);
+        debugger
+        const contentPromise = 
+            fetch(contentRequest)
+            .then((response) =>
+                {
+                    this.#status = response.status;
+                    return Promise.all([response.text(),Promise.resolve(response.status)]);
+                })
+            .then(promises =>
+                {
+                    const result = 
+                    {
+                        html: promises[0],
+                        status: promises[1]
+                    }
+                    return result;
+                });
+            
+            const allPromise = Promise.all([navPromise, contentPromise]);
+            return allPromise;
     }
     
     #load = (routingEvent) =>
