@@ -7,6 +7,7 @@ export default class Anchor extends HTMLAnchorElement
 {
     #router;
     #_locationMatch;
+    #removeListenersController;
 
     get #locationMatch()
     {
@@ -28,6 +29,7 @@ export default class Anchor extends HTMLAnchorElement
 
     connectedCallback()
     {
+        removeListenersController = new AbortController();
         this.addEventListener(namings.events.connectComponent, 
             this.#connectionEventListener,
             {
@@ -45,34 +47,12 @@ export default class Anchor extends HTMLAnchorElement
 
     disconnectedCallback()
     {
-        this.#router.removeEventListener(namings.events.navigate, this.routeChangeEventListener);
+        this.#removeListenersController.abort();
     }
 
     #initNavigationEvent()
     {
-        if(!this.getAttribute(this.download))
-        {
-            this.addEventListener("click", 
-            (e) => 
-            {
-                e.preventDefault();
-                this.#router.dispatchEvent(
-                    new CustomEvent(namings.events.navigate,
-                    {
-                        detail:
-                        {
-                            url: new URL(this.href),
-                            target: this.target,
-                            state: null,
-                            rel: this.rel.split(',')
-                                .filter(r => r === "noopener" || r === "noreferrer")
-                                .join(',')
-                        }
-                    }
-                    )
-                );
-            });
-        }
+        
     }
 
     #updateLocationMatch = (href) => 
@@ -101,15 +81,18 @@ export default class Anchor extends HTMLAnchorElement
         {
             this.href = new URL(href, e.detail.url);
         }
-        
+        this.#removeListenersController = new AbortController();
         this.#router = e.detail.router;
         if(config.anchor.showAttribute.locationMatch)
         {
             this.#updateLocationMatch(location.href);
-            this.#router.addEventListener(namings.events.navigate,
+            this.#router?.addEventListener("namings.events.navigate",
                 (e)=>
                 {
                     this.#updateLocationMatch(e.detail.url.href);
+                },
+                {
+                    signal: this.#removeListenersController.signal
                 }
             );
         }

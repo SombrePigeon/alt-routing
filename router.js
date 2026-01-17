@@ -83,19 +83,6 @@ export default class Router extends ParentClass
             this.addEventListener(namings.events.navigate, 
                 this.#startViewTransition
             );
-            this.dispatchEvent(
-            new CustomEvent(namings.events.navigate,
-                {
-                    detail:
-                        {
-                            url: new URL(location.href),
-                            type: "initial",
-                            target: "_self",
-                            rel: ""
-                        }
-                }
-            )
-        );
         },
         {
             once: true
@@ -119,7 +106,7 @@ export default class Router extends ParentClass
         navigateEvent.altRouting.writeDom = Promise.withResolvers();
         navigateEvent.altRouting.referrer = location.href;
         //this.startRouting(navigateEvent);
-        navigateEvent.intercept(
+        /*navigateEvent.intercept(
             {
                 handler: async (e) => console.log("coucou1"),
                 precommitHandler: async (e) => console.log("prout1")
@@ -130,7 +117,7 @@ export default class Router extends ParentClass
                 handler: async (e) => console.log("coucou2"),
                 precommitHandler: async (e) => console.log("prout2")
             }
-        )
+        )*/
     }
 /*
     async startRouting(navigateEvent)

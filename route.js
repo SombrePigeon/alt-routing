@@ -13,6 +13,8 @@ export default class Route extends HTMLElement
     #staticNav;
     #propagateStaticNav;
 
+    #initRouting = Promise.withResolvers();
+
     #locationMatchExact
     #locationMatchPart;
     #locationMatchNone;
@@ -27,6 +29,11 @@ export default class Route extends HTMLElement
     #_locationMatch;
     #_state;
     #_status;
+
+    get initRoutingPromise()
+    {
+        return this.#initRouting.promise;
+    }
 
     //private getters&setters
     get #locationMatch()
@@ -210,27 +217,33 @@ export default class Route extends HTMLElement
     {
         if(e.newState === "closed")
         {
-            const prevLink = this.querySelector(`:scope a[rel~="prev"]:not(${config.route.routingSelector} *)`);
-            prevLink?.click();
+            this.prevClick();
         }
     }
 
-    #updateContent = (e) =>
+    prevClick()
     {
-        const update = this.popover
-        || (!this.popover && !e.detail.popover)
-        || e.detail.type === "initial";
+        const prevLink = this.querySelector(`:scope a[rel~="prev"]:not(${config.route.routingSelector} *)`);
+        prevLink?.click();
+    }
+
+    updateContent(navigateEvent)
+    {
+        const popoverNav = navigateEvent?.altRouting.popover;
+        const update = !navigateEvent
+        || (this.popover && popoverNav)
+        || (!this.popover && !popoverNav);
 
         if(update)
         {
             //attach callback to navigate
             console.debug(`${this.#url} will try to update`);
             let match = namings.enums.locationMatch.none;
-            const location = e.detail.url;
+            const url = navigateEvent?.altRouting.url ?? new URL(location.href);
             //toDo try opti
-            if(location.pathname.startsWith(this.#url.pathname))
+            if(url.pathname.startsWith(this.#url.pathname))
             {
-                if(location.pathname === this.#url.pathname)
+                if(url.pathname === this.#url.pathname)
                 {
                     match = namings.enums.locationMatch.exact;
                 }
@@ -240,37 +253,17 @@ export default class Route extends HTMLElement
                 }
             }
 
-            //loading policy
-            let locationMatchMode;
             switch(match)
             {
                 case namings.enums.locationMatch.exact:
-                    locationMatchMode = this.#locationMatchExact;
+                    this.load();
                 break;
                 case namings.enums.locationMatch.part:
-                    locationMatchMode = this.#locationMatchPart;
+                    this.load();
                 break;
                 case namings.enums.locationMatch.none:
-                    locationMatchMode = this.#locationMatchNone;
+                    this.unload();
                 break;
-            }
-            //action to do
-            switch(locationMatchMode)
-            {
-                case namings.enums.locationMatchType.fresh:
-                    this.#load(e);
-                    break;
-                case namings.enums.locationMatchType.still:
-                    if(this.#_state === namings.enums.state.unloading
-                        || this.#_state === namings.enums.state.unloaded
-                    )
-                    {
-                        this.#load(e);
-                    }
-                    break;
-                case namings.enums.locationMatchType.hidden:
-                        this.#unload(e);
-                    break;
             }
         }
     }
@@ -283,7 +276,7 @@ export default class Route extends HTMLElement
         let writen = canWrite.then(this.insertContent);
         if(this.popover)
         {
-            writen = writen.then(e => 
+            writen = writen.then(e =>
                 {
                     this.showPopover({ source: navigationEvent?.sourceElement});
                 }
@@ -299,14 +292,13 @@ export default class Route extends HTMLElement
                 loaded.resolve();
             },
             {
-
                 once: true,
-                signal: navigationEvent?.abortSignal 
+                signal: navigationEvent?.signal 
             }
         );
 
         const target = this.shadowRoot ?? this;
-        writen.then(e => 
+        Promise.all([this.#initRouting.promise, writen]).then(e => 
             {
                 target.dispatchEvent(new CustomEvent(namings.events.loaded,
                     {
@@ -318,18 +310,6 @@ export default class Route extends HTMLElement
         );
         
         navigationEvent?.altRouting.domChanges.push(loaded.promise);
-        /*
-        const handler =
-            async _ =>
-            {
-
-            }
-
-        navigationEvent?.intercept(
-            {
-                handler
-            }
-        );*/
     }
 
     fetch(navigationEvent)
@@ -361,7 +341,6 @@ export default class Route extends HTMLElement
         const contentURL = new URL(namings.files.content, this.#url);
         contentURL.search = url.search;
         const contentRequest = new Request(contentURL, requestInit);
-        debugger
         const contentPromise = 
             fetch(contentRequest)
             .then((response) =>
@@ -377,108 +356,14 @@ export default class Route extends HTMLElement
                         status: promises[1]
                     }
                     return result;
-                });
-            
-            const allPromise = Promise.all([navPromise, contentPromise]);
-            return allPromise;
-    }
-    
-    #load = (routingEvent) =>
-    {
-        //write on dom when routeur resolve
-        const fetchPromise = this.fetchContent(routingEvent);
-        const source = routingEvent.detail.source;
-        const canWrite = Promise.all([fetchPromise, routingEvent.detail.writeDom.promise]);
-        let writen = canWrite.then(this.insertContent);
-        if(this.popover)
-        {
-            writen = writen.then(e => 
-                {
-                    this.showPopover({ source: source});
                 }
             );
-        }
 
-        //laoded event setup 
-        const loaded = Promise.withResolvers();
-        
-        this.addEventListener(namings.events.loaded, e =>
-            {
-                e.stopPropagation();
-                loaded.resolve();
-            },
-            {
-
-                once: true,
-                signal: routingEvent.abortSignal //what if no navigation ?
-            }
-        );
-
-        const target = this.shadowRoot ?? this;
-        writen.then(e => 
-            {
-                target.dispatchEvent(new CustomEvent(namings.events.loaded,
-                    {
-                        bubbles: true,
-                        composed: true
-                    }
-                ));
-            }
-        );
-        
-        routingEvent.detail.domChanges.push(loaded.promise);
+        const allPromise = Promise.all([navPromise, contentPromise]);
+        return allPromise;
     }
+
     //state listeners
-    //onLoading
-    fetchContent = (routingEvent) =>
-    {
-        //request setup
-        const abortSignal = routingEvent.detail.abortSignal;
-        const navigationEvent = routingEvent.detail.navigation;
-        //toDo check if locations is already modified 
-        const requestInit = 
-            {   
-                referrer: routingEvent.detail.referrer,
-                signal: abortSignal
-            };
-
-        const url = navigationEvent ? navigationEvent.destination.url : location.href;
-        const navURL = new URL(namings.files.nav, this.#url);
-        navURL.search = routingEvent.detail.url.search;
-        const navRequest = new Request(navURL.href, requestInit);
-        const navPromise = (this.#localNav && !this.#staticNav) ?
-            fetch(navRequest)
-            .then((response) =>
-                {
-                    return response.text();
-                }
-            ) : Promise.resolve();
-
-        const contentURL = new URL(namings.files.content, this.#url);
-        contentURL.search = routingEvent.detail.url.search;
-        const contentRequest = new Request(contentURL, requestInit);
-        const contentPromise = 
-            fetch(contentRequest)
-            .then((response) =>
-                {
-                    this.#status = response.status;
-                    return Promise.all([response.text(),Promise.resolve(response.status)]);
-                })
-            .then(promises =>
-                {
-                    const result = 
-                    {
-                        html: promises[0],
-                        status: promises[1]
-                    }
-                    return result;
-                });
-            
-            const allPromise = Promise.all([navPromise, contentPromise]);
-            return allPromise;
-            
-    }
-    
     //onLoaded
     insertContent = (promise) =>
     {
@@ -504,6 +389,7 @@ export default class Route extends HTMLElement
         {
             this.insertAdjacentHTML("beforeend", content);
         }
+
         this.#status = status;
     }
 
@@ -519,27 +405,17 @@ export default class Route extends HTMLElement
         const routesReady = [];
         for(const route of routes)
         {
-            const {promise, resolve} = Promise.withResolvers();
-            routesReady.push(promise);
-            route.addEventListener(namings.events.routingReady,
-                ()=>
-                {
-                    resolve();
-                },
-                {
-                    once: true
-                }
-            );
+            routesReady.push(route.#initRouting.promise);
         }
         Promise.all(routesReady)
-        .then(()=> this.dispatchEvent(new CustomEvent(namings.events.routingReady)));
+        .then(()=> this.#initRouting.resolve());
 
     }
 
-    #unload = (navigation) =>
+    unload(navigateEvent)
     {
         //write on dom when routeur resolve
-        const canWrite = navigation.detail.writeDom.promise;
+        const canWrite = navigateEvent?.writeDom.promise ?? Promise.resolve();
         let removed = canWrite.then(this.#removeContent);
         if(this.popover)
         {
@@ -548,15 +424,9 @@ export default class Route extends HTMLElement
                 this.hidePopover();
             })
         }
-        navigation.detail.domChanges.push(removed);
+        navigateEvent?.altRouting.domChanges.push(removed);
     }
     
-    //onUnloading
-    #onUnloading = (e) =>
-    {
-        //noop
-        this.dispatchEvent(new CustomEvent(namings.events.unloaded));
-    }
     //onUnloaded
     #removeContent = (e) =>
     {
@@ -678,7 +548,7 @@ export default class Route extends HTMLElement
         }
 
         this.#router.addEventListener(namings.events.navigate,
-            this.#updateContent);
+            this.updateContent());
 
         //set selectors to remove on unloading
         this.excludeRemoveSelector = [config.route.routingSelector];
