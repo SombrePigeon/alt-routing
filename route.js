@@ -23,8 +23,6 @@ export default class Route extends HTMLElement
     #path;
     #router;
     #url;
-    #abortController;
-    #lastRoute
 
     #_locationMatch;
     #_state;
@@ -233,7 +231,7 @@ export default class Route extends HTMLElement
         const update = !navigateEvent
         || (this.popover && popoverNav)
         || (!this.popover && !popoverNav);
-
+        
         if(update)
         {
             //attach callback to navigate
@@ -256,29 +254,28 @@ export default class Route extends HTMLElement
             switch(match)
             {
                 case namings.enums.locationMatch.exact:
-                    this.load();
+                    this.load(navigateEvent);
                 break;
                 case namings.enums.locationMatch.part:
-                    this.load();
+                    this.load(navigateEvent);
                 break;
                 case namings.enums.locationMatch.none:
-                    this.unload();
+                    this.unload(navigateEvent);
                 break;
             }
         }
     }
 
-    load(navigationEvent)//optionnal param
+    load(navigateEvent)//optionnal param
     {
-        const fetchPromise = this.fetch(navigationEvent);
-
-        const canWrite = Promise.all([fetchPromise, navigationEvent?.altRouting.writeDom.promise]);
+        const fetchPromise = this.fetch(navigateEvent);
+        const canWrite = Promise.all([fetchPromise, navigateEvent?.altRouting.writeDom.promise]);
         let writen = canWrite.then(this.insertContent);
         if(this.popover)
         {
             writen = writen.then(e =>
                 {
-                    this.showPopover({ source: navigationEvent?.sourceElement});
+                    this.showPopover({ source: navigateEvent?.sourceElement});
                 }
             );
         }
@@ -293,7 +290,7 @@ export default class Route extends HTMLElement
             },
             {
                 once: true,
-                signal: navigationEvent?.signal 
+                signal: navigateEvent?.signal 
             }
         );
 
@@ -308,15 +305,15 @@ export default class Route extends HTMLElement
                 ));
             }
         );
-        
-        navigationEvent?.altRouting.domChanges.push(loaded.promise);
+        navigateEvent?.altRouting.fetchs.push(fetchPromise);
+        navigateEvent?.altRouting.domChanges.push(loaded.promise);
     }
 
-    fetch(navigationEvent)
+    fetch(navigateEvent)
     {
         //request setup
-        const abortSignal = navigationEvent?.signal;
-        const referrer = navigationEvent?.altRouting.referrer ?? document.referrer
+        const abortSignal = navigateEvent?.signal;
+        const referrer = navigateEvent?.altRouting.referrer ?? document.referrer
         //toDo check if locations is already modified 
         const requestInit = 
             {   
@@ -325,8 +322,7 @@ export default class Route extends HTMLElement
                 signal: abortSignal
             };
 
-        const url = navigationEvent?.destination.url ?? new URL(location.href);
-
+        const url = new URL(navigateEvent?.destination.url ?? location.href);
         const navURL = new URL(namings.files.nav, this.#url);
         navURL.search = url.search;
         const navRequest = new Request(navURL.href, requestInit);
@@ -367,6 +363,7 @@ export default class Route extends HTMLElement
     //onLoaded
     insertContent = (promise) =>
     {
+
         const nav = promise[0][0];
         const content = promise[0][1].html;
         const status = promise[0][1].status;
@@ -415,7 +412,7 @@ export default class Route extends HTMLElement
     unload(navigateEvent)
     {
         //write on dom when routeur resolve
-        const canWrite = navigateEvent?.writeDom.promise ?? Promise.resolve();
+        const canWrite = navigateEvent?.altRouting.writeDom.promise ?? Promise.resolve();
         let removed = canWrite.then(this.#removeContent);
         if(this.popover)
         {
@@ -436,12 +433,6 @@ export default class Route extends HTMLElement
         {
             elementToRemove.remove();
         }
-    }
-
-    #onAbort = (e) =>
-    {
-        e.stopPropagation();
-        this.#abortController?.abort();
     }
 
     //methods
@@ -489,11 +480,6 @@ export default class Route extends HTMLElement
         }
     }
 
-    updateRoutes()
-    {
-        this.dispatchEvent(new CustomEvent(namings.events.routeChange));
-    }
-
     #routerConstructionEventListener = (e) => 
     {
         e.detail.url = new URL(location.origin);
@@ -526,7 +512,6 @@ export default class Route extends HTMLElement
         
         this.#url = e.detail.url;
         this.#router = e.detail.router;
-        this.#lastRoute =location.href.split('#')[0];
         
         if(this.popover)
         {
@@ -610,8 +595,32 @@ export default class Route extends HTMLElement
         //listen to route change
         this.#router.addEventListener(namings.events.navigate,
             this.updateLocationMatch);
+        //listen navigate event
+        //add router ref to routing components on connection
+        if(navigation)
+        {
+            console.debug("init navigation event");
+            navigation?.addEventListener("navigate", this.#navigateEventListener);
+        }
     };
 
+    #navigateEventListener = (navigateEvent) =>
+    {
+        //
+        if(navigateEvent.altRouting)
+        {
+            const handler = _ =>
+            {
+                this.updateContent(navigateEvent)
+            }
+            navigateEvent.intercept(
+                {
+                    handler
+                }
+            );
+        }
+        
+    }
     
 
     #replaceCustomStateCSS(from, to)

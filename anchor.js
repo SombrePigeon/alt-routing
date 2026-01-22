@@ -29,7 +29,7 @@ export default class Anchor extends HTMLAnchorElement
 
     connectedCallback()
     {
-        removeListenersController = new AbortController();
+        this.#removeListenersController = new AbortController();
         this.addEventListener(namings.events.connectComponent, 
             this.#connectionEventListener,
             {
