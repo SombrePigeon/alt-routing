@@ -65,7 +65,7 @@ export default class Route extends HTMLElement
                 locationMatchMode = this.#locationMatchNone;
             break;
         }
-        if(!this.popover)
+        if(true)
         {
             switch(locationMatchMode)
             {
@@ -210,59 +210,37 @@ export default class Route extends HTMLElement
         this.#router.removeEventListener(namings.events.navigate, this.updateLocationMatch);
         this.dispatchEvent(namings.events.disconnectComponent);
     }
-    
-    #closepopoverListener = (e) =>
-    {
-        if(e.newState === "closed")
-        {
-            this.prevClick();
-        }
-    }
-
-    prevClick()
-    {
-        const prevLink = this.querySelector(`:scope a[rel~="prev"]:not(${config.route.routingSelector} *)`);
-        prevLink?.click();
-    }
 
     updateContent(navigateEvent)
     {
-        const popoverNav = navigateEvent?.altRouting.popover;
-        const update = !navigateEvent
-        || (this.popover && popoverNav)
-        || (!this.popover && !popoverNav);
-        
-        if(update)
+        //attach callback to navigate
+        console.debug(`${this.#url} will try to update`);
+        let match = namings.enums.locationMatch.none;
+        const url = navigateEvent?.altRouting.url ?? new URL(location.href);
+        //toDo try opti
+        if(url.pathname.startsWith(this.#url.pathname))
         {
-            //attach callback to navigate
-            console.debug(`${this.#url} will try to update`);
-            let match = namings.enums.locationMatch.none;
-            const url = navigateEvent?.altRouting.url ?? new URL(location.href);
-            //toDo try opti
-            if(url.pathname.startsWith(this.#url.pathname))
+            if(url.pathname === this.#url.pathname)
             {
-                if(url.pathname === this.#url.pathname)
-                {
-                    match = namings.enums.locationMatch.exact;
-                }
-                else
-                {
-                    match = namings.enums.locationMatch.part;
-                }
+                match = namings.enums.locationMatch.exact;
             }
+            else
+            {
+                match = namings.enums.locationMatch.part;
+            }
+        }
 
-            switch(match)
-            {
-                case namings.enums.locationMatch.exact:
-                    this.load(navigateEvent);
-                break;
-                case namings.enums.locationMatch.part:
-                    this.load(navigateEvent);
-                break;
-                case namings.enums.locationMatch.none:
-                    this.unload(navigateEvent);
-                break;
-            }
+        switch(match)
+        {
+            case namings.enums.locationMatch.exact:
+                this.load(navigateEvent);
+            break;
+            case namings.enums.locationMatch.part:
+                this.load(navigateEvent);
+            break;
+            case namings.enums.locationMatch.none:
+                this.unload(navigateEvent);
+            break;
         }
     }
 
@@ -271,15 +249,7 @@ export default class Route extends HTMLElement
         const fetchPromise = this.fetch(navigateEvent);
         const canWrite = Promise.all([fetchPromise, navigateEvent?.altRouting.writeDom.promise]);
         let writen = canWrite.then(this.insertContent);
-        if(this.popover)
-        {
-            writen = writen.then(e =>
-                {
-                    this.showPopover({ source: navigateEvent?.sourceElement});
-                }
-            );
-        }
-
+  
         //laoded event setup 
         const loaded = Promise.withResolvers();
         
@@ -414,13 +384,7 @@ export default class Route extends HTMLElement
         //write on dom when routeur resolve
         const canWrite = navigateEvent?.altRouting.writeDom.promise ?? Promise.resolve();
         let removed = canWrite.then(this.#removeContent);
-        if(this.popover)
-        {
-            removed = removed.then(e => 
-            {
-                this.hidePopover();
-            })
-        }
+
         navigateEvent?.altRouting.domChanges.push(removed);
     }
     
@@ -436,49 +400,7 @@ export default class Route extends HTMLElement
     }
 
     //methods
-    updateLocationMatch = (e) =>
-    {
-        let match = namings.enums.locationMatch.none;
-        const location = e.detail.url;
-        //toDo try opti
-        if(location.pathname.startsWith(this.#url.pathname))
-        {
-            if(location.pathname === this.#url.pathname)
-            {
-                match = namings.enums.locationMatch.exact;
-            }
-            else
-            {
-                match = namings.enums.locationMatch.part;
-            }
-        }
-        if(this.popover)
-        {
-            //this.hidePopover();
-        }
-        this.#locationMatch = match;
-
-        if(!this.popover && false)
-        {
-            switch(locationMatchMode)
-            {
-                case namings.enums.locationMatchType.fresh:
-                    //this.#load(location.search);
-                    break;
-                case namings.enums.locationMatchType.still:
-                    if(this.#_state === namings.enums.state.unloading
-                        || this.#_state === namings.enums.state.unloaded
-                    )
-                    {
-                        //this.#load(location.search);
-                    }
-                    break;
-                case namings.enums.locationMatchType.hidden:
-                        //this.#unload();
-                    break;
-            }
-        }
-    }
+    
 
     #routerConstructionEventListener = (e) => 
     {
@@ -512,25 +434,6 @@ export default class Route extends HTMLElement
         
         this.#url = e.detail.url;
         this.#router = e.detail.router;
-        
-        if(this.popover)
-        {
-            this.#router.addEventListener(namings.events.navigate,
-                (e)=>
-                {
-                    e.detail.popover ||= e.detail.url.pathname.startsWith(this.url.pathname);
-                },
-                {
-                    capture: true
-                });
-            /*
-            this.addEventListener(namings.events.loading,
-                ()=> {this.showPopover()});
-            this.addEventListener(namings.events.unloaded,
-                ()=> {this.hidePopover()});*/
-            this.addEventListener("beforetoggle",
-                this.#closepopoverListener);
-        }
 
         this.#router.addEventListener(namings.events.navigate,
             this.updateContent());
@@ -593,8 +496,7 @@ export default class Route extends HTMLElement
         this.#state = namings.enums.state.unloaded;
 
         //listen to route change
-        this.#router.addEventListener(namings.events.navigate,
-            this.updateLocationMatch);
+
         //listen navigate event
         //add router ref to routing components on connection
         if(navigation)

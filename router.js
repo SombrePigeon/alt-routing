@@ -39,7 +39,10 @@ export default class Router extends ParentClass
         if(navigation)
         {
             console.debug("init navigation event");
-            navigation.addEventListener("navigate", this.#beforeNavigateEventListener);
+            navigation.addEventListener("navigate", this.#beforeNavigateEventListener,
+            {
+                capture: true
+            });
         }
         
         //add router ref to routing components on connection
@@ -89,9 +92,19 @@ export default class Router extends ParentClass
             navigateEvent.altRouting.domChanges ??= [];
             //toDo replace with 
             navigateEvent.altRouting.referrer ??= navigation.currentEntry.url;
-        
+
+            if(config.routeur.features.viewTransition)
+            {
+                navigateEvent.altRouting.transition ??= document.startViewTransition(_ => {
+                    return navigation.transition.finished;
+                });
+            }
+        }
         
     }
+
+    //toDo add check if a toute match exact (if not : cancel and go to 404.html ? 
+    // abort and add to navigate failure data ?)
 
     #afterNavigateEventListener = (navigateEvent) =>
     {
@@ -115,26 +128,6 @@ export default class Router extends ParentClass
         e.detail.router = this;
     };
 
-
-    #startViewTransition = (e) =>
-    {
-        const domLoaded = e.detail.domLoaded;
-        if(!document.startViewTransition)
-        {
-            e.detail.writeDom.resolve();
-        }
-        else
-        {
-            const viewTransition =
-            document.startViewTransition(async ()=>
-            {
-                e.detail.writeDom.resolve();
-                await domLoaded;
-            });//toDo add param with type alt-routing (param from navigation)
-
-            e.detail.viewTransition = viewTransition;
-        }
-    }
 }
 
 customElements.define(namings.components.router, Router, { extends: config.routeur.extends });

@@ -37,7 +37,8 @@ export default
         {
             shadowRouting: false,
             styleShadowRouting:false,
-            updateTarget: false
+            updateTarget: false,
+            viewTransition: false,
         },
         extends: "main"
         
