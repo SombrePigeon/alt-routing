@@ -43,6 +43,10 @@ export default class Router extends ParentClass
             {
                 capture: true
             });
+            if(config.routeur.features.viewTransition)
+            {
+                navigation.addEventListener("navigate", this.#startViewTransition);
+            }
         }
         
         //add router ref to routing components on connection
@@ -92,15 +96,17 @@ export default class Router extends ParentClass
             navigateEvent.altRouting.domChanges ??= [];
             //toDo replace with 
             navigateEvent.altRouting.referrer ??= navigation.currentEntry.url;
-
-            if(config.routeur.features.viewTransition)
-            {
-                navigateEvent.altRouting.transition ??= document.startViewTransition(_ => {
-                    return navigation.transition.finished;
-                });
-            }
+            console.log(`referer : ${document.referrer}`)
+            console.log(`current entry : ${navigation.currentEntry.url}`)
         }
         
+    }
+
+    #startViewTransition = (navigateEvent) =>
+    {
+        navigateEvent.altRouting.transition ??= document.startViewTransition(_ => {
+                return navigation.transition.finished;
+            });
     }
 
     //toDo add check if a toute match exact (if not : cancel and go to 404.html ? 
