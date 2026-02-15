@@ -104,9 +104,20 @@ export default class Router extends ParentClass
 
     #startViewTransition = (navigateEvent) =>
     {
-        navigateEvent.altRouting.transition ??= document.startViewTransition(_ => {
-                return navigation.transition.finished;
-            });
+        if(navigateEvent?.info?.altRouting?.viewTransitionResolve)
+        {
+            navigateEvent.altRouting.viewTransitionResolve = navigateEvent?.info?.altRouting?.viewTransitionResolve;
+        }
+        else
+        {
+            const {promise, resolve} = Promise.withResolvers();
+            navigateEvent.altRouting.viewTransitionResolve = resolve;
+            document.startViewTransition(_ => {
+                    return promise;
+                });
+                debugger
+        }
+
     }
 
     //toDo add check if a toute match exact (if not : cancel and go to 404.html ? 

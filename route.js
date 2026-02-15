@@ -211,7 +211,7 @@ export default class Route extends HTMLElement
         this.dispatchEvent(namings.events.disconnectComponent);
     }
 
-    updateContent(navigateEvent)
+    async updateContent(navigateEvent)
     {
         //attach callback to navigate
         console.debug(`${this.#url} will try to update`);
@@ -229,27 +229,27 @@ export default class Route extends HTMLElement
                 match = namings.enums.locationMatch.part;
             }
         }
-
+        let retPromise;
         switch(match)
         {
             case namings.enums.locationMatch.exact:
-                this.load(navigateEvent);
+                retPromise = this.load(navigateEvent);
             break;
             case namings.enums.locationMatch.part:
-                this.load(navigateEvent);
+                retPromise = this.load(navigateEvent);
             break;
             case namings.enums.locationMatch.none:
-                this.unload(navigateEvent);
+                retPromise = this.unload(navigateEvent);
             break;
         }
+        await retPromise;
     }
 
-    load(navigateEvent)//optionnal param
+    async load(navigateEvent)//optionnal param
     {
-        const fetchPromise = this.fetch(navigateEvent);
-        const canWrite = Promise.all([fetchPromise, navigateEvent?.altRouting.writeDom.promise]);
-        let writen = canWrite.then(this.insertContent);
-  
+        const responses = await this.fetch(navigateEvent);//or the one in event (beta)
+        this.insertContent(responses);
+
         //laoded event setup 
         const loaded = Promise.withResolvers();
         
@@ -265,24 +265,27 @@ export default class Route extends HTMLElement
         );
 
         const target = this.shadowRoot ?? this;
-        Promise.all([this.#initRouting.promise, writen]).then(e => 
+        
+        await this.#initRouting.promise;
+
+        target.dispatchEvent(new CustomEvent(namings.events.loaded,
             {
-                target.dispatchEvent(new CustomEvent(namings.events.loaded,
-                    {
-                        bubbles: true,
-                        composed: true
-                    }
-                ));
+                bubbles: true,
+                composed: true
             }
-        );
-        navigateEvent?.altRouting.fetchs.push(fetchPromise);
-        navigateEvent?.altRouting.domChanges.push(loaded.promise);
+        ));
+
+        if(navigateEvent?.altRouting.viewTransitionResolve && true)/*nav no redirect && mainroute*/
+        {
+            navigation.transition.finished.then( _=> {navigateEvent.altRouting.viewTransitionResolve();})
+        }
+        await loaded.promise;
     }
 
     fetch(navigateEvent)
     {
         //request setup
-        const abortSignal = navigateEvent?.signal;
+        const abortSignal = navigateEvent?.signal;//toDo add pageclose signal
         const referrer = navigateEvent?.altRouting.referrer ?? document.referrer
         //toDo check if locations is already modified 
         const requestInit = 
@@ -334,9 +337,9 @@ export default class Route extends HTMLElement
     insertContent = (promise) =>
     {
 
-        const nav = promise[0][0];
-        const content = promise[0][1].html;
-        const status = promise[0][1].status;
+        const nav = promise[0];
+        const content = promise[1].html;
+        const status = promise[1].status;
 
         this.#removeContent();
 
@@ -379,17 +382,15 @@ export default class Route extends HTMLElement
 
     }
 
-    unload(navigateEvent)
+    async unload(navigateEvent)
     {
         //write on dom when routeur resolve
-        const canWrite = navigateEvent?.altRouting.writeDom.promise ?? Promise.resolve();
-        let removed = canWrite.then(this.#removeContent);
-
-        navigateEvent?.altRouting.domChanges.push(removed);
+        this.#removeContent;
+        //toDo update event to sync
     }
     
     //onUnloaded
-    #removeContent = (e) =>
+    #removeContent(e)
     {
         this.#status = "";
         let elementsToRemove = this.querySelectorAll(`:scope>*:not(:is(${this.excludeRemoveSelector}))`)
@@ -436,7 +437,7 @@ export default class Route extends HTMLElement
         this.#router = e.detail.router;
 
         this.#router.addEventListener(namings.events.navigate,
-            this.updateContent());
+            this.updateContent());//bad !
 
         //set selectors to remove on unloading
         this.excludeRemoveSelector = [config.route.routingSelector];
@@ -470,7 +471,7 @@ export default class Route extends HTMLElement
                 );
             });
         }
-        //
+        
         this.addEventListener(namings.events.routingLoaded,
             this.insertRouting,
             {
@@ -511,9 +512,9 @@ export default class Route extends HTMLElement
         //
         if(navigateEvent.altRouting)
         {
-            const handler = _ =>
+            const handler = async _ =>
             {
-                this.updateContent(navigateEvent)
+                await this.updateContent(navigateEvent)
             }
             navigateEvent.intercept(
                 {
