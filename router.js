@@ -15,11 +15,19 @@ export default class Router extends ParentClass
 
     connectedCallback()
     {
-        this.#path = this.dataset.path ?? '/';
-        if(!this.#path.startsWith('/'))
+        const origin = location.origin;
+        const path = this.dataset.path ?? '/';
+        if(!path.startsWith('/'))
         {
             throw new Error("Router path must be absolute");
         }
+        const pathURL = new URL(path, origin);
+        if(pathURL.origin != location.origin)
+        {
+            throw new Error("Router path must be same origin");
+        }
+
+        this.#path = pathURL.pathname;
 
         //init features
         if(config.routeur.features.shadowRouting)
