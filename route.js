@@ -216,7 +216,7 @@ export default class Route extends HTMLElement
         //attach callback to navigate
         console.debug(`${this.#url} will try to update`);
         let match = namings.enums.locationMatch.none;
-        const url = navigateEvent?.altRouting.url ?? new URL(location.href);
+        const url = new URL(navigateEvent?.destination.url ?? location.href);
         //toDo try opti
         if(url.pathname.startsWith(this.#url.pathname))
         {
@@ -239,7 +239,7 @@ export default class Route extends HTMLElement
                 retPromise = this.load(navigateEvent);
             break;
             case namings.enums.locationMatch.none:
-                retPromise = this.unload(navigateEvent);
+                retPromise = this.unload();
             break;
         }
         await retPromise;
@@ -274,11 +274,6 @@ export default class Route extends HTMLElement
                 composed: true
             }
         ));
-
-        if(navigateEvent?.altRouting.viewTransitionResolve && true)/*nav no redirect && mainroute*/
-        {
-            navigation.transition.finished.then( _=> {navigateEvent.altRouting.viewTransitionResolve();})
-        }
         await loaded.promise;
     }
 
@@ -314,7 +309,6 @@ export default class Route extends HTMLElement
             fetch(contentRequest)
             .then((response) =>
                 {
-                    this.#status = response.status;
                     return Promise.all([response.text(),Promise.resolve(response.status)]);
                 })
             .then(promises =>
@@ -340,7 +334,7 @@ export default class Route extends HTMLElement
         const nav = promise[0];
         const content = promise[1].html;
         const status = promise[1].status;
-
+        //remove old content 
         this.#removeContent();
 
         if(this.#localNav && !this.#staticNav)
@@ -382,16 +376,15 @@ export default class Route extends HTMLElement
 
     }
 
-    async unload(navigateEvent)
+    async unload()
     {
-        //write on dom when routeur resolve
-        this.#removeContent;
-        //toDo update event to sync
+        this.#removeContent();
     }
     
     //onUnloaded
-    #removeContent(e)
+    #removeContent()
     {
+        console.debug(this, "remove content")
         this.#status = "";
         let elementsToRemove = this.querySelectorAll(`:scope>*:not(:is(${this.excludeRemoveSelector}))`)
         for(let elementToRemove of elementsToRemove)
