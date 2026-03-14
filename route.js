@@ -230,12 +230,14 @@ export default class Route extends HTMLElement
             }
         }
         let retPromise;
+        //toDo conditionnal loaging
         switch(match)
         {
             case namings.enums.locationMatch.exact:
                 retPromise = this.load(navigateEvent);
             break;
             case namings.enums.locationMatch.part:
+                //toDo conditionnal loaging
                 retPromise = this.load(navigateEvent);
             break;
             case namings.enums.locationMatch.none:
@@ -247,8 +249,19 @@ export default class Route extends HTMLElement
 
     async load(navigateEvent)//optionnal param
     {
-        const responses = await this.fetch(navigateEvent);//or the one in event (beta)
-        this.insertContent(responses);
+        /*const contentPromise = this.newFetchContent(navigateEvent);
+        //toDo handle post redirect
+        //const navPromise = this.fetchNav(navigateEvent);
+        const contentResponse = await contentPromise;
+        const insert = true;//not if 304
+        if(insert)
+        {
+            this.#newInsertContent(contentResponse);
+        }*/
+
+
+        const responses = await this.fetchContent(navigateEvent);//or the one in event (beta)
+        this.#insertContent(responses);
 
         //laoded event setup 
         const loaded = Promise.withResolvers();
@@ -277,17 +290,19 @@ export default class Route extends HTMLElement
         await loaded.promise;
     }
 
-    fetch(navigateEvent)
+    async fetchContent(navigateEvent)
     {
         //request setup
         const abortSignal = navigateEvent?.signal;//toDo add pageclose signal
+        //toDo check referrer policy
         const referrer = navigateEvent?.altRouting.referrer ?? document.referrer
         //toDo check if locations is already modified 
         const requestInit = 
             {   
                 //toDo try not using data added to navigateEvent.altRouting
                 referrer,
-                signal: abortSignal
+                signal: abortSignal,
+                redirect: "manual"
             };
 
         const url = new URL(navigateEvent?.destination.url ?? location.href);
@@ -309,31 +324,83 @@ export default class Route extends HTMLElement
             fetch(contentRequest)
             .then((response) =>
                 {
+                    
                     return Promise.all([response.text(),Promise.resolve(response.status)]);
                 })
             .then(promises =>
                 {
                     const result = 
                     {
-                        html: promises[0],
+                        body: promises[0],
                         status: promises[1]
                     }
                     return result;
                 }
             );
 
-        const allPromise = Promise.all([navPromise, contentPromise]);
+        const allPromise = [await navPromise, await contentPromise];
         return allPromise;
+    }
+    //toDo replace fetchContent
+    async newFetchContent(navigateEvent)
+    {
+        //request setup
+        const abortSignal = navigateEvent?.signal;//toDo add pageclose signal ? auto abort de base ?
+        //toDo check referrer policy
+        const referrer = navigateEvent?.altRouting.referrer ?? document.referrer
+        //toDo check if locations is already modified 
+        const requestInit = 
+            {   
+                //toDo try not using data added to navigateEvent.altRouting
+                referrer,
+                signal: abortSignal,
+                redirect: "manual"
+            };
+
+        const url = new URL(navigateEvent?.destination.url ?? location.href);
+        
+        const contentURL = new URL(namings.files.content, this.#url);
+        contentURL.search = url.search;
+        const contentRequest = new Request(contentURL, requestInit);
+        const response = await fetch(contentRequest);
+
+        return response;
+    }
+    
+    async fetchNav(navigateEvent)
+    {
+        //request setup
+        const abortSignal = navigateEvent?.signal;//toDo add pageclose signal ? auto abort de base ?
+        //toDo check referrer policy
+        const referrer = navigateEvent?.altRouting.referrer ?? document.referrer
+        //toDo check if locations is already modified 
+        const requestInit = 
+            {   
+                //toDo try not using data added to navigateEvent.altRouting
+                referrer,
+                signal: abortSignal,
+                redirect: "error"//toDo try and 
+            };
+        
+        const navURL = new URL(namings.files.nav, this.#url);
+        if(!this.#staticNav)
+        {
+            const destination = new URL(navigateEvent?.destination.url ?? location.href);
+            navURL.search = destination.search;
+        }
+        const request = new Request(navURL.href, requestInit);
+        const response = await fetch(request);
+        return response;
     }
 
     //state listeners
     //onLoaded
-    insertContent = (promise) =>
+    #insertContent(response)
     {
 
-        const nav = promise[0];
-        const content = promise[1].html;
-        const status = promise[1].status;
+        const nav = response[0];
+        const content = response[1].body;
+        const status = response[1].status;
         //remove old content 
         this.#removeContent();
 
@@ -355,6 +422,42 @@ export default class Route extends HTMLElement
         }
 
         this.#status = status;
+    }
+    #newInsertContent(response)
+    {
+
+        
+        const content = response.body;
+        const status = response.status;
+        if(status == 304 && false )//toDo move in parent function
+        {
+            //toDo 
+            if(/* not laoded*/ true)
+            {
+                //fetch force cache if not loaded
+            }
+            //else no update
+        }
+        else
+        {
+            this.#removeContent();
+
+            //content after because it's after in static routing too
+            const routingFirstElement = this.querySelector(`${config.route.routingSelector}:first-of-type`);
+            
+            if(routingFirstElement)
+            {
+                routingFirstElement.insertAdjacentHTML("beforebegin", content);
+            }
+            else
+            {
+                this.insertAdjacentHTML("beforeend", content);
+            }
+
+            this.#status = status;
+        }
+        //remove old content 
+        
     }
 
     insertNav = (html) =>

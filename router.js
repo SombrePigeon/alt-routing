@@ -38,6 +38,8 @@ export default class Router extends ParentClass
                 addStyleToConnectingRoutes(this);
             }
         }
+
+        //toDo check if usefull in 2.0
         if(config.routeur.features.updateTarget)
         {
             addUpdateTarget(this);
@@ -46,6 +48,8 @@ export default class Router extends ParentClass
         //navigations event
         if(navigation)
         {
+            //toDo remove capture (not in dom :/)
+            //also choose if use check subroute for handle or use <route external> ?
             console.debug("init navigation event");
             navigation.addEventListener("navigate", this.#beforeNavigateEventListener,
             {
@@ -53,7 +57,7 @@ export default class Router extends ParentClass
             });
             if(config.routeur.features.viewTransition)
             {
-                navigation.addEventListener("navigate", this.#startViewTransition);
+                navigation.addEventListener("navigate", this.#attachViewTransition);
             }
         }
         
@@ -79,7 +83,7 @@ export default class Router extends ParentClass
         baseRoute.initRoutingPromise.then(
             _ =>
             {
-                navigation.addEventListener("navigate", this.#afterNavigateEventListener);
+                //navigation.addEventListener("navigate", this.#afterNavigateEventListener);
             }
         )
 
@@ -98,54 +102,52 @@ export default class Router extends ParentClass
         //aggremente l'event avec alt-routing
         if(new URL(navigateEvent.destination.url).pathname.startsWith(this.#path))
         {
+            //init
             navigateEvent.altRouting ??= {};
-            navigateEvent.altRouting.writeDom ??= Promise.withResolvers();
-            navigateEvent.altRouting.fetchs ??= [];
-            navigateEvent.altRouting.domChanges ??= [];
+            navigateEvent.altRouting.update ??= new URL(navigateEvent?.destination.url).pathname.startsWith(this.#path);
             //toDo replace with 
             navigateEvent.altRouting.referrer ??= navigation.currentEntry.url;
-            console.log(`referer : ${document.referrer}`)
+            console.log(`document referer : ${document.referrer}`)
             console.log(`current entry : ${navigation.currentEntry.url}`)
+            //pas forcement le bon referrer avec la cache policy
         }
         
     }
 
-    #startViewTransition = (navigateEvent) =>
+    #attachViewTransition = (navigateEvent) =>
     {
-        if(navigateEvent?.info?.altRouting?.viewTransitionResolve)
+        //toDo add présnapsot promises
+        if(navigateEvent.altRouting.update)
         {
-            navigateEvent.altRouting.viewTransitionResolve = navigateEvent?.info?.altRouting?.viewTransitionResolve;
-        }
-        else
-        {
-            const {promise, resolve} = Promise.withResolvers();
-            navigateEvent.altRouting.viewTransitionResolve = resolve;
-            document.startViewTransition(_ => {
-                    return promise;
-                });
-                debugger
-        }
-
-    }
-
-    //toDo add check if a toute match exact (if not : cancel and go to 404.html ? 
-    // abort and add to navigate failure data ?)
-
-    #afterNavigateEventListener = (navigateEvent) =>
-    {
-        Promise.all(navigateEvent.altRouting.fetchs)
-        .then(navigateEvent.altRouting.writeDom.resolve());
-
-        const handler = _ =>
-        {
-            return Promise.all(navigateEvent.altRouting.domChanges)
-        }
-        navigateEvent.intercept(
+            const precommitHandler = async () =>
             {
-                handler
+                const snapshot = Promise.withResolvers();
+                console.group("ViewTransition snapshot");
+                
+                const navigationFinished = navigation.transition.finished;
+                const vtWrapper = async  _ => 
+                    {
+                        snapshot.resolve()
+                        await navigationFinished;
+                    }
+                console.debug("start viewTransition");
+                console.debug("ViewTransition snapshot begin");
+                document.startViewTransition(
+                    vtWrapper
+                );
+                console.debug("snapshot current state", snapshot.promise)
+                await snapshot.promise;
+                console.debug("ViewTransition snapshot done");
+                console.groupEnd();//snapshot
+
             }
-        )
-        
+
+            navigateEvent.intercept(
+                {
+                    precommitHandler
+                }
+            )
+        }
     }
 
     #routeConstructionEventListener = (e) => 
