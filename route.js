@@ -1,11 +1,14 @@
 import namings from "./namings.js";
 import config from "alt-routing/config";
-
+import composition from "./composition.json" with { type: "json" };
+console .debug("test", composition)
 console.info("alt-routing module init : route");
 
 export default class Route extends HTMLElement
 {
     #internals;
+    //composition
+    #composition = composition;
 
     //config
     #isBaseRoute;
@@ -52,7 +55,7 @@ export default class Route extends HTMLElement
         this.#_locationMatch = locationMatch;
         
         //loading policy
-        let locationMatchMode;
+        /*let locationMatchMode;
         switch(this.#_locationMatch)
         {
             case namings.enums.locationMatch.exact:
@@ -84,7 +87,7 @@ export default class Route extends HTMLElement
                         //this.#unload();
                     break;
             }
-        }
+        }*/
     }
 
     get #state()
@@ -211,7 +214,7 @@ export default class Route extends HTMLElement
         this.dispatchEvent(namings.events.disconnectComponent);
     }
 
-    async updateContent(navigateEvent)
+    async update(navigateEvent)
     {
         //attach callback to navigate
         console.debug(`${this.#url} will try to update`);
@@ -229,39 +232,51 @@ export default class Route extends HTMLElement
                 match = namings.enums.locationMatch.part;
             }
         }
-        let retPromise;
         //toDo conditionnal loaging
-        switch(match)
+        const fragmentsNames = this.#composition.order;
+        const fragmentsModels = this.#composition.models;
+
+        const fragmentsUpdated = [];
+        for(const name of fragmentsNames)
         {
-            case namings.enums.locationMatch.exact:
-                retPromise = this.load(navigateEvent);
-            break;
-            case namings.enums.locationMatch.part:
-                //toDo conditionnal loaging
-                retPromise = this.load(navigateEvent);
-            break;
-            case namings.enums.locationMatch.none:
-                retPromise = this.unload();
-            break;
+            
+            const model = fragmentsModels[name];
+            const isStatic = model.static;
+            const navigation = navigateEvent != null;
+            const update = !(isStatic && navigation);
+            
+            if(update)
+            {
+                const show = isStatic || model.loading.includes(match);
+                if(show)
+                {
+                    fragmentsUpdated.push(this.load(name,navigateEvent));
+                }
+                else
+                {
+                    fragmentsUpdated.push(this.unload());
+                }
+            }
         }
-        await retPromise;
+        
+        await Promise.all(fragmentsUpdated);
     }
 
-    async load(navigateEvent)//optionnal param
+    async load(fragmentsName, navigateEvent)//optionnal param
     {
-        /*const contentPromise = this.newFetchContent(navigateEvent);
+        if(fragmentsName != "content.html") return //debug
+
+        debugger
+        const contentPromise = this.fetchContent(fragmentsName, navigateEvent);
         //toDo handle post redirect
         //const navPromise = this.fetchNav(navigateEvent);
         const contentResponse = await contentPromise;
         const insert = true;//not if 304
         if(insert)
         {
-            this.#newInsertContent(contentResponse);
-        }*/
-
-
-        const responses = await this.fetchContent(navigateEvent);//or the one in event (beta)
-        this.#insertContent(responses);
+            this.#status = contentResponse.status;
+            this.#insertContent("",await contentResponse.text());
+        }
 
         //laoded event setup 
         const loaded = Promise.withResolvers();
@@ -290,77 +305,31 @@ export default class Route extends HTMLElement
         await loaded.promise;
     }
 
-    async fetchContent(navigateEvent)
-    {
-        //request setup
-        const abortSignal = navigateEvent?.signal;//toDo add pageclose signal
-        //toDo check referrer policy
-        const referrer = navigateEvent?.altRouting.referrer ?? document.referrer
-        //toDo check if locations is already modified 
-        const requestInit = 
-            {   
-                //toDo try not using data added to navigateEvent.altRouting
-                referrer,
-                signal: abortSignal,
-                redirect: "manual"
-            };
-
-        const url = new URL(navigateEvent?.destination.url ?? location.href);
-        const navURL = new URL(namings.files.nav, this.#url);
-        navURL.search = url.search;
-        const navRequest = new Request(navURL.href, requestInit);
-        const navPromise = (this.#localNav && !this.#staticNav) ?
-            fetch(navRequest)
-            .then((response) =>
-                {
-                    return response.text();
-                }
-            ) : Promise.resolve();
-
-        const contentURL = new URL(namings.files.content, this.#url);
-        contentURL.search = url.search;
-        const contentRequest = new Request(contentURL, requestInit);
-        const contentPromise = 
-            fetch(contentRequest)
-            .then((response) =>
-                {
-                    
-                    return Promise.all([response.text(),Promise.resolve(response.status)]);
-                })
-            .then(promises =>
-                {
-                    const result = 
-                    {
-                        body: promises[0],
-                        status: promises[1]
-                    }
-                    return result;
-                }
-            );
-
-        const allPromise = [await navPromise, await contentPromise];
-        return allPromise;
-    }
     //toDo replace fetchContent
-    async newFetchContent(navigateEvent)
+    async fetchContent(fragmentsName, navigateEvent)
     {
         //request setup
         const abortSignal = navigateEvent?.signal;//toDo add pageclose signal ? auto abort de base ?
         //toDo check referrer policy
         const referrer = navigateEvent?.altRouting.referrer ?? document.referrer
         //toDo check if locations is already modified 
+        const model = this.#composition.models[fragmentsName];
         const requestInit = 
             {   
                 //toDo try not using data added to navigateEvent.altRouting
                 referrer,
                 signal: abortSignal,
-                redirect: "manual"
+                redirect: model.canRedirect ? "manual" : "error" //todo check if good idea
             };
 
         const url = new URL(navigateEvent?.destination.url ?? location.href);
         
-        const contentURL = new URL(namings.files.content, this.#url);
-        contentURL.search = url.search;
+        const contentURL = new URL(fragmentsName, this.#url);
+
+        if(model.useSearchParam)
+        {
+            contentURL.search = url.search;
+        }
         const contentRequest = new Request(contentURL, requestInit);
         const response = await fetch(contentRequest);
 
@@ -395,20 +364,12 @@ export default class Route extends HTMLElement
 
     //state listeners
     //onLoaded
-    #insertContent(response)
+    #insertContent(name, fragment)
     {
-
-        const nav = response[0];
-        const content = response[1].body;
-        const status = response[1].status;
-        //remove old content 
+        const content = fragment;
+        
         this.#removeContent();
 
-        if(this.#localNav && !this.#staticNav)
-        {
-            this.insertNav(nav);
-        }
-        
         //content after because it's after in static routing too
         const routingFirstElement = this.querySelector(`${config.route.routingSelector}:first-of-type`);
         
@@ -419,42 +380,6 @@ export default class Route extends HTMLElement
         else
         {
             this.insertAdjacentHTML("beforeend", content);
-        }
-
-        this.#status = status;
-    }
-    #newInsertContent(response)
-    {
-
-        
-        const content = response.body;
-        const status = response.status;
-        if(status == 304 && false )//toDo move in parent function
-        {
-            //toDo 
-            if(/* not laoded*/ true)
-            {
-                //fetch force cache if not loaded
-            }
-            //else no update
-        }
-        else
-        {
-            this.#removeContent();
-
-            //content after because it's after in static routing too
-            const routingFirstElement = this.querySelector(`${config.route.routingSelector}:first-of-type`);
-            
-            if(routingFirstElement)
-            {
-                routingFirstElement.insertAdjacentHTML("beforebegin", content);
-            }
-            else
-            {
-                this.insertAdjacentHTML("beforeend", content);
-            }
-
-            this.#status = status;
         }
         //remove old content 
         
@@ -481,6 +406,7 @@ export default class Route extends HTMLElement
 
     async unload()
     {
+        this.#status = "" ;
         this.#removeContent();
     }
     
@@ -488,7 +414,6 @@ export default class Route extends HTMLElement
     #removeContent()
     {
         console.debug(this, "remove content")
-        this.#status = "";
         let elementsToRemove = this.querySelectorAll(`:scope>*:not(:is(${this.excludeRemoveSelector}))`)
         for(let elementToRemove of elementsToRemove)
         {
@@ -533,7 +458,7 @@ export default class Route extends HTMLElement
         this.#router = e.detail.router;
 
         this.#router.addEventListener(namings.events.navigate,
-            this.updateContent());//bad !
+            this.update());//bad !
 
         //set selectors to remove on unloading
         this.excludeRemoveSelector = [config.route.routingSelector];
@@ -610,7 +535,7 @@ export default class Route extends HTMLElement
         {
             const handler = async _ =>
             {
-                await this.updateContent(navigateEvent)
+                await this.update(navigateEvent)
             }
             navigateEvent.intercept(
                 {

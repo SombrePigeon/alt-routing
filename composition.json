@@ -1,0 +1,25 @@
+{
+    "models":
+    {
+        "content.html":
+        {
+            "static": false,
+            "loading": ["exact","part"],
+            "useSearchParam": true,
+            "canRedirect": true,
+            "selector": "not(alt-route)"
+        },
+        "routing.html":
+        {
+            "static": true,
+            "useSearchParam": false,
+            "selector": "alt-route"
+        }
+    },
+    "order":
+    [
+        "content.html",
+        "routing.html"
+    ],
+    "shadow": false
+}
