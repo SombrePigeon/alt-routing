@@ -266,7 +266,7 @@ export default class Route extends HTMLElement
     {
         if(fragmentsName != "content.html") return //debug
 
-        debugger
+
         const contentPromise = this.fetchContent(fragmentsName, navigateEvent);
         //toDo handle post redirect
         //const navPromise = this.fetchNav(navigateEvent);
@@ -275,7 +275,7 @@ export default class Route extends HTMLElement
         if(insert)
         {
             this.#status = contentResponse.status;
-            this.#insertContent("",await contentResponse.text());
+            this.#insertFragment(fragmentsName, await contentResponse.text());
         }
 
         //laoded event setup 
@@ -364,25 +364,31 @@ export default class Route extends HTMLElement
 
     //state listeners
     //onLoaded
-    #insertContent(name, fragment)
+    #insertFragment(name, fragment)
     {
-        const content = fragment;
-        
-        this.#removeContent();
+        const composition = this.#composition;
+        const models = composition.models;
+        const index = composition.order.indexOf(name);
+        const prevSelectorsList = [];
 
-        //content after because it's after in static routing too
-        const routingFirstElement = this.querySelector(`${config.route.routingSelector}:first-of-type`);
-        
-        if(routingFirstElement)
+        for(const name of composition.order.slice(0, index))
         {
-            routingFirstElement.insertAdjacentHTML("beforebegin", content);
+            prevSelectorsList.push(models[name].selector);
+        }
+
+        const prevElement = this.querySelector(`:scope>:is(${prevSelectorsList}):last-of-type`);
+
+        this.#removeContent(name);
+
+        if(prevElement)
+        {
+            prevElement.insertAdjacentHTML("afterend", fragment);
         }
         else
         {
-            this.insertAdjacentHTML("beforeend", content);
+            this.insertAdjacentHTML("afterbegin",fragment);
         }
-        //remove old content 
-        
+        debugger
     }
 
     insertNav = (html) =>
