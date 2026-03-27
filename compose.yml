@@ -14,7 +14,7 @@ services:
         build:
             dockerfile_inline: FROM sombrepigeon/releases:2.0-mounted
             args:
-                EXT: js
+                EXT: (js|json)
         profiles: [dev]
         environment:
             VIRTUAL_HOST: "alt-routing.dev.releases.sombrepigeon.fr"

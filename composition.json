@@ -7,7 +7,7 @@
             "loading": ["exact","part"],
             "useSearchParam": true,
             "canRedirect": true,
-            "selector": "not(alt-route)"
+            "selector": ":not(alt-route)"
         },
         "routing.html":
         {

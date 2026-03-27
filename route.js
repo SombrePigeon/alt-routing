@@ -254,7 +254,7 @@ export default class Route extends HTMLElement
                 }
                 else
                 {
-                    fragmentsUpdated.push(this.unload());
+                    fragmentsUpdated.push(this.unload(name));
                 }
             }
         }
@@ -378,7 +378,7 @@ export default class Route extends HTMLElement
 
         const prevElement = this.querySelector(`:scope>:is(${prevSelectorsList}):last-of-type`);
 
-        this.#removeContent(name);
+        this.#removeFragment(name);
 
         if(prevElement)
         {
@@ -388,7 +388,6 @@ export default class Route extends HTMLElement
         {
             this.insertAdjacentHTML("afterbegin",fragment);
         }
-        debugger
     }
 
     insertNav = (html) =>
@@ -410,17 +409,18 @@ export default class Route extends HTMLElement
 
     }
 
-    async unload()
+    async unload(fragmentName)
     {
         this.#status = "" ;
-        this.#removeContent();
+        this.#removeFragment(fragmentName);
     }
     
     //onUnloaded
-    #removeContent()
+    #removeFragment(name)
     {
-        console.debug(this, "remove content")
-        let elementsToRemove = this.querySelectorAll(`:scope>*:not(:is(${this.excludeRemoveSelector}))`)
+        console.debug( `remove frament : ${name} from route `, this);
+        const selector = this.#composition.models[name].selector;
+        const elementsToRemove = this.querySelectorAll(`:scope>${selector}`)
         for(let elementToRemove of elementsToRemove)
         {
             elementToRemove.remove();
