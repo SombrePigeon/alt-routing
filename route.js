@@ -264,18 +264,18 @@ export default class Route extends HTMLElement
 
     async load(fragmentsName, navigateEvent)//optionnal param
     {
-        if(fragmentsName != "content.html") return //debug
+        if(fragmentsName == "routing.html") return //debug
 
 
-        const contentPromise = this.fetchContent(fragmentsName, navigateEvent);
+        const fragmentPromise = this.fetchContent(fragmentsName, navigateEvent);
         //toDo handle post redirect
         //const navPromise = this.fetchNav(navigateEvent);
-        const contentResponse = await contentPromise;
+        const fragmentResponse = await fragmentPromise;
         const insert = true;//not if 304
         if(insert)
         {
-            this.#status = contentResponse.status;
-            this.#insertFragment(fragmentsName, await contentResponse.text());
+            this.#status = fragmentResponse.status;
+            this.#insertFragment(fragmentsName, await fragmentResponse.text());
         }
 
         //laoded event setup 

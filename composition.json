@@ -7,17 +7,24 @@
             "loading": ["exact","part"],
             "useSearchParam": true,
             "canRedirect": true,
-            "selector": ":not(alt-route)"
+            "selector": ":not(alt-route, nav)"
         },
         "routing.html":
         {
             "static": true,
             "useSearchParam": false,
             "selector": "alt-route"
+        },
+        "nav.html":
+        {
+            "static": true,
+            "useSearchParam": false,
+            "selector": "nav"
         }
     },
     "order":
     [
+        "nav.html", 
         "content.html",
         "routing.html"
     ],

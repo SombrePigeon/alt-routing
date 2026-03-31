@@ -55,8 +55,9 @@ export default class Anchor extends HTMLAnchorElement
         
     }
 
-    #updateLocationMatch = (href) => 
+    #updateLocationMatch = (navigateEvent) => 
     {
+        const href = navigateEvent?.destination.url ?? location.href;
         let match = namings.enums.locationMatch.none;
         //toDo try opti
         if(href.startsWith(this.href))
@@ -85,11 +86,12 @@ export default class Anchor extends HTMLAnchorElement
         this.#router = e.detail.router;
         if(config.anchor.showAttribute.locationMatch)
         {
-            this.#updateLocationMatch(location.href);
-            this.#router?.addEventListener("namings.events.navigate",
-                (e)=>
+            this.#updateLocationMatch();
+            //toDo integration au view transitions/intercept
+            navigation?.addEventListener("navigate",
+                (navigateEvent)=>
                 {
-                    this.#updateLocationMatch(e.detail.url.href);
+                    this.#updateLocationMatch(navigateEvent);
                 },
                 {
                     signal: this.#removeListenersController.signal
