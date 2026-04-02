@@ -8,13 +8,17 @@ export default class Route extends HTMLElement
 {
     #internals;
     //composition
-    #composition = composition;
+    #composition = Promise.resolve(composition);
 
     //config
     #isBaseRoute;
     #localNav;
     #staticNav;
     #propagateStaticNav;
+
+    //promises
+    #composeReady = Promise.withResolvers();
+    #routingReady = Promise.withResolvers();
 
     #initRouting = Promise.withResolvers();
 
@@ -35,6 +39,14 @@ export default class Route extends HTMLElement
     {
         return this.#initRouting.promise;
     }
+    get composeReady()
+    {
+        return this.#composeReady.promise;
+    }
+    get routingReady()
+    {
+        return this.#routingReady.promise;
+    }
 
     //private getters&setters
     get #locationMatch()
@@ -53,41 +65,6 @@ export default class Route extends HTMLElement
             this.dataset.locationMatch = locationMatch;
         }
         this.#_locationMatch = locationMatch;
-        
-        //loading policy
-        /*let locationMatchMode;
-        switch(this.#_locationMatch)
-        {
-            case namings.enums.locationMatch.exact:
-                locationMatchMode = this.#locationMatchExact;
-            break;
-            case namings.enums.locationMatch.part:
-                locationMatchMode = this.#locationMatchPart;
-            break;
-            case namings.enums.locationMatch.none:
-                locationMatchMode = this.#locationMatchNone;
-            break;
-        }
-        if(true)
-        {
-            switch(locationMatchMode)
-            {
-                case namings.enums.locationMatchType.fresh:
-                    //this.#load(location.search);
-                    break;
-                case namings.enums.locationMatchType.still:
-                    if(this.#_state === namings.enums.state.unloading
-                        || this.#_state === namings.enums.state.unloaded
-                    )
-                    {
-                        //this.#load(location.search);
-                    }
-                    break;
-                case namings.enums.locationMatchType.hidden:
-                        //this.#unload();
-                    break;
-            }
-        }*/
     }
 
     get #state()
@@ -233,8 +210,9 @@ export default class Route extends HTMLElement
             }
         }
         //toDo conditionnal loaging
-        const fragmentsNames = this.#composition.order;
-        const fragmentsModels = this.#composition.models;
+        const composition = await this.composeReady;
+        const fragmentsNames = composition.order;
+        const fragmentsModels = composition.models;
 
         const fragmentsUpdated = [];
         for(const name of fragmentsNames)
@@ -269,13 +247,14 @@ export default class Route extends HTMLElement
 
         const fragmentPromise = this.fetchContent(fragmentsName, navigateEvent);
         //toDo handle post redirect
-        //const navPromise = this.fetchNav(navigateEvent);
         const fragmentResponse = await fragmentPromise;
         const insert = true;//not if 304
         if(insert)
         {
             this.#status = fragmentResponse.status;
-            this.#insertFragment(fragmentsName, await fragmentResponse.text());
+            const fragment = await fragmentResponse.text();
+            await this.composeReady;
+            await this.#insertFragment(fragmentsName, fragment);
         }
 
         //laoded event setup 
@@ -313,7 +292,7 @@ export default class Route extends HTMLElement
         //toDo check referrer policy
         const referrer = navigateEvent?.altRouting.referrer ?? document.referrer
         //toDo check if locations is already modified 
-        const model = this.#composition.models[fragmentsName];
+        const model = composition.models[fragmentsName];
         const requestInit = 
             {   
                 //toDo try not using data added to navigateEvent.altRouting
@@ -335,59 +314,19 @@ export default class Route extends HTMLElement
 
         return response;
     }
-    
-    async fetchNav(navigateEvent)
-    {
-        //request setup
-        const abortSignal = navigateEvent?.signal;//toDo add pageclose signal ? auto abort de base ?
-        //toDo check referrer policy
-        const referrer = navigateEvent?.altRouting.referrer ?? document.referrer
-        //toDo check if locations is already modified 
-        const requestInit = 
-            {   
-                //toDo try not using data added to navigateEvent.altRouting
-                referrer,
-                signal: abortSignal,
-                redirect: "error"//toDo try and 
-            };
-        
-        const navURL = new URL(namings.files.nav, this.#url);
-        if(!this.#staticNav)
-        {
-            const destination = new URL(navigateEvent?.destination.url ?? location.href);
-            navURL.search = destination.search;
-        }
-        const request = new Request(navURL.href, requestInit);
-        const response = await fetch(request);
-        return response;
-    }
+
 
     //state listeners
     //onLoaded
-    #insertFragment(name, fragment)
+    async #insertFragment(name, html)
     {
-        const composition = this.#composition;
-        const models = composition.models;
-        const index = composition.order.indexOf(name);
-        const prevSelectorsList = [];
+        const composition = await this.composeReady;
+        
+        await this.#removeFragment(name);
 
-        for(const name of composition.order.slice(0, index))
-        {
-            prevSelectorsList.push(models[name].selector);
-        }
-
-        const prevElement = this.querySelector(`:scope>:is(${prevSelectorsList}):last-of-type`);
-
-        this.#removeFragment(name);
-
-        if(prevElement)
-        {
-            prevElement.insertAdjacentHTML("afterend", fragment);
-        }
-        else
-        {
-            this.insertAdjacentHTML("afterbegin",fragment);
-        }
+        const range = this.ranges[name];
+        const fragment = range.createContextualFragment(html);
+        range.insertNode(fragment)
     }
 
     insertNav = (html) =>
@@ -412,19 +351,19 @@ export default class Route extends HTMLElement
     async unload(fragmentName)
     {
         this.#status = "" ;
-        this.#removeFragment(fragmentName);
+        await this.#removeFragment(fragmentName);
     }
     
     //onUnloaded
-    #removeFragment(name)
+    async #removeFragment(name)
     {
         console.debug( `remove frament : ${name} from route `, this);
-        const selector = this.#composition.models[name].selector;
-        const elementsToRemove = this.querySelectorAll(`:scope>${selector}`)
-        for(let elementToRemove of elementsToRemove)
-        {
-            elementToRemove.remove();
-        }
+        const composition = await this.composeReady;
+
+        const range = this.ranges[name];
+        debugger
+
+        range.deleteContents();
     }
 
     //methods
@@ -453,12 +392,6 @@ export default class Route extends HTMLElement
 
     #connectionEventListener = (e) => 
     {
-        //init propagatable attributes
-        this.#staticNav = this.dataset.staticNav ?? e.detail.staticNav?? config.route.staticNav;
-        if(this.#staticNav)
-        {
-            this.#replaceCustomStateCSS(undefined, "staticNav");
-        }
         
         this.#url = e.detail.url;
         this.#router = e.detail.router;
@@ -468,36 +401,8 @@ export default class Route extends HTMLElement
 
         //set selectors to remove on unloading
         this.excludeRemoveSelector = [config.route.routingSelector];
-        if(this.#localNav && this.#staticNav)
-        {
-            this.excludeRemoveSelector.push(config.route.navSelector)
-        }
-        this.excludeRemoveSelector.push(config.route.routingSelector)
 
-        if(this.#localNav && this.#staticNav) 
-        {
-            this.addEventListener(namings.events.navLoaded,
-                this.insertNav,
-                {
-                    once: true
-                }
-            );
-            fetch(new URL(namings.files.nav, this.#url))
-            .then(response => response.text())
-            .then((html) =>
-            {
-                this.dispatchEvent(
-                    new CustomEvent(namings.events.navLoaded,
-                        {
-                            detail: 
-                            {
-                                nav: html
-                            }
-                        }
-                    )
-                );
-            });
-        }
+        this.excludeRemoveSelector.push(config.route.routingSelector)
         
         this.addEventListener(namings.events.routingLoaded,
             this.insertRouting,
@@ -505,6 +410,11 @@ export default class Route extends HTMLElement
                 once: true
             }
         );
+        //toDo init composition
+        this.#initComposition();
+        
+
+        //toDo remove when routing done with fragment
         fetch(new URL(namings.files.routing, this.#url))
         .then(response => response.text())
         .then((html) =>
@@ -521,18 +431,35 @@ export default class Route extends HTMLElement
             );
         });
 
-        this.#state = namings.enums.state.unloaded;
-
-        //listen to route change
+        this.#state = namings.enums.state.unloaded;//toDo check si ça sert encore 
 
         //listen navigate event
-        //add router ref to routing components on connection
         if(navigation)
         {
             console.debug("init navigation event");
             navigation?.addEventListener("navigate", this.#navigateEventListener);
         }
     };
+
+    async #initComposition()
+    {
+        const composition = await this.#composition;//toDo replace by composition init (with fetch) and do better namings
+
+        this.ranges = {};
+
+        for(const framentName of composition.order)
+        {
+            const fragmentTag = document.createComment(framentName);
+            this.appendChild(fragmentTag);
+
+            const range = new Range();
+            this.ranges[framentName] = range;
+            range.setStartAfter(fragmentTag);
+        }
+        
+        this.#composeReady.resolve(composition);
+
+    }
 
     #navigateEventListener = (navigateEvent) =>
     {
