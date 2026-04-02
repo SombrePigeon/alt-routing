@@ -1,14 +1,12 @@
 import namings from "./namings.js";
 import config from "alt-routing/config";
-import composition from "./composition.json" with { type: "json" };
-console .debug("test", composition)
+import baseComposition from "./composition.json" with { type: "json" };
+console.debug("base composition : ", baseComposition)
 console.info("alt-routing module init : route");
 
 export default class Route extends HTMLElement
 {
     #internals;
-    //composition
-    #composition = Promise.resolve(composition);
 
     //config
     #isBaseRoute;
@@ -19,26 +17,16 @@ export default class Route extends HTMLElement
     //promises
     #composeReady = Promise.withResolvers();
     #routingReady = Promise.withResolvers();
-
-    #initRouting = Promise.withResolvers();
-
-    #locationMatchExact
-    #locationMatchPart;
-    #locationMatchNone;
     
     //attr
     #path;
-    #router;
     #url;
+    #router;
 
     #_locationMatch;
     #_state;
     #_status;
 
-    get initRoutingPromise()
-    {
-        return this.#initRouting.promise;
-    }
     get composeReady()
     {
         return this.#composeReady.promise;
@@ -141,16 +129,8 @@ export default class Route extends HTMLElement
         this.#locationMatch = namings.enums.locationMatch.none;
         
         this.#path = this.dataset.path;
-        this.#isBaseRoute = this.#path.startsWith('/');
+        this.#isBaseRoute = this.#path.startsWith('/');//toDo check si suffisant
         //init attributes
-        this.#locationMatchExact = this.dataset.locationMatchExact ?? config.route.locationMatchExact;
-        this.#locationMatchPart = this.dataset.locationMatchPart ?? config.route.locationMatchPart;
-        this.#locationMatchNone = this.dataset.locationMatchNone ?? config.route.locationMatchNone;
-        this.#localNav = this.dataset.localNav ?? config.route.localNav;
-        if(this.#localNav)
-        {
-            this.#replaceCustomStateCSS(undefined, "localNav");
-        }
 
         if(this.#isBaseRoute)
         {
@@ -228,7 +208,7 @@ export default class Route extends HTMLElement
                 const show = isStatic || model.loading.includes(match);
                 if(show)
                 {
-                    fragmentsUpdated.push(this.load(name,navigateEvent));
+                    fragmentsUpdated.push(this.loadFragment(name, navigateEvent));
                 }
                 else
                 {
@@ -236,28 +216,14 @@ export default class Route extends HTMLElement
                 }
             }
         }
-        
         await Promise.all(fragmentsUpdated);
+        await this.loaded(navigateEvent);
     }
 
-    async load(fragmentsName, navigateEvent)//optionnal param
+    async loaded(navigateEvent)
     {
-        if(fragmentsName == "routing.html") return //debug
-
-
-        const fragmentPromise = this.fetchContent(fragmentsName, navigateEvent);
-        //toDo handle post redirect
-        const fragmentResponse = await fragmentPromise;
-        const insert = true;//not if 304
-        if(insert)
-        {
-            this.#status = fragmentResponse.status;
-            const fragment = await fragmentResponse.text();
-            await this.composeReady;
-            await this.#insertFragment(fragmentsName, fragment);
-        }
-
-        //laoded event setup 
+        
+        //loaded Event
         const loaded = Promise.withResolvers();
         
         this.addEventListener(namings.events.loaded, e =>
@@ -273,7 +239,7 @@ export default class Route extends HTMLElement
 
         const target = this.shadowRoot ?? this;
         
-        await this.#initRouting.promise;
+        await this.routingReady;
 
         target.dispatchEvent(new CustomEvent(namings.events.loaded,
             {
@@ -284,14 +250,38 @@ export default class Route extends HTMLElement
         await loaded.promise;
     }
 
-    //toDo replace fetchContent
-    async fetchContent(fragmentsName, navigateEvent)
+    async loadFragment(fragmentsName, navigateEvent)//optionnal param
+    {
+        const fragmentPromise = this.fetchFragment(fragmentsName, navigateEvent);
+        //toDo handle post redirect
+        const fragmentResponse = await fragmentPromise;
+        const insert = true;//not if 304 and already loaded
+        if(insert)
+        {
+            this.#status = fragmentResponse.status;
+            const fragment = await fragmentResponse.text();
+            await this.#insertFragment(fragmentsName, fragment);
+            //toDo si routing set routing ready
+            if(fragmentsName === "routing.html")
+            {
+                const promises = [];
+                for(const route of this.querySelectorAll("alt-route"))
+                {
+                    promises.push(route.routingReady);
+                }
+                this.#routingReady.resolve(Promise.all(promises));
+            }
+        }
+    }
+
+    async fetchFragment(fragmentsName, navigateEvent)
     {
         //request setup
         const abortSignal = navigateEvent?.signal;//toDo add pageclose signal ? auto abort de base ?
         //toDo check referrer policy
         const referrer = navigateEvent?.altRouting.referrer ?? document.referrer
         //toDo check if locations is already modified 
+        const composition = await this.composeReady;
         const model = composition.models[fragmentsName];
         const requestInit = 
             {   
@@ -324,29 +314,12 @@ export default class Route extends HTMLElement
         
         await this.#removeFragment(name);
 
-        const range = this.ranges[name];
+        const range = composition.ranges[name];
+
         const fragment = range.createContextualFragment(html);
         range.insertNode(fragment)
     }
 
-    insertNav = (html) =>
-    {
-        this.insertAdjacentHTML("afterbegin", html);
-    }
-
-    insertRouting = (e) =>
-    {
-        this.insertAdjacentHTML("beforeend", e.detail.routing);
-        const routes = this.querySelectorAll(namings.components.route);
-        const routesReady = [];
-        for(const route of routes)
-        {
-            routesReady.push(route.#initRouting.promise);
-        }
-        Promise.all(routesReady)
-        .then(()=> this.#initRouting.resolve());
-
-    }
 
     async unload(fragmentName)
     {
@@ -360,15 +333,12 @@ export default class Route extends HTMLElement
         console.debug( `remove frament : ${name} from route `, this);
         const composition = await this.composeReady;
 
-        const range = this.ranges[name];
-        debugger
+        const range = composition.ranges[name];
 
         range.deleteContents();
     }
 
     //methods
-    
-
     #routerConstructionEventListener = (e) => 
     {
         e.detail.url = new URL(location.origin);
@@ -399,21 +369,8 @@ export default class Route extends HTMLElement
         this.#router.addEventListener(namings.events.navigate,
             this.update());//bad !
 
-        //set selectors to remove on unloading
-        this.excludeRemoveSelector = [config.route.routingSelector];
-
-        this.excludeRemoveSelector.push(config.route.routingSelector)
-        
-        this.addEventListener(namings.events.routingLoaded,
-            this.insertRouting,
-            {
-                once: true
-            }
-        );
-        //toDo init composition
         this.#initComposition();
         
-
         //toDo remove when routing done with fragment
         fetch(new URL(namings.files.routing, this.#url))
         .then(response => response.text())
@@ -443,9 +400,10 @@ export default class Route extends HTMLElement
 
     async #initComposition()
     {
-        const composition = await this.#composition;//toDo replace by composition init (with fetch) and do better namings
+        const composition = structuredClone(baseComposition);
+        //toDo replace by composition init (with fetch) and do better namings
 
-        this.ranges = {};
+        composition.ranges = {};
 
         for(const framentName of composition.order)
         {
@@ -453,10 +411,9 @@ export default class Route extends HTMLElement
             this.appendChild(fragmentTag);
 
             const range = new Range();
-            this.ranges[framentName] = range;
+            composition.ranges[framentName] = range;
             range.setStartAfter(fragmentTag);
         }
-        
         this.#composeReady.resolve(composition);
 
     }
@@ -479,7 +436,6 @@ export default class Route extends HTMLElement
         
     }
     
-
     #replaceCustomStateCSS(from, to)
     {
         try

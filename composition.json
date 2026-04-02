@@ -4,22 +4,24 @@
         "content.html":
         {
             "static": false,
-            "loading": ["exact","part"],
+            "loading": ["exact"],
             "useSearchParam": true,
-            "canRedirect": true,
-            "selector": ":not(alt-route, nav)"
+            "canRedirect": true
         },
         "routing.html":
         {
             "static": true,
-            "useSearchParam": false,
-            "selector": "alt-route"
+            "useSearchParam": false
         },
         "nav.html":
         {
             "static": true,
-            "useSearchParam": false,
-            "selector": "nav"
+            "useSearchParam": false
+        },
+        "template.html":
+        {
+            "static": true,
+            "useSearchParam": false
         }
     },
     "order":

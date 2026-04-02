@@ -80,7 +80,7 @@ export default class Router extends ParentClass
         //toDo when routing init end, add navigate write
         const baseRoute = this.children[0];
         
-        baseRoute.initRoutingPromise.then(
+        baseRoute.routingReady.then(
             _ =>
             {
                 //navigation.addEventListener("navigate", this.#afterNavigateEventListener);
