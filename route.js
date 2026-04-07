@@ -260,8 +260,12 @@ export default class Route extends HTMLElement
         if(insert)
         {
             this.#status = fragmentResponse.status;
-            const fragment = await fragmentResponse.text();
-            await this.#insertFragment(fragmentsName, fragment);
+            const html = await fragmentResponse.text();
+
+            //toDo import TTP and use it with arg (path, fragmentName)
+            const trusted_html = html;
+
+            await this.#insertFragment(fragmentsName, trusted_html);
             //toDo si routing set routing ready
             if(fragmentsName === "routing.html")
             {
@@ -317,8 +321,9 @@ export default class Route extends HTMLElement
 
         const range = composition.ranges[name];
 
-        const fragment = range.createContextualFragment(html);
-        range.insertNode(fragment)
+        const template = document.createElement('template');
+        template.setHTMLUnsafe(html);
+        range.insertNode(template.content);
     }
 
 
