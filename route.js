@@ -1,6 +1,7 @@
 import namings from "./namings.js";
 import config from "alt-routing/config";
 import baseComposition from "./composition.json" with { type: "json" };
+import trustedTypesPolicy from "./trustedTypes.js";
 console.debug("base composition : ", baseComposition)
 console.info("alt-routing module init : route");
 
@@ -108,6 +109,10 @@ export default class Route extends HTMLElement
     get url()
     {
         return this.#url;
+    }
+    get absolutePath()
+    {
+        return this.#url.pathname;
     }
 
     get router()
@@ -262,8 +267,7 @@ export default class Route extends HTMLElement
             this.#status = fragmentResponse.status;
             const html = await fragmentResponse.text();
 
-            //toDo import TTP and use it with arg (path, fragmentName)
-            const trusted_html = html;
+            const trusted_html = trustedTypesPolicy?.createHTML(html, this.absolutePath, fragmentsName) ?? html;
 
             await this.#insertFragment(fragmentsName, trusted_html);
             //toDo si routing set routing ready
