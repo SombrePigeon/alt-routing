@@ -104,7 +104,14 @@ export default class Router extends ParentClass
         {
             //init
             navigateEvent.altRouting ??= {};
-            navigateEvent.altRouting.update ??= new URL(navigateEvent?.destination.url).pathname.startsWith(this.#path);
+            //toDo check if a route match
+            const update = navigateEvent.canIntercept 
+            && !navigateEvent.hashChange 
+            && !navigateEvent.downloadRequest
+            && this.#isLocalNavigation(navigateEvent)
+            //remove next line, routeur checkif a route match
+            && new URL(navigateEvent?.destination.url).pathname.startsWith(this.#path)
+            navigateEvent.altRouting.update ??= update;
             //toDo replace with 
             navigateEvent.altRouting.referrer ??= navigation.currentEntry.url;
             console.log(`document referer : ${document.referrer}`)
@@ -112,6 +119,19 @@ export default class Router extends ParentClass
             //pas forcement le bon referrer avec la cache policy
         }
         
+    }
+    #isLocalNavigation(navigateEvent)
+    {
+        //toDo select bonne method http
+        let local = true;
+        const url = new URL(navigateEvent.destination.url);
+        const path = url.pathname;
+        const postAttributeSelector = "[data-method='POST']";
+        const isPostAttributeSelector = navigateEvent.formData ? `${postAttributeSelector}` : `:not(${postAttributeSelector})`;
+        //toDo select bonne method http
+        const exactRoute = this.querySelector(`:scope ${namings.components.route}[data-absolute-path="${path}"]${isPostAttributeSelector}`);
+        local &&= (exactRoute != null);
+        return local;
     }
 
     #attachViewTransition = (navigateEvent) =>

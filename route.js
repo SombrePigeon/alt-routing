@@ -126,7 +126,6 @@ export default class Route extends HTMLElement
         this.#internals = this.attachInternals();
         this.#state = namings.enums.state.init;
         this.#status = "";
-        this.#locationMatch = namings.enums.locationMatch.none;
         
         this.#path = this.dataset.path;
         this.#isBaseRoute = this.#path.startsWith('/');//toDo check si suffisant
@@ -141,7 +140,7 @@ export default class Route extends HTMLElement
                 }
             );
         }
-        
+
         this.addEventListener(namings.events.connectComponent,
             this.#constructionEventListener,
             {
@@ -217,7 +216,9 @@ export default class Route extends HTMLElement
             }
         }
         await Promise.all(fragmentsUpdated);
+        this.#locationMatch = match;
         await this.loaded(navigateEvent);
+
     }
 
     async loaded(navigateEvent)
@@ -364,6 +365,7 @@ export default class Route extends HTMLElement
     {
         
         this.#url = e.detail.url;
+        this.dataset.absolutePath = this.#url.pathname;
         this.#router = e.detail.router;
 
         this.#router.addEventListener(namings.events.navigate,
@@ -420,8 +422,7 @@ export default class Route extends HTMLElement
 
     #navigateEventListener = (navigateEvent) =>
     {
-        //
-        if(navigateEvent.altRouting)
+        if(navigateEvent?.altRouting.update)
         {
             const handler = async _ =>
             {
