@@ -11,9 +11,6 @@ export default class Route extends HTMLElement
 
     //config
     #isBaseRoute;
-    #localNav;
-    #staticNav;
-    #propagateStaticNav;
 
     //promises
     #composeReady = Promise.withResolvers();
@@ -118,11 +115,6 @@ export default class Route extends HTMLElement
     get router()
     {
         return this.#router;
-    }
-
-    get staticNav()
-    {
-        return this.#staticNav;
     }
     
     //callbacks
@@ -357,17 +349,6 @@ export default class Route extends HTMLElement
     #constructionEventListener = (e) => 
     {
         e.detail.url = new URL(this.#path, e.detail.url);
-        if(this.#propagateStaticNav != null)
-        {
-            if(this.#propagateStaticNav)
-            {
-                e.detail.staticNav = this.#staticNav;
-            }
-            else
-            {
-                delete e.detail.staticNav;
-            }
-        }
     };
 
     #connectionEventListener = (e) => 
