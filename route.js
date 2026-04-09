@@ -21,6 +21,8 @@ export default class Route extends HTMLElement
     #url;
     #router;
 
+    #queries;
+
     #_locationMatch;
     #_state;
     #_status;
@@ -185,7 +187,7 @@ export default class Route extends HTMLElement
                 match = namings.enums.locationMatch.part;
             }
         }
-        //toDo conditionnal loaging
+
         const composition = await this.composeReady;
         const fragmentsNames = composition.order;
         const fragmentsModels = composition.models;
@@ -298,7 +300,10 @@ export default class Route extends HTMLElement
 
         if(model.useSearchParam)
         {
-            contentURL.search = url.search;
+            for(const param of this.#queries)
+            {
+                contentURL.searchParams.append(param, url.searchParams.get(param));
+            }
         }
         const contentRequest = new Request(contentURL, requestInit);
         const response = await fetch(contentRequest);
@@ -344,11 +349,18 @@ export default class Route extends HTMLElement
     #routerConstructionEventListener = (e) => 
     {
         e.detail.url = new URL(location.origin);
+        e.detail.queries = new Set();
     };
 
     #constructionEventListener = (e) => 
     {
         e.detail.url = new URL(this.#path, e.detail.url);
+        const queriesParam = this.dataset.queries?.split(/\s+/);
+        if(queriesParam)
+        {
+            e.detail.queries.add(queriesParam);
+        }  
+
     };
 
     #connectionEventListener = (e) => 
@@ -357,6 +369,8 @@ export default class Route extends HTMLElement
         this.#url = e.detail.url;
         this.dataset.absolutePath = this.#url.pathname;
         this.#router = e.detail.router;
+
+        this.#queries = new Set(e.detail.queries);
 
         this.#router.addEventListener(namings.events.navigate,
             this.update());//bad !
