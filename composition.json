@@ -5,23 +5,19 @@
         {
             "static": false,
             "loading": ["exact"],
-            "useSearchParam": true,
             "canRedirect": true
         },
         "routing.html":
         {
-            "static": true,
-            "useSearchParam": false
+            "static": true
         },
         "nav.html":
         {
-            "static": true,
-            "useSearchParam": false
+            "static": true
         },
         "template.html":
         {
-            "static": true,
-            "useSearchParam": false
+            "static": true
         }
     },
     "order":
@@ -30,5 +26,6 @@
         "content.html",
         "routing.html"
     ],
+    "paramFilter": null,
     "shadow": false
 }

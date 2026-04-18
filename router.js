@@ -72,9 +72,10 @@ export default class Router extends ParentClass
 
         //toDo get innerHTML and send it in an event
         //add base route
+        //toDo secure trusted type
         this.innerHTML = 
         `
-            <${namings.components.route} data-path="${this.#path}">
+            <${namings.components.route} path="${this.#path}">
             </${namings.components.route}>
         `;
         //toDo when routing init end, add navigate write

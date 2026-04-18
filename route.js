@@ -21,11 +21,10 @@ export default class Route extends HTMLElement
     #url;
     #router;
 
-    #queries;
-
     #_locationMatch;
     #_state;
     #_status;
+    #_ok;
 
     get composeReady()
     {
@@ -43,49 +42,30 @@ export default class Route extends HTMLElement
     }
     set #locationMatch(locationMatch) 
     {
-
-        if(this.#_locationMatch)
-        {
-            this.#replaceCustomStateCSS(this.#_locationMatch, locationMatch);
-        }
-        if(config.route.showAttribute.locationMatch)
-        {
-            this.dataset.locationMatch = locationMatch;
-        }
+        const lm = namings.enums.locationMatch;
+        let openBefore = this.#_locationMatch != lm.none ? "open" : null;
+        let currentBefore = this.#_locationMatch == lm.exact ? "current" : null;
         this.#_locationMatch = locationMatch;
+        let openAfter = this.#_locationMatch != lm.none ? "open" : null;
+        let currentAfter = this.#_locationMatch == lm.exact ? "current" : null;
+        this.#replaceCustomStateCSS(openBefore, openAfter);
+        this.#replaceCustomStateCSS(currentBefore, currentAfter);
     }
 
-    get #state()
+    get #ok()
     {
-        return this.#_state;
+        return this.#_ok;
     }
-    set #state(state)
+    set #ok(ok)
     {
-        if(this.#_state !== state)
+        if(this.#_ok !== ok)
         {
-            this.#_state && this.#replaceCustomStateCSS(this.#_state, state)
-            if(config.route.showAttribute.state)
-            {
-                this.dataset.state = state;
-            }
-            this.#_state = state;
-        }
-    }
-    
-    get #status()
-    {
-        return this.#_status;
-    }
-    set #status(status)
-    {
-        if(this.#_status !== status)
-        {
-            this.#_status && this.#replaceCustomStateCSS(this.#_status, status)
-            if(config.route.showAttribute.status)
-            {
-                this.dataset.status = status;
-            }
-            this.#_status = status;
+            
+            const oldOk = this.#_ok ? "ok" : null;
+            this.#_ok = ok;
+            const newOk = this.#_ok ? "ok" : null;
+            
+            this.#replaceCustomStateCSS(oldOk, newOk);
         }
     }
 
@@ -123,10 +103,9 @@ export default class Route extends HTMLElement
     connectedCallback()
     {
         this.#internals = this.attachInternals();
-        this.#state = namings.enums.state.init;
-        this.#status = "";
         
-        this.#path = this.dataset.path;
+        this.#path = this.getAttribute("path");
+        if(!this.#path) console.error(`path is not set in`, this);
         this.#isBaseRoute = this.#path.startsWith('/');//toDo check si suffisant
         //init attributes
 
@@ -187,6 +166,7 @@ export default class Route extends HTMLElement
                 match = namings.enums.locationMatch.part;
             }
         }
+        this.#locationMatch = match;
 
         const composition = await this.composeReady;
         const fragmentsNames = composition.order;
@@ -210,12 +190,12 @@ export default class Route extends HTMLElement
                 }
                 else
                 {
-                    fragmentsUpdated.push(this.unload(name));
+                    fragmentsUpdated.push(this.unloadFragment(name));
                 }
             }
         }
-        await Promise.all(fragmentsUpdated);
-        this.#locationMatch = match;
+        await Promise.all(fragmentsUpdated);  
+
         await this.loaded(navigateEvent);
 
     }
@@ -258,13 +238,17 @@ export default class Route extends HTMLElement
         const insert = true;//not if 304 and already loaded
         if(insert)
         {
-            this.#status = fragmentResponse.status;
             const html = await fragmentResponse.text();
 
-            const trusted_html = trustedTypesPolicy?.createHTML(html, this.absolutePath, fragmentsName) ?? html;
+            const trusted_html = trustedTypesPolicy?.createHTML(html, this.absolutePath, fragmentsName);
 
-            await this.#insertFragment(fragmentsName, trusted_html);
-            //toDo si routing set routing ready
+            await this.#insertFragment(fragmentsName, trusted_html ?? html);
+
+            if(fragmentsName === "content.html")
+            {
+                //toDo redirect if necessary
+                this.#ok = fragmentResponse.ok;
+            }
             if(fragmentsName === "routing.html")
             {
                 const promises = [];
@@ -289,6 +273,8 @@ export default class Route extends HTMLElement
         const requestInit = 
             {   
                 //toDo try not using data added to navigateEvent.altRouting
+                //mode: "no-cors",
+                //cache: "no-cache",
                 referrer,
                 signal: abortSignal,
                 redirect: model.canRedirect ? "manual" : "error" //todo check if good idea
@@ -298,15 +284,24 @@ export default class Route extends HTMLElement
         
         const contentURL = new URL(fragmentsName, this.#url);
 
-        if(model.useSearchParam)
+        if(!model.static)
         {
-            for(const param of this.#queries)
+            if(composition.paramFilter)
             {
-                contentURL.searchParams.append(param, url.searchParams.get(param));
+                for(const param of composition.paramFilter)
+                {
+                    contentURL.searchParams.append(param, url.searchParams.get(param));
+                }
             }
+            else
+            {
+                contentURL.search = url.search;
+            }
+            
         }
         const contentRequest = new Request(contentURL, requestInit);
         const response = await fetch(contentRequest);
+        //if(fragmentsName == "content.html") debugger
 
         return response;
     }
@@ -328,10 +323,10 @@ export default class Route extends HTMLElement
     }
 
 
-    async unload(fragmentName)
+    async unloadFragment(fragmentName)
     {
-        this.#status = "" ;
         await this.#removeFragment(fragmentName);
+        this.#ok = null;
     }
     
     //onUnloaded
@@ -349,18 +344,11 @@ export default class Route extends HTMLElement
     #routerConstructionEventListener = (e) => 
     {
         e.detail.url = new URL(location.origin);
-        e.detail.queries = new Set();
     };
 
     #constructionEventListener = (e) => 
     {
         e.detail.url = new URL(this.#path, e.detail.url);
-        const queriesParam = this.dataset.queries?.split(/\s+/);
-        if(queriesParam)
-        {
-            e.detail.queries.add(queriesParam);
-        }  
-
     };
 
     #connectionEventListener = (e) => 
@@ -370,31 +358,10 @@ export default class Route extends HTMLElement
         this.dataset.absolutePath = this.#url.pathname;
         this.#router = e.detail.router;
 
-        this.#queries = new Set(e.detail.queries);
-
         this.#router.addEventListener(namings.events.navigate,
             this.update());//bad !
 
         this.#initComposition();
-        
-        //toDo remove when routing done with fragment
-        fetch(new URL(namings.files.routing, this.#url))
-        .then(response => response.text())
-        .then((html) =>
-        {
-            this.dispatchEvent(
-                new CustomEvent(namings.events.routingLoaded,
-                    {
-                        detail: 
-                        {
-                            routing: html
-                        }
-                    }
-                )
-            );
-        });
-
-        this.#state = namings.enums.state.unloaded;//toDo check si ça sert encore 
 
         //listen navigate event
         if(navigation)
@@ -407,7 +374,30 @@ export default class Route extends HTMLElement
     async #initComposition()
     {
         const composition = structuredClone(baseComposition);
-        //toDo replace by composition init (with fetch) and do better namings
+        //toDo try catch ?
+        const localComposition = 
+            config.route.localComposition ? 
+            await import(new URL("composition.json", this.#url),{ with: { type: "json" } }) :
+            null;
+        if(localComposition)
+        {
+            //merge models
+            composition.models = {...composition.models, ...localComposition.models};
+            delete localComposition.models;
+            composition = {...composition, ...localComposition};
+        }
+        if(!composition.order.includes("content.html"))
+        {
+            throw new Error(`Cannot find "content.html" fragment in ${this} composition`);
+        }
+        for(const fragment of composition.order)
+        {
+            if(!composition.models[fragment])
+            {
+                throw new Error(`Cannot find model for fragment "${fragment}" in ${this} composition`);
+            }
+        }
+        //toDo get composition and merger
 
         composition.ranges = {};
 
@@ -443,6 +433,21 @@ export default class Route extends HTMLElement
     
     #replaceCustomStateCSS(from, to)
     {
+        if(config.route.showAttribute.state)
+        {
+            const state = this.dataset.state;
+            const stateList = state?.split(/\s+/);
+            const stateSet = new Set(stateList);
+            if(from)
+            {
+                stateSet.delete(from);
+            }
+            if(to)
+            {
+                stateSet.add(to);
+            } 
+            this.dataset.state = [...stateSet].join(" ");
+        }
         try
         {
             this.#internals.states.delete(`${from}`);
