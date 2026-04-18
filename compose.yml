@@ -1,6 +1,9 @@
 services:
     alt-routing:
-        image: sombrepigeon/releases:2.0-onbluid
+        build:
+            dockerfile_inline: FROM sombrepigeon/releases:2.0-onbuild
+            args:
+                EXT: (js|json)
         profiles: [prod]
         environment:
             SOURCE: "https://github.com/SombrePigeon/alt-routing"
