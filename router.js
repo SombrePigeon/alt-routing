@@ -16,7 +16,7 @@ export default class Router extends ParentClass
     connectedCallback()
     {
         const origin = location.origin;
-        const path = this.dataset.path ?? '/';
+        const path = this.getAttribute("path") ?? '/';//toDo info 
         if(!path.startsWith('/'))
         {
             throw new Error("Router path must be absolute");
