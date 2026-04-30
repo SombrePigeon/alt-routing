@@ -12,6 +12,12 @@ const ParentClass = document.createElement(config.routeur.extends).constructor;
 export default class Router extends ParentClass
 {
     #path;
+    #routingReady = Promise.withResolvers();
+
+    get routingReady()
+    {
+        return this.#routingReady.promise;
+    }
 
     connectedCallback()
     {
@@ -84,6 +90,7 @@ export default class Router extends ParentClass
         baseRoute.routingReady.then(
             _ =>
             {
+                this.#routingReady.resolve();
                 //navigation.addEventListener("navigate", this.#afterNavigateEventListener);
             }
         )
@@ -105,8 +112,8 @@ export default class Router extends ParentClass
         {
             //init
             navigateEvent.altRouting ??= {};
-            //toDo check if a route match
             const update = navigateEvent.canIntercept 
+            && navigateEvent.navigationType !== "reload"
             && !navigateEvent.hashChange 
             && !navigateEvent.downloadRequest
             && this.#isLocalNavigation(navigateEvent)
@@ -127,8 +134,8 @@ export default class Router extends ParentClass
         let local = true;
         const url = new URL(navigateEvent.destination.url);
         const path = url.pathname;
-        const postAttributeSelector = "[data-method='POST']";
-        const isPostAttributeSelector = navigateEvent.formData ? `${postAttributeSelector}` : `:not(${postAttributeSelector})`;
+        const postAttributeSelector = "[method='POST']";//toDo remove
+        const isPostAttributeSelector = ""; //navigateEvent.formData ? `${postAttributeSelector}` : `:not(${postAttributeSelector})`;
         //toDo select bonne method http
         const exactRoute = this.querySelector(`:scope ${namings.components.route}[data-absolute-path="${path}"]${isPostAttributeSelector}`);
         local &&= (exactRoute != null);

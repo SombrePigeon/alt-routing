@@ -169,7 +169,7 @@ export default class Route extends HTMLElement
         this.#locationMatch = match;
 
         const composition = await this.composeReady;
-        const fragmentsNames = composition.order;
+        const fragmentsNames = composition.fragments;
         const fragmentsModels = composition.models;
 
         const fragmentsUpdated = [];
@@ -235,7 +235,7 @@ export default class Route extends HTMLElement
         const fragmentPromise = this.fetchFragment(fragmentsName, navigateEvent);
         //toDo handle post redirect
         const fragmentResponse = await fragmentPromise;
-        const insert = true;//not if 304 and already loaded
+        const insert = true;//toDo add 304 simulation handler
         if(insert)
         {
             const html = await fragmentResponse.text();
@@ -248,11 +248,19 @@ export default class Route extends HTMLElement
             {
                 //toDo redirect if necessary
                 this.#ok = fragmentResponse.ok;
+                if(false)//toDo detectPost (main + formData) add remove on unload (setmethod)
+                {
+                    //state get
+                }
+                else
+                {
+                    //state post
+                }
             }
             if(fragmentsName === "routing.html")
             {
                 const promises = [];
-                for(const route of this.querySelectorAll("alt-route"))
+                for(const route of this.querySelectorAll(":scope>alt-route"))
                 {
                     promises.push(route.routingReady);
                 }
@@ -263,24 +271,31 @@ export default class Route extends HTMLElement
 
     async fetchFragment(fragmentsName, navigateEvent)
     {
+        
         //request setup
+        const url = new URL(navigateEvent?.destination.url ?? location.href);
+
         const abortSignal = navigateEvent?.signal;//toDo add pageclose signal ? auto abort de base ?
         //toDo check referrer policy
-        const referrer = navigateEvent?.altRouting.referrer ?? document.referrer
+        const referrer = navigateEvent?.altRouting.referrer ?? document.referrer;
         //toDo check if locations is already modified 
         const composition = await this.composeReady;
         const model = composition.models[fragmentsName];
+        debugger
+        const isMainRoute = this.#url.pathname === url.pathname;//toDo create func
         const requestInit = 
             {   
                 //toDo try not using data added to navigateEvent.altRouting
                 //mode: "no-cors",
                 //cache: "no-cache",
+                //info impossible de gérer le cas ou le premier chargement est un post
+                method: (isMainRoute && navigateEvent?.formData) ? "POST" : "GET",
                 referrer,
                 signal: abortSignal,
-                redirect: model.canRedirect ? "manual" : "error" //todo check if good idea
+                redirect: fragmentsName == "content.html" ? "manual" : "error" //todo check if good idea
             };
 
-        const url = new URL(navigateEvent?.destination.url ?? location.href);
+        
         
         const contentURL = new URL(fragmentsName, this.#url);
 
@@ -386,11 +401,20 @@ export default class Route extends HTMLElement
             delete localComposition.models;
             composition = {...composition, ...localComposition};
         }
-        if(!composition.order.includes("content.html"))
+        if(!composition.fragments.includes("content.html"))
         {
             throw new Error(`Cannot find "content.html" fragment in ${this} composition`);
         }
-        for(const fragment of composition.order)
+        if(!composition.fragments.includes("routing.html"))
+        {
+            this.#routingReady.resolve();
+        }
+        const templateModel = composition.models["template.html"];
+        if(templateModel && !templateModel?.static)
+        {
+            throw new Error(`"template.html" fragment must be static in ${this} composition`);
+        }
+        for(const fragment of composition.fragments)
         {
             if(!composition.models[fragment])
             {
@@ -401,7 +425,7 @@ export default class Route extends HTMLElement
 
         composition.ranges = {};
 
-        for(const framentName of composition.order)
+        for(const framentName of composition.fragments)
         {
             const fragmentTag = document.createComment(framentName);
             this.appendChild(fragmentTag);

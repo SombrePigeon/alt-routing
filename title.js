@@ -4,45 +4,51 @@ console.info("alt-routing module init : title");
 
 export default class Title extends HTMLTitleElement
 {
-    #abortController;
     //callbacks
     connectedCallback()
     {
-        document.body.addEventListener(namings.events.routeChange, 
-            this.routeChangeEventListener,
-            {
-                capture: true,
-            });
+        const router = document.querySelector(`[is="${namings.components.router}"]`);
+        router.routingReady.then(_=>
+        {
+            navigation?.addEventListener("navigate", 
+            this.navigateEventListener);
+        });
     }
 
     disconnectedCallback()
     {
-        document.body.removeEventListener(namings.events.routeChange, this.routeChangeEventListener);
+        navigation?.removeEventListener("navigate", this.navigateEventListener);
     }
 
-    routeChangeEventListener = (e) =>
+    navigateEventListener = (navigateEvent) =>
     {
-        const titleAbsolutePath = location.pathname + namings.files.title;
-        this.#abortController?.abort();
-        this.#abortController = new AbortController();
+        if(navigateEvent?.altRouting.update)
+        {
 
-        fetch(titleAbsolutePath,
-            {
-                signal: this.#abortController.signal
-            })
-            .then((response) =>
-            {
-                return response.text();
-            })
-            .then((text) =>
-            {
-                this.text = text;
-            })
-            .finally(()=>
-            {
-                this.#abortController = null;
-            });
-        
+            const url = new URL(navigateEvent?.destination.url ?? location.href);
+            
+            const titleURL = new URL(namings.files.title, url);
+            
+            //toDo check referrer policy
+            const referrer = navigateEvent?.altRouting.referrer ?? document.referrer;
+
+            const requestInit = 
+            {   
+                referrer,
+                signal: navigateEvent?.signal,
+                redirect: "error" //todo check if good idea
+            };
+
+            fetch(titleURL, requestInit)
+                .then((response) =>
+                {
+                    return response.text();
+                })
+                .then((text) =>
+                {
+                    this.text = text.trim();
+                });
+        }
     };
 }
 

@@ -1,31 +1,23 @@
 {
     "models":
     {
+        "template.html":
+        {
+            "static": true
+        },
         "content.html":
         {
-            "static": false,
-            "loading": ["exact"],
-            "canRedirect": true
+            "loading": ["exact"]
         },
         "routing.html":
         {
             "static": true
-        },
-        "nav.html":
-        {
-            "static": true
-        },
-        "template.html":
-        {
-            "static": true
         }
     },
-    "order":
+    "fragments":
     [
-        "nav.html", 
         "content.html",
         "routing.html"
     ],
-    "paramFilter": null,
-    "shadow": false
+    "paramFilter": null
 }
