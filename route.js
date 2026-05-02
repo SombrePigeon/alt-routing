@@ -1,6 +1,6 @@
 import namings from "./namings.js";
 import config from "alt-routing/config.json" with { type: "json" };
-import baseComposition from "./composition.json" with { type: "json" };
+import baseComposition from "alt-routing/composition.json" with { type: "json" };
 import trustedTypesPolicy from "./trustedTypes.js";
 console.debug("base composition : ", baseComposition)
 console.info("alt-routing module init : route");

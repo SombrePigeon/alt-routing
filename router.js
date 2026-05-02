@@ -1,8 +1,5 @@
 import namings from "./namings.js";
 import Route from "./route.js";//required
-import {addShadowToConnectingRoutes} from "./features/shadow.js";
-import {addStyleToConnectingRoutes} from "./features/style.js"
-import {addUpdateTarget} from "./features/target.js";
 import config from "alt-routing/config.json" with { type: "json" };
 
 console.info("alt-routing module init : router");

@@ -8,27 +8,15 @@ export default
             exact: "exact",
             none: "none"
         },
-        locationMatchType:
-        {
-            fresh: "fresh",
-            still: "still",
-            hidden: "hidden"
-        },
         state: 
         {
-            init: "init",
-            unloaded: "unloaded",
-            loaded: "loaded",
-            loading: "loading",
-            unloading: "unloading"
+            open: "open",
+            current: "current",
+            ok: "ok"
         }
     },
     events:
     {
-        navigate: "alt-navigate",
-        navigated: "alt-navigated",
-        routeChange: "alt-route-change",
-        
         connectComponent: "alt-new-routing",
         disconnectComponent: "alt-delete-routing",
 
@@ -37,14 +25,6 @@ export default
         loaded: "alt-loaded",
         loading: "alt-loading",
         unloading: "alt-unloading",
-        //routing infos
-        navLoaded: "alt-nav-loaded",
-        routingLoaded: "alt-route-loaded",
-        //abort request
-        abort: "alt-abort",
-        routingReady: "alt-routing-ready",
-        startRouting: "alt-start-routing",
-        routingComplete: ""
     },
     components:
     {
@@ -53,19 +33,16 @@ export default
         anchor: "alt-a",
         title: "alt-title",
         slot: "alt-slot",
-        form: "alt-form"
+        form: "alt-form",
+        template: "alt-template"
     },
     files:
     {
         template: "template.html",
-        nav: "nav.html",
         content: "content.html",
         routing: "routing.html",
-        title: "title.html",
+        title: "title.txt",
         style: "style.css"
     },
-    classes:
-    {
-        altTarget: "alt-target"
-    }
+
 }
