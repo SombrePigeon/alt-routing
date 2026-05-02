@@ -1,5 +1,5 @@
 import namings from "./namings.js";
-import config from "alt-routing/config";
+import config from "alt-routing/config.json" with { type: "json" };
 import baseComposition from "./composition.json" with { type: "json" };
 import trustedTypesPolicy from "./trustedTypes.js";
 console.debug("base composition : ", baseComposition)
@@ -248,13 +248,15 @@ export default class Route extends HTMLElement
             {
                 //toDo redirect if necessary
                 this.#ok = fragmentResponse.ok;
-                if(false)//toDo detectPost (main + formData) add remove on unload (setmethod)
+                const url = new URL(navigateEvent?.destination.url ?? location.href);
+                const isMainRoute = this.#url.pathname === url.pathname;
+                if(isMainRoute && navigateEvent?.formData)//toDo detectPost (main + formData) add remove on unload (setmethod)
                 {
-                    //state get
+                    //state post
                 }
                 else
                 {
-                    //state post
+                    //state get
                 }
             }
             if(fragmentsName === "routing.html")
@@ -281,7 +283,7 @@ export default class Route extends HTMLElement
         //toDo check if locations is already modified 
         const composition = await this.composeReady;
         const model = composition.models[fragmentsName];
-        debugger
+
         const isMainRoute = this.#url.pathname === url.pathname;//toDo create func
         const requestInit = 
             {   
@@ -405,6 +407,10 @@ export default class Route extends HTMLElement
         {
             throw new Error(`Cannot find "content.html" fragment in ${this} composition`);
         }
+        if(!composition.models["content.html"].loading.includes("exact"))
+        {
+            throw new Error(`"content.html" model must load on exact in ${this} composition`);
+        }
         if(!composition.fragments.includes("routing.html"))
         {
             this.#routingReady.resolve();
@@ -457,7 +463,7 @@ export default class Route extends HTMLElement
     
     #replaceCustomStateCSS(from, to)
     {
-        if(config.route.showAttribute.state)
+        if(config.route.dataAttribute.state)
         {
             const state = this.dataset.state;
             const stateList = state?.split(/\s+/);

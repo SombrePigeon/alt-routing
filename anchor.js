@@ -1,11 +1,10 @@
 import namings from "./namings.js";
-import config from "alt-routing/config";
+import config from "alt-routing/config.json" with { type: "json" };
 
 console.info("alt-routing module init : anchor");
 
 export default class Anchor extends HTMLAnchorElement
 {
-    #router;
     #_locationMatch;
     #removeListenersController;
 
@@ -14,13 +13,16 @@ export default class Anchor extends HTMLAnchorElement
         return this.#_locationMatch;
     }
     set #locationMatch(locationMatch) 
-    {
-        if(this.#_locationMatch !== locationMatch)
         {
+            const lm = namings.enums.locationMatch;
+            let openBefore = this.#_locationMatch != lm.none ? "open" : null;
+            let currentBefore = this.#_locationMatch == lm.exact ? "current" : null;
             this.#_locationMatch = locationMatch;
-            this.dataset.locationMatch = this.#_locationMatch;
+            let openAfter = this.#_locationMatch != lm.none ? "open" : null;
+            let currentAfter = this.#_locationMatch == lm.exact ? "current" : null;
+            this.#replaceState(openBefore, openAfter);
+            this.#replaceState(currentBefore, currentAfter);
         }
-    }
 
     get locationMatch()
     {
@@ -50,10 +52,6 @@ export default class Anchor extends HTMLAnchorElement
         this.#removeListenersController.abort();
     }
 
-    #initNavigationEvent()
-    {
-        
-    }
 
     #updateLocationMatch = (navigateEvent) => 
     {
@@ -83,8 +81,8 @@ export default class Anchor extends HTMLAnchorElement
             this.href = new URL(href, e.detail.url);
         }
         this.#removeListenersController = new AbortController();
-        this.#router = e.detail.router;
-        if(config.anchor.showAttribute.locationMatch)
+
+        if(config.anchor.dataAttribute.state)
         {
             this.#updateLocationMatch();
             //toDo integration au view transitions/intercept
@@ -98,8 +96,26 @@ export default class Anchor extends HTMLAnchorElement
                 }
             );
         }
-        this.#initNavigationEvent();
     };
+
+    #replaceState(from, to)
+        {
+            if(config.route.dataAttribute.state)
+            {
+                const state = this.dataset.state;
+                const stateList = state?.split(/\s+/);
+                const stateSet = new Set(stateList);
+                if(from)
+                {
+                    stateSet.delete(from);
+                }
+                if(to)
+                {
+                    stateSet.add(to);
+                } 
+                this.dataset.state = [...stateSet].join(" ");
+            }
+        }
 
 }
 

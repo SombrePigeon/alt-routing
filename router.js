@@ -3,7 +3,7 @@ import Route from "./route.js";//required
 import {addShadowToConnectingRoutes} from "./features/shadow.js";
 import {addStyleToConnectingRoutes} from "./features/style.js"
 import {addUpdateTarget} from "./features/target.js";
-import config from "alt-routing/config";
+import config from "alt-routing/config.json" with { type: "json" };
 
 console.info("alt-routing module init : router");
 
@@ -34,22 +34,6 @@ export default class Router extends ParentClass
         }
 
         this.#path = pathURL.pathname;
-
-        //init features
-        if(config.routeur.features.shadowRouting)
-        {
-            addShadowToConnectingRoutes(this);
-            if(config.routeur.features.styleShadowRouting)
-            {
-                addStyleToConnectingRoutes(this);
-            }
-        }
-
-        //toDo check if usefull in 2.0
-        if(config.routeur.features.updateTarget)
-        {
-            addUpdateTarget(this);
-        }
         
         //navigations event
         if(navigation)
@@ -61,7 +45,7 @@ export default class Router extends ParentClass
             {
                 capture: true
             });
-            if(config.routeur.features.viewTransition)
+            if(config.routeur.viewTransition)
             {
                 navigation.addEventListener("navigate", this.#attachViewTransition);
             }
