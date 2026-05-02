@@ -104,11 +104,6 @@ export default class Router extends ParentClass
             //remove next line, routeur checkif a route match
             && new URL(navigateEvent?.destination.url).pathname.startsWith(this.#path)
             navigateEvent.altRouting.update ??= update;
-            //toDo replace with 
-            navigateEvent.altRouting.referrer ??= navigation.currentEntry.url;
-            console.log(`document referer : ${document.referrer}`)
-            console.log(`current entry : ${navigation.currentEntry.url}`)
-            //pas forcement le bon referrer avec la cache policy
         }
         
     }

@@ -279,26 +279,23 @@ export default class Route extends HTMLElement
 
         const abortSignal = navigateEvent?.signal;//toDo add pageclose signal ? auto abort de base ?
         //toDo check referrer policy
-        const referrer = navigateEvent?.altRouting.referrer ?? document.referrer;
+        const referrer = navigation?.transition?.from.url ?? document.referrer;
         //toDo check if locations is already modified 
         const composition = await this.composeReady;
         const model = composition.models[fragmentsName];
 
-        const isMainRoute = this.#url.pathname === url.pathname;//toDo create func
+        const isMainRoute = this.#url.pathname === url.pathname;
         const requestInit = 
             {   
                 //toDo try not using data added to navigateEvent.altRouting
-                //mode: "no-cors",
-                //cache: "no-cache",
                 //info impossible de gérer le cas ou le premier chargement est un post
                 method: (isMainRoute && navigateEvent?.formData) ? "POST" : "GET",
+                body: navigateEvent?.formData,
                 referrer,
                 signal: abortSignal,
                 redirect: fragmentsName == "content.html" ? "manual" : "error" //todo check if good idea
             };
 
-        
-        
         const contentURL = new URL(fragmentsName, this.#url);
 
         if(!model.static)
