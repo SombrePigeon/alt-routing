@@ -387,7 +387,7 @@ export default class Route extends HTMLElement
 
     async #initComposition()
     {
-        const composition = structuredClone(baseComposition);
+        let composition = structuredClone(baseComposition);
         //toDo try catch ?
         const localComposition = 
             config.route.localComposition ? 
