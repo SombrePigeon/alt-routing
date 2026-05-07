@@ -389,10 +389,11 @@ export default class Route extends HTMLElement
     {
         let composition = structuredClone(baseComposition);
         //toDo try catch ?
-        const localComposition = 
+        const localCompositionModule = 
             config.route.localComposition ? 
-            await import(new URL("composition.json", this.#url),{ with: { type: "json" } }) :
-            null;
+            await import(new URL("composition.json", this.#url),{ with: { type: "json" } }): null;
+        const localComposition = localCompositionModule?.default;
+            
         if(localComposition)
         {
             //merge models
