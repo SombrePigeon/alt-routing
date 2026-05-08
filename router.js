@@ -10,6 +10,7 @@ export default class Router extends ParentClass
 {
     #path;
     #routingReady = Promise.withResolvers();
+    #serviceWorkerUpdated = false;
 
     get routingReady()
     {
@@ -76,6 +77,12 @@ export default class Router extends ParentClass
             }
         )
 
+        navigator.serviceWorker.addEventListener("controllerchange", 
+            _ =>
+            {
+                this.#serviceWorkerUpdated = true;
+            }
+        )
         
         //this.startRouting();
         
@@ -115,6 +122,7 @@ export default class Router extends ParentClass
         //toDo select bonne method http
         const exactRoute = this.querySelector(`:scope ${namings.components.route}[data-absolute-path="${path}"]${isPostAttributeSelector}`);
         local &&= (exactRoute != null);
+        local &&= !this.#serviceWorkerUpdated;
         return local;
     }
 
@@ -158,6 +166,11 @@ export default class Router extends ParentClass
     {
         e.detail.router = this;
     };
+
+    #serviceWorkerUpdate()
+    {
+        this.#serviceWorkerUpdated = true;
+    }
 
 }
 
