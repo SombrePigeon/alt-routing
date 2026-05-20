@@ -10,10 +10,16 @@ export default class Router extends ParentClass
 {
     #path;
     #routingReady = Promise.withResolvers();
+    #initialLoadDone = Promise.withResolvers();
 
     get routingReady()
     {
         return this.#routingReady.promise;
+    }
+
+    get initialLoadDone()
+    {
+        return this.#initialLoadDone.promise;
     }
 
     connectedCallback()
@@ -56,6 +62,7 @@ export default class Router extends ParentClass
             }
         );
 
+        this.#initialLoadPromiseSetup()
 
         //toDo get innerHTML and send it in an event
         //add base route
@@ -110,10 +117,7 @@ export default class Router extends ParentClass
         let local = true;
         const url = new URL(navigateEvent.destination.url);
         const path = url.pathname;
-        const postAttributeSelector = "[method='POST']";//toDo remove
-        const isPostAttributeSelector = ""; //navigateEvent.formData ? `${postAttributeSelector}` : `:not(${postAttributeSelector})`;
-        //toDo select bonne method http
-        const exactRoute = this.querySelector(`:scope ${namings.components.route}[data-absolute-path="${path}"]${isPostAttributeSelector}`);
+        const exactRoute = this.querySelector(`:scope ${namings.components.route}[data-absolute-path="${path}"]`);
         local &&= (exactRoute != null);
         return local;
     }
@@ -154,10 +158,52 @@ export default class Router extends ParentClass
         }
     }
 
-    #routeConstructionEventListener = (e) => 
+    #initialLoadPromiseSetup()
+    {
+        const promises = [];
+        const listenNewRoutes = new AbortController();
+        this.addEventListener(namings.events.connectComponent, 
+            (e) =>
+            {
+                const component = e.target;
+                if(component.tagName.toLowerCase() === namings.components.route.toLowerCase())
+                {
+                    const route = component;
+                    const loaded = Promise.withResolvers();
+                    promises.push(loaded.promise);
+                    route.addEventListener(namings.events.loaded,
+                        _=>
+                        {
+                            loaded.resolve()
+                        },
+                        {
+                            once: true
+                        }
+                    );
+                }
+            },
+            {
+                capture: true,
+                signal: listenNewRoutes.signal
+            }
+        );
+        
+        this.routingReady.then(
+            async _=>
+            {
+                listenNewRoutes.abort();
+                 console.debug('routing ready',promises)
+                await Promise.all(promises);
+                this.#initialLoadDone.resolve();
+                console.debug(promises)
+            }
+        );
+    }
+
+    #routeConstructionEventListener(e)
     {
         e.detail.router = this;
-    };
+    }
 
 }
 

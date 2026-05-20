@@ -4,10 +4,10 @@ const {promise, resolve} = Promise.withResolvers();
 
 export default promise;
 
-const routeur = document.querySelector(`[is="${namings.components.router}"]`);
+const routeur = document.querySelector(`[is=${namings.components.router}]`);
 if(routeur)
 {
     await customElements.whenDefined(namings.components.router);
-    await routeur.routingReady;
+    await routeur.initialLoadDone;
     resolve();
 }
