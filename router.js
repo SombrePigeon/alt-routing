@@ -80,6 +80,7 @@ export default class Router extends ParentClass
         navigator.serviceWorker.addEventListener("controllerchange", 
             _ =>
             {
+                console.info(`serviceWorker changed, alt-routing will not capture next navigate event.`)
                 this.#serviceWorkerUpdated = true;
             }
         )
