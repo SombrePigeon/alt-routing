@@ -3,7 +3,7 @@ import version from "./version.json" with {type : "json"};
 const logPrefix = "[SW::alt-routing]";
 let _cacheName;
 let _cacheNameVersion;
-const url = new URL("./",import.meta.url);
+const url = new URL("./", import.meta.url);
 
 export function install(cacheName)
 {
@@ -17,29 +17,35 @@ export function install(cacheName)
     self.addEventListener("install",
         e =>
         {
-            //get version and store it in cache
-            e.waitUntil(
-                async _ =>
+            const install = async _ =>
                 {
-                    caches.delete(url)
-                    const cache = await caches.open(cacheNameVersion);
-                    const files = [
-                        "namings.js",
-                        "config.json",
-                        "version.json",
-                        "composition.json",
-                        "router.js",
-                        "route.js",
-                        "anchor.js",
-                        "trustedTypes.js",
-                        "slot.js",
-                        "title.js",
-                    ];
-                    const urls = files.map(file => new URL(file, url));
-                    await cache.addAll(urls);
-                    console.debug(`${logPrefix} url en cache : `, urls);
-                }
-            )
+                    console.info(`${logPrefix} install version : ${version}`);
+                    if(caches.has(_cacheNameVersion))
+                    {
+                        console.debug(`${logPrefix} already in cache`);
+                    }
+                    else
+                    {
+                        const cache = await caches.open(cacheNameVersion);
+                        const files = [
+                            "namings.js",
+                            "config.json",
+                            "version.json",
+                            "composition.json",
+                            "router.js",
+                            "route.js",
+                            "anchor.js",
+                            "trustedTypes.js",
+                            "slot.js",
+                            "title.js",
+                        ];
+                        const urls = files.map(file => new URL(file, url));
+                        await cache.addAll(urls);
+                        console.debug(`${logPrefix} added to cache`);
+                    }
+                    console.info(`${logPrefix} installed`);
+                };
+            e.waitUntil(install());
         }
     )
 
@@ -49,6 +55,7 @@ export function install(cacheName)
             const request = e.request;
             if(request.url.startsWith(url))
             {
+                console.debug(`${logPrefix} handle : `, request);
                 const promise = caches.match(request);
                 e.respondWith(promise);
             }
@@ -72,9 +79,9 @@ export function install(cacheName)
                         }
                     }
                 }
-                console.info(`${logPrefix} activated`);
+                console.info(`${logPrefix} old versions removed`);
             }
-            e.waitUntil(remove);
+            e.waitUntil(remove());
         }
     )
 
