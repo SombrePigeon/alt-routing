@@ -1,4 +1,4 @@
-import version from "./version.json" with {type : "json"};
+const version = "2.0.0-alpha.5";
 
 const logPrefix = "[SW::alt-routing]";
 let _cacheName;
