@@ -15,21 +15,12 @@ export default
         locationMatchPart: "still",
         locationMatchNone: "hidden",
 
-        staticRouting: false,
-        propagateStaticRouting: undefined,
-        
-        routingSelector: `:scope>${namings.components.route}`,
-
-        localNav: false,
-        staticNav: false,
-        navSelector: ":scope>nav",
-
         showAttribute:
         {
-            locationMatch: false,
             state: false,
-            status: false
-        }
+        },
+        //new
+        localComposition: false
     },
     routeur:
     {
@@ -37,7 +28,8 @@ export default
         {
             shadowRouting: false,
             styleShadowRouting:false,
-            updateTarget: false
+            updateTarget: false,
+            viewTransition: false,
         },
         extends: "main"
         
@@ -59,12 +51,6 @@ export default
         {
             locationMatch: false
         }
-    },
-    targetNavigation:
-    {
-        origins:[],
-        targets:[],
-        timeout: 10//ms
     }
 
 }

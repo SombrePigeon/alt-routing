@@ -1,0 +1,34 @@
+{ 
+    "route":
+    {
+        "dataAttribute":
+        {
+            "state": false
+        },
+        "localComposition": false
+    },
+    "routeur":
+    {
+        "viewTransition": false,
+        "extends": "main"
+    },
+    "anchor":
+    {
+        "dataAttribute":
+        {
+            "state": false
+        }
+    },
+    "slot":
+    {
+
+    },
+    "form":
+    {
+        "dataAttribute":
+        {
+            "state": false
+        }
+    }
+
+}

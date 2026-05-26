@@ -1,25 +1,28 @@
 import namings from "./namings.js";
-import config from "alt-routing/config";
+import config from "alt-routing/config.json" with { type: "json" };
 
 console.info("alt-routing module init : anchor");
 
 export default class Anchor extends HTMLAnchorElement
 {
-    #router;
     #_locationMatch;
+    #removeListenersController;
 
     get #locationMatch()
     {
         return this.#_locationMatch;
     }
     set #locationMatch(locationMatch) 
-    {
-        if(this.#_locationMatch !== locationMatch)
         {
+            const lm = namings.enums.locationMatch;
+            let openBefore = this.#_locationMatch != lm.none ? "open" : null;
+            let currentBefore = this.#_locationMatch == lm.exact ? "current" : null;
             this.#_locationMatch = locationMatch;
-            this.dataset.locationMatch = this.#_locationMatch;
+            let openAfter = this.#_locationMatch != lm.none ? "open" : null;
+            let currentAfter = this.#_locationMatch == lm.exact ? "current" : null;
+            this.#replaceState(openBefore, openAfter);
+            this.#replaceState(currentBefore, currentAfter);
         }
-    }
 
     get locationMatch()
     {
@@ -28,6 +31,7 @@ export default class Anchor extends HTMLAnchorElement
 
     connectedCallback()
     {
+        this.#removeListenersController = new AbortController();
         this.addEventListener(namings.events.connectComponent, 
             this.#connectionEventListener,
             {
@@ -45,43 +49,18 @@ export default class Anchor extends HTMLAnchorElement
 
     disconnectedCallback()
     {
-        this.#router?.removeEventListener(namings.events.routeChange, this.routeChangeEventListener);
+        this.#removeListenersController.abort();
     }
 
-    #initNavigationEvent()
-    {
-        if(!this.getAttribute(this.download))
-        {
-            this.addEventListener("click", 
-            (e) => 
-            {
-                e.preventDefault();
-                this.#router.dispatchEvent(
-                    new CustomEvent(namings.events.navigate,
-                    {
-                        detail:
-                        {
-                            url: new URL(this.href),
-                            target: this.target,
-                            state: null,
-                            rel: this.rel.split(',')
-                                .filter(r => r === "noopener" || r === "noreferrer")
-                                .join(',')
-                        }
-                    }
-                    )
-                );
-            });
-        }
-    }
 
-    #updateLocationMatch = () => 
+    #updateLocationMatch = (navigateEvent) => 
     {
+        const href = navigateEvent?.destination.url ?? location.href;
         let match = namings.enums.locationMatch.none;
         //toDo try opti
-        if(location.href.startsWith(this.href))
+        if(href.startsWith(this.href))
         {
-            if(location.href === this.href)
+            if(href === this.href)
             {
                 match = namings.enums.locationMatch.exact;
             }
@@ -101,16 +80,42 @@ export default class Anchor extends HTMLAnchorElement
         {
             this.href = new URL(href, e.detail.url);
         }
-        
-        this.#router = e.detail.router;
-        if(config.anchor.showAttribute.locationMatch)
+        this.#removeListenersController = new AbortController();
+
+        if(config.anchor.dataAttribute.state)
         {
             this.#updateLocationMatch();
-            this.#router?.addEventListener(namings.events.routeChange,
-                this.#updateLocationMatch);
+            //toDo integration au view transitions/intercept
+            navigation?.addEventListener("navigate",
+                (navigateEvent)=>
+                {
+                    this.#updateLocationMatch(navigateEvent);
+                },
+                {
+                    signal: this.#removeListenersController.signal
+                }
+            );
         }
-        this.#initNavigationEvent();
     };
+
+    #replaceState(from, to)
+        {
+            if(config.route.dataAttribute.state)
+            {
+                const state = this.dataset.state;
+                const stateList = state?.split(/\s+/);
+                const stateSet = new Set(stateList);
+                if(from)
+                {
+                    stateSet.delete(from);
+                }
+                if(to)
+                {
+                    stateSet.add(to);
+                } 
+                this.dataset.state = [...stateSet].join(" ");
+            }
+        }
 
 }
 
