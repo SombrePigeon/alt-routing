@@ -1,4 +1,4 @@
-const version = "2.0.0-alpha.6";
+const version = "2.0.0-alpha.7";
 
 const logPrefix = "[SW::alt-routing]";
 let _cacheName;
