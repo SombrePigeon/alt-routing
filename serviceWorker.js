@@ -1,45 +1,51 @@
-const version = "2.0.0-alpha.6";
+const version = "2.0.0-alpha.7";
 
 const logPrefix = "[SW::alt-routing]";
 let _cacheName;
 let _cacheNameVersion;
 const url = new URL("./", import.meta.url);
 
+const files = [
+    "namings.js",
+    "config.json",
+    "version.json",
+    "composition.json",
+    "router.js",
+    "route.js",
+    "anchor.js",
+    "trustedTypes.js",
+    "slot.js",
+    "title.js",
+];
+
+let urls;
+
 export function install(cacheName)
 {
     _cacheName = cacheName ?? "alt-routing";
     _cacheNameVersion = `${_cacheName}/${version}`;
-
-    console.debug(`${logPrefix} url : `, url.href);
-    console.debug(`${logPrefix} version : `,version);
+    console.debug(`${logPrefix} version : `, version);
     console.debug(`${logPrefix} cacheName : `, _cacheNameVersion);
 
     self.addEventListener("install",
         e =>
         {
+            console.info(`${logPrefix} install version : ${version}`);
+
+            urls = files.map(file => new URL(file, url).href);
+            console.debug(`${logPrefix} urls à mettre en cache`, urls);
+
             const install = async _ =>
                 {
-                    console.info(`${logPrefix} install version : ${version}`);
-                    if(caches.has(_cacheNameVersion))
+                    if(await caches.has(_cacheNameVersion))
                     {
-                        console.debug(`${logPrefix} already in cache`);
+                        console.debug(`${logPrefix} ${_cacheNameVersion} already in cache`);
                     }
                     else
                     {
-                        const cache = await caches.open(cacheNameVersion);
-                        const files = [
-                            "namings.js",
-                            "config.json",
-                            "version.json",
-                            "composition.json",
-                            "router.js",
-                            "route.js",
-                            "anchor.js",
-                            "trustedTypes.js",
-                            "slot.js",
-                            "title.js",
-                        ];
-                        const urls = files.map(file => new URL(file, url));
+                        console.debug(`${logPrefix} create cache : `, _cacheNameVersion);
+                        const cache = await caches.open(_cacheNameVersion);
+                        console.debug(`${logPrefix} cache created : `, _cacheNameVersion);
                         await cache.addAll(urls);
                         console.debug(`${logPrefix} added to cache`);
                     }
@@ -53,10 +59,11 @@ export function install(cacheName)
         e =>
         {
             const request = e.request;
-            if(request.url.startsWith(url))
+            if(request.url.startsWith(url)
+            && urls.includes(request.url))
             {
                 console.debug(`${logPrefix} handle : `, request);
-                const promise = caches.match(request);
+                const promise = caches.match(request, {cacheName: _cacheNameVersion });
                 e.respondWith(promise);
             }
         }
@@ -79,7 +86,8 @@ export function install(cacheName)
                         }
                     }
                 }
-                console.info(`${logPrefix} old versions removed`);
+                console.debug(`${logPrefix} old versions removed`);
+                console.info(`${logPrefix} ${_cacheNameVersion} activated`);
             }
             e.waitUntil(remove());
         }
