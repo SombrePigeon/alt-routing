@@ -1,0 +1,40 @@
+{
+    "enums":
+    {
+        "locationMatch":
+        {
+            "part": "part",
+            "exact": "exact",
+            "none": "none"
+        },
+        "state": 
+        {
+            "open": "open",
+            "current": "current",
+            "ok": "ok"
+        }
+    },
+    "events":
+    {
+        "connectComponent": "alt-new-routing",
+        "loaded": "alt-loaded"
+    },
+    "components":
+    {
+        "route": "alt-route",
+        "router": "alt-router",
+        "anchor": "alt-a",
+        "title": "alt-title",
+        "slot": "alt-slot",
+        "form": "alt-form",
+        "template": "alt-template"
+    },
+    "files":
+    {
+        "content": "content.html",
+        "routing": "routing.html",
+        "template": "template.html",
+        "title": "title.txt",
+        "style": "style.css"
+    }
+}

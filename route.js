@@ -1,4 +1,4 @@
-import namings from "./namings.js";
+import namings from "./namings.json" with { type: "json" };
 import config from "alt-routing/config.json" with { type: "json" };
 import baseComposition from "alt-routing/composition.json" with { type: "json" };
 import trustedTypesPolicy from "./trustedTypes.js";
@@ -43,11 +43,11 @@ export default class Route extends HTMLElement
     set #locationMatch(locationMatch) 
     {
         const lm = namings.enums.locationMatch;
-        let openBefore = this.#_locationMatch != lm.none ? "open" : null;
-        let currentBefore = this.#_locationMatch == lm.exact ? "current" : null;
+        let openBefore = this.#_locationMatch != lm.none ? namings.enums.state.open : null;
+        let currentBefore = this.#_locationMatch == lm.exact ? namings.enums.state.current : null;
         this.#_locationMatch = locationMatch;
-        let openAfter = this.#_locationMatch != lm.none ? "open" : null;
-        let currentAfter = this.#_locationMatch == lm.exact ? "current" : null;
+        let openAfter = this.#_locationMatch != lm.none ? namings.enums.state.open : null;
+        let currentAfter = this.#_locationMatch == lm.exact ? namings.enums.state.current : null;
         this.#replaceCustomStateCSS(openBefore, openAfter);
         this.#replaceCustomStateCSS(currentBefore, currentAfter);
     }
@@ -61,9 +61,9 @@ export default class Route extends HTMLElement
         if(this.#_ok !== ok)
         {
             
-            const oldOk = this.#_ok ? "ok" : null;
+            const oldOk = this.#_ok ? namings.enums.state.ok : null;
             this.#_ok = ok;
-            const newOk = this.#_ok ? "ok" : null;
+            const newOk = this.#_ok ? namings.enums.state.ok : null;
             
             this.#replaceCustomStateCSS(oldOk, newOk);
         }
@@ -244,7 +244,7 @@ export default class Route extends HTMLElement
 
             await this.#insertFragment(fragmentsName, trusted_html ?? html);
 
-            if(fragmentsName === "content.html")
+            if(fragmentsName === namings.files.content)
             {
                 //toDo redirect if necessary
                 this.#ok = fragmentResponse.ok;
@@ -259,7 +259,7 @@ export default class Route extends HTMLElement
                     //state get
                 }
             }
-            if(fragmentsName === "routing.html")
+            if(fragmentsName === namings.files.routing)
             {
                 const promises = [];
                 for(const route of this.querySelectorAll(":scope>alt-route"))
@@ -293,7 +293,7 @@ export default class Route extends HTMLElement
                 body: navigateEvent?.formData,
                 referrer,
                 signal: abortSignal,
-                redirect: fragmentsName == "content.html" ? "manual" : "error" //todo check if good idea
+                redirect: fragmentsName == namings.files.content ? "manual" : "error" //todo check if good idea
             };
 
         const contentURL = new URL(fragmentsName, this.#url);
@@ -315,7 +315,7 @@ export default class Route extends HTMLElement
         }
         const contentRequest = new Request(contentURL, requestInit);
         const response = await fetch(contentRequest);
-        //if(fragmentsName == "content.html") debugger
+        //if(fragmentsName == namings.files.content) debugger
 
         return response;
     }
@@ -401,22 +401,22 @@ export default class Route extends HTMLElement
             delete localComposition.models;
             composition = {...composition, ...localComposition};
         }
-        if(!composition.fragments.includes("content.html"))
+        if(!composition.fragments.includes(namings.files.content))
         {
-            throw new Error(`Cannot find "content.html" fragment in ${this} composition`);
+            throw new Error(`Cannot find "${namings.files.content}" fragment in ${this} composition`);
         }
-        if(!composition.models["content.html"].loading.includes("exact"))
+        if(!composition.models[namings.files.content].loading.includes("exact"))
         {
-            throw new Error(`"content.html" model must load on exact in ${this} composition`);
+            throw new Error(`"${namings.files.content}" model must load on exact in ${this} composition`);
         }
-        if(!composition.fragments.includes("routing.html"))
+        if(!composition.fragments.includes(namings.files.routing))
         {
             this.#routingReady.resolve();
         }
-        const templateModel = composition.models["template.html"];
+        const templateModel = composition.models[namings.files.template];
         if(templateModel && !templateModel?.static)
         {
-            throw new Error(`"template.html" fragment must be static in ${this} composition`);
+            throw new Error(`"${namings.files.template}" fragment must be static in ${this} composition`);
         }
         for(const fragment of composition.fragments)
         {

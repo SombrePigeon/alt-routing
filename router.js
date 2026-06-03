@@ -1,4 +1,4 @@
-import namings from "./namings.js";
+import namings from "./namings.json" with { type: "json" };
 import Route from "./route.js";//required
 import config from "alt-routing/config.json" with { type: "json" };
 
