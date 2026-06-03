@@ -15,11 +15,11 @@ export default class Anchor extends HTMLAnchorElement
     set #locationMatch(locationMatch) 
         {
             const lm = namings.enums.locationMatch;
-            let openBefore = this.#_locationMatch != lm.none ? "open" : null;
-            let currentBefore = this.#_locationMatch == lm.exact ? "current" : null;
+            let openBefore = this.#_locationMatch != lm.none ? namings.files.open : null;
+            let currentBefore = this.#_locationMatch == lm.exact ? namings.files.current : null;
             this.#_locationMatch = locationMatch;
-            let openAfter = this.#_locationMatch != lm.none ? "open" : null;
-            let currentAfter = this.#_locationMatch == lm.exact ? "current" : null;
+            let openAfter = this.#_locationMatch != lm.none ? namings.files.open : null;
+            let currentAfter = this.#_locationMatch == lm.exact ? namings.files.current : null;
             this.#replaceState(openBefore, openAfter);
             this.#replaceState(currentBefore, currentAfter);
         }

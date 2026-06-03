@@ -38,11 +38,11 @@ export default
     },
     files:
     {
-        template: "template.html",
         content: "content.html",
         routing: "routing.html",
+        template: "template.html",
         title: "title.txt",
         style: "style.css"
-    },
+    }
 
 }
