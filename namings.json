@@ -17,12 +17,7 @@
     "events":
     {
         "connectComponent": "alt-new-routing",
-        "disconnectComponent": "alt-delete-routing",
-
-        "unloaded": "alt-unloaded",
-        "loaded": "alt-loaded",
-        "loading": "alt-loading",
-        "unloading": "alt-unloading"
+        "loaded": "alt-loaded"
     },
     "components":
     {
