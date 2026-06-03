@@ -1,4 +1,4 @@
-import namings from "./namings.js";
+import namings from "./namings.json" with { type: "json" };
 import config from "alt-routing/config.json" with { type: "json" };
 import baseComposition from "alt-routing/composition.json" with { type: "json" };
 import trustedTypesPolicy from "./trustedTypes.js";

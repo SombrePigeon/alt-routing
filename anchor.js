@@ -1,4 +1,4 @@
-import namings from "./namings.js";
+import namings from "./namings.json" with { type: "json" };
 import config from "alt-routing/config.json" with { type: "json" };
 
 console.info("alt-routing module init : anchor");

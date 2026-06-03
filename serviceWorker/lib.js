@@ -7,7 +7,7 @@ const url = new URL("../", import.meta.url);
 
 const files = [
     "version.json",
-    "namings.js",
+    "namings.json",
     "config.json",
     "composition.json",
     "trustedTypes.js",
