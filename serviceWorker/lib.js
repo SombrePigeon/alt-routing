@@ -1,26 +1,29 @@
-const version = "2.0.0-alpha.7";
+import version from "./version.json" with { type: "json" };
 
 const logPrefix = "[SW::alt-routing]";
 let _cacheName;
 let _cacheNameVersion;
-const url = new URL("./", import.meta.url);
+const url = new URL("../", import.meta.url);
 
 const files = [
+    "version.json",
     "namings.js",
     "config.json",
-    "version.json",
     "composition.json",
+    "trustedTypes.js",
     "router.js",
     "route.js",
     "anchor.js",
-    "trustedTypes.js",
-    "slot.js",
+    "form.js",
     "title.js",
+    "template.js",
+    "slot.js"
 ];
 
 let urls;
+let urlsSet;
 
-export function install(cacheName)
+export function init(cacheName)
 {
     _cacheName = cacheName ?? "alt-routing";
     _cacheNameVersion = `${_cacheName}/${version}`;
@@ -33,6 +36,8 @@ export function install(cacheName)
             console.info(`${logPrefix} install version : ${version}`);
 
             urls = files.map(file => new URL(file, url).href);
+            urlsSet = new Set(urls);
+            
             console.debug(`${logPrefix} urls à mettre en cache`, urls);
 
             const install = async _ =>
@@ -59,8 +64,7 @@ export function install(cacheName)
         e =>
         {
             const request = e.request;
-            if(request.url.startsWith(url)
-            && urls.includes(request.url))
+            if(urlsSet.has(request.url))
             {
                 console.debug(`${logPrefix} handle : `, request);
                 const promise = caches.match(request, {cacheName: _cacheNameVersion });
@@ -89,7 +93,7 @@ export function install(cacheName)
                 console.debug(`${logPrefix} old versions removed`);
                 console.info(`${logPrefix} ${_cacheNameVersion} activated`);
             }
-            e.waitUntil(remove());
+            remove();
         }
     )
 
