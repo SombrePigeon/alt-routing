@@ -13,16 +13,16 @@ export default class Anchor extends HTMLAnchorElement
         return this.#_locationMatch;
     }
     set #locationMatch(locationMatch) 
-        {
-            const lm = namings.enums.locationMatch;
-            let openBefore = this.#_locationMatch != lm.none ? namings.files.open : null;
-            let currentBefore = this.#_locationMatch == lm.exact ? namings.files.current : null;
-            this.#_locationMatch = locationMatch;
-            let openAfter = this.#_locationMatch != lm.none ? namings.files.open : null;
-            let currentAfter = this.#_locationMatch == lm.exact ? namings.files.current : null;
-            this.#replaceState(openBefore, openAfter);
-            this.#replaceState(currentBefore, currentAfter);
-        }
+    {
+        const lm = namings.enums.locationMatch;
+        let openBefore = this.#_locationMatch != lm.none ? namings.files.open : null;
+        let currentBefore = this.#_locationMatch == lm.exact ? namings.files.current : null;
+        this.#_locationMatch = locationMatch;
+        let openAfter = this.#_locationMatch != lm.none ? namings.files.open : null;
+        let currentAfter = this.#_locationMatch == lm.exact ? namings.files.current : null;
+        this.#replaceState(openBefore, openAfter);
+        this.#replaceState(currentBefore, currentAfter);
+    }
 
     get locationMatch()
     {
@@ -31,7 +31,6 @@ export default class Anchor extends HTMLAnchorElement
 
     connectedCallback()
     {
-        this.#removeListenersController = new AbortController();
         this.addEventListener(namings.events.connectComponent, 
             this.#connectionEventListener,
             {
@@ -74,11 +73,11 @@ export default class Anchor extends HTMLAnchorElement
 
     #connectionEventListener = (e) => 
     {
-        //rewrite href(absolute)
-        let href = this.getAttribute("href");
         if(e.detail.url)
         {
-            this.href = new URL(href, e.detail.url);
+            //rewrite href(absolute)
+            const href = this.getAttribute("href");
+            this.href = new URL(href, e.detail.url).href;
         }
         this.#removeListenersController = new AbortController();
 
