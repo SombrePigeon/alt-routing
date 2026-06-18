@@ -15,11 +15,11 @@ export default class Anchor extends HTMLAnchorElement
     set #locationMatch(locationMatch) 
     {
         const lm = namings.enums.locationMatch;
-        let openBefore = this.#_locationMatch != lm.none ? namings.files.open : null;
-        let currentBefore = this.#_locationMatch == lm.exact ? namings.files.current : null;
+        let openBefore = this.#_locationMatch != lm.none ? namings.enums.states.open : null;
+        let currentBefore = this.#_locationMatch == lm.exact ? namings.enums.states.current : null;
         this.#_locationMatch = locationMatch;
-        let openAfter = this.#_locationMatch != lm.none ? namings.files.open : null;
-        let currentAfter = this.#_locationMatch == lm.exact ? namings.files.current : null;
+        let openAfter = this.#_locationMatch != lm.none ? namings.enums.states.open : null;
+        let currentAfter = this.#_locationMatch == lm.exact ? namings.enums.states.current : null;
         this.#replaceState(openBefore, openAfter);
         this.#replaceState(currentBefore, currentAfter);
     }
@@ -98,23 +98,20 @@ export default class Anchor extends HTMLAnchorElement
     };
 
     #replaceState(from, to)
+    {
+        const state = this.dataset.state;
+        const stateList = state?.split(/\s+/);
+        const stateSet = new Set(stateList);
+        if(from)
         {
-            if(config.route.dataAttribute.state)
-            {
-                const state = this.dataset.state;
-                const stateList = state?.split(/\s+/);
-                const stateSet = new Set(stateList);
-                if(from)
-                {
-                    stateSet.delete(from);
-                }
-                if(to)
-                {
-                    stateSet.add(to);
-                } 
-                this.dataset.state = [...stateSet].join(" ");
-            }
+            stateSet.delete(from);
         }
+        if(to)
+        {
+            stateSet.add(to);
+        } 
+        this.dataset.state = [...stateSet].join(" ");
+    }
 
 }
 
