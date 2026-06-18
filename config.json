@@ -29,6 +29,27 @@
         {
             "state": false
         }
+    },
+    "submitButton":
+    {
+        "dataAttribute":
+        {
+            "state": false
+        }
+    },
+    "submitInput":
+    {
+        "dataAttribute":
+        {
+            "state": false
+        }
+    },
+    "area":
+    {
+        "dataAttribute":
+        {
+            "state": false
+        }
     }
 
 }
