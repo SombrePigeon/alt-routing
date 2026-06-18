@@ -27,6 +27,9 @@
         "title": "alt-title",
         "slot": "alt-slot",
         "form": "alt-form",
+        "button": "alt-button",
+        "input": "alt-input",
+        "area": "alt-area",
         "template": "alt-template"
     },
     "files":
