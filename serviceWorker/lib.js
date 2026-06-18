@@ -15,9 +15,9 @@ const files = [
     "route.js",
     "anchor.js",
     "form.js",
-    "title.js",
-    "template.js",
-    "slot.js"
+    "button.js",
+    "input.js",
+    "title.js"
 ];
 
 let urls;

@@ -1,9 +1,9 @@
 import namings from "./namings.json" with { type: "json" };
 import config from "alt-routing/config.json" with { type: "json" };
 
-console.info("alt-routing module init : anchor");
+console.info("alt-routing module init : submitInput");
 
-export default class Anchor extends HTMLAnchorElement
+export default class Input extends HTMLInputElement
 {
     #_locationMatch;
     #removeListenersController;
@@ -31,24 +31,28 @@ export default class Anchor extends HTMLAnchorElement
 
     connectedCallback()
     {
-        this.addEventListener(namings.events.connectComponent, 
-            this.#connectionEventListener,
-            {
-                once: true
-            });
-        this.dispatchEvent(
-            new CustomEvent(namings.events.connectComponent,
+        if(this.type === "submit" || this.type === "image")
+        {
+            this.addEventListener(namings.events.connectComponent, 
+                this.#connectionEventListener,
                 {
-                    composed: true,
-                    detail: {}//must be initialized
+                    once: true
                 }
-            )
-        );
+            );
+            this.dispatchEvent(
+                new CustomEvent(namings.events.connectComponent,
+                    {
+                        composed: true,
+                        detail: {}//must be initialized
+                    }
+                )
+            );
+        }
     }
 
     disconnectedCallback()
     {
-        this.#removeListenersController.abort();
+        this.#removeListenersController?.abort();
     }
 
 
@@ -56,10 +60,13 @@ export default class Anchor extends HTMLAnchorElement
     {
         const href = navigateEvent?.destination.url ?? location.href;
         let match = namings.enums.locationMatch.none;
+
+        const action = this.getAttribute("formaction") ? this.formAction : this.form.action;
         //toDo try opti
-        if(href.startsWith(this.href))
+
+        if(href.startsWith(action))//toDo with action (and)
         {
-            if(href === this.href)
+            if(href === action)
             {
                 match = namings.enums.locationMatch.exact;
             }
@@ -75,13 +82,16 @@ export default class Anchor extends HTMLAnchorElement
     {
         if(e.detail.url)
         {
-            //rewrite href(absolute)
-            const href = this.getAttribute("href");
-            this.href = new URL(href, e.detail.url).href;
+            //rewrite formAction(absolute)
+            const action = this.getAttribute("formaction");
+            if(action)
+            {
+                this.formAction = new URL(action, e.detail.url).href;
+            }
         }
         this.#removeListenersController = new AbortController();
 
-        if(config.anchor.dataAttribute.state)
+        if(config.input.dataAttribute.state)
         {
             this.#updateLocationMatch();
             //toDo integration au view transitions/intercept
@@ -115,4 +125,4 @@ export default class Anchor extends HTMLAnchorElement
 
 }
 
-customElements.define(namings.components.anchor, Anchor, { extends: "a" });
+customElements.define(namings.components.input, Input, { extends: "input" });

@@ -43,11 +43,11 @@ export default class Route extends HTMLElement
     set #locationMatch(locationMatch) 
     {
         const lm = namings.enums.locationMatch;
-        let openBefore = this.#_locationMatch != lm.none ? namings.enums.state.open : null;
-        let currentBefore = this.#_locationMatch == lm.exact ? namings.enums.state.current : null;
+        let openBefore = this.#_locationMatch != lm.none ? namings.enums.states.open : null;
+        let currentBefore = this.#_locationMatch == lm.exact ? namings.enums.states.current : null;
         this.#_locationMatch = locationMatch;
-        let openAfter = this.#_locationMatch != lm.none ? namings.enums.state.open : null;
-        let currentAfter = this.#_locationMatch == lm.exact ? namings.enums.state.current : null;
+        let openAfter = this.#_locationMatch != lm.none ? namings.enums.states.open : null;
+        let currentAfter = this.#_locationMatch == lm.exact ? namings.enums.states.current : null;
         this.#replaceCustomStateCSS(openBefore, openAfter);
         this.#replaceCustomStateCSS(currentBefore, currentAfter);
     }
@@ -61,9 +61,9 @@ export default class Route extends HTMLElement
         if(this.#_ok !== ok)
         {
             
-            const oldOk = this.#_ok ? namings.enums.state.ok : null;
+            const oldOk = this.#_ok ? namings.enums.states.ok : null;
             this.#_ok = ok;
-            const newOk = this.#_ok ? namings.enums.state.ok : null;
+            const newOk = this.#_ok ? namings.enums.states.ok : null;
             
             this.#replaceCustomStateCSS(oldOk, newOk);
         }
