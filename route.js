@@ -148,7 +148,7 @@ export default class Route extends HTMLElement
         this.dispatchEvent(namings.events.disconnectComponent);
     }
 
-    async update(navigateEvent)
+    async update(navigateEvent, precommitData)
     {
         //attach callback to navigate
         console.debug(`${this.#url} will try to update`);
@@ -186,7 +186,7 @@ export default class Route extends HTMLElement
                 const show = isStatic || model.loading.includes(match);
                 if(show)
                 {
-                    fragmentsUpdated.push(this.loadFragment(name, navigateEvent));
+                    fragmentsUpdated.push(this.loadFragment(name, navigateEvent, precommitData));
                 }
                 else
                 {
@@ -198,6 +198,45 @@ export default class Route extends HTMLElement
 
         await this.loaded(navigateEvent);
 
+    }
+
+    async #precommitAction(navigateEvent, precommitData)
+    {
+        //attach callback to navigate
+        console.debug(`${this.#url} precommit actions`);
+        let match = namings.enums.locationMatch.none;
+        const url = new URL(navigateEvent?.destination.url ?? location.href);
+        //toDo try opti
+        if(url.pathname.startsWith(this.#url.pathname))
+        {
+            if(url.pathname === this.#url.pathname)
+            {
+                match = namings.enums.locationMatch.exact;
+            }
+            else
+            {
+                match = namings.enums.locationMatch.part;
+            }
+        }
+
+        const composition = await this.composeReady;
+        const fragmentsNames = composition.fragments;
+        const fragmentsModels = composition.models;
+
+        const fragmentsPrefetch = [];
+        for(const name of fragmentsNames)
+        {
+            
+            const model = fragmentsModels[name];
+            const isStatic = model.static;
+            const prefetch = !isStatic && model.prefetch && model.loading.includes(match);
+            
+            if(prefetch)
+            {
+                precommitData.prefetch[name] = this.fetchFragment(name, navigateEvent);
+            }
+        }
+        await Promise.all(fragmentsPrefetch);  
     }
 
     async loaded(navigateEvent)
@@ -230,9 +269,9 @@ export default class Route extends HTMLElement
         await loaded.promise;
     }
 
-    async loadFragment(fragmentsName, navigateEvent)//optionnal param
+    async loadFragment(fragmentName, navigateEvent, precommitData)//optionnal param
     {
-        const fragmentPromise = this.fetchFragment(fragmentsName, navigateEvent);
+        const fragmentPromise = precommitData?.prefetch[fragmentName] ?? this.fetchFragment(fragmentName, navigateEvent);
         //toDo handle post redirect
         const fragmentResponse = await fragmentPromise;
         const insert = true;//toDo add 304 simulation handler
@@ -240,11 +279,11 @@ export default class Route extends HTMLElement
         {
             const html = await fragmentResponse.text();
 
-            const trusted_html = trustedTypesPolicy?.createHTML(html, this.absolutePath, fragmentsName);
+            const trusted_html = trustedTypesPolicy?.createHTML(html, this.absolutePath, fragmentName);
 
-            await this.#insertFragment(fragmentsName, trusted_html ?? html);
+            await this.#insertFragment(fragmentName, trusted_html ?? html);
 
-            if(fragmentsName === namings.files.content)
+            if(fragmentName === namings.files.content)
             {
                 //toDo redirect if necessary
                 this.#ok = fragmentResponse.ok;
@@ -259,7 +298,7 @@ export default class Route extends HTMLElement
                     //state get
                 }
             }
-            if(fragmentsName === namings.files.routing)
+            if(fragmentName === namings.files.routing)
             {
                 const promises = [];
                 for(const route of this.querySelectorAll(":scope>alt-route"))
@@ -271,7 +310,7 @@ export default class Route extends HTMLElement
         }
     }
 
-    async fetchFragment(fragmentsName, navigateEvent)
+    async fetchFragment(fragmentName, navigateEvent)
     {
         
         //request setup
@@ -282,7 +321,7 @@ export default class Route extends HTMLElement
         const referrer = navigation?.transition?.from.url ?? document.referrer;
         //toDo check if locations is already modified 
         const composition = await this.composeReady;
-        const model = composition.models[fragmentsName];
+        const model = composition.models[fragmentName];
 
         const isMainRoute = this.#url.pathname === url.pathname;
         const requestInit = 
@@ -293,10 +332,10 @@ export default class Route extends HTMLElement
                 body: navigateEvent?.formData,
                 referrer,
                 signal: abortSignal,
-                redirect: fragmentsName == namings.files.content ? "manual" : "error" //todo check if good idea
+                redirect: fragmentName == namings.files.content ? "manual" : "error" //todo check if good idea
             };
 
-        const contentURL = new URL(fragmentsName, this.#url);
+        const contentURL = new URL(fragmentName, this.#url);
 
         if(!model.static)
         {
@@ -315,7 +354,7 @@ export default class Route extends HTMLElement
         }
         const contentRequest = new Request(contentURL, requestInit);
         const response = await fetch(contentRequest);
-        //if(fragmentsName == namings.files.content) debugger
+        //if(fragmentName == namings.files.content) debugger
 
         return response;
     }
@@ -446,17 +485,25 @@ export default class Route extends HTMLElement
     {
         if(navigateEvent?.altRouting.update)
         {
+            const precommitData = 
+            {
+                prefetch: {}
+            };
             const handler = async _ =>
             {
-                await this.update(navigateEvent)
-            }
+                await this.update(navigateEvent, precommitData);
+            };
+            const precommitHandler = async controller =>
+            {
+                await this.#precommitAction(navigateEvent, precommitData);
+            };
             navigateEvent.intercept(
                 {
+                    precommitHandler,
                     handler
                 }
             );
         }
-        
     }
     
     #replaceCustomStateCSS(from, to)

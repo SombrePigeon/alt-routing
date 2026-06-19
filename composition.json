@@ -7,7 +7,8 @@
         },
         "content.html":
         {
-            "loading": ["exact"]
+            "loading": ["exact"],
+            "prefetch": true
         },
         "routing.html":
         {
