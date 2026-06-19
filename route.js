@@ -152,20 +152,7 @@ export default class Route extends HTMLElement
     {
         //attach callback to navigate
         console.debug(`${this.#url} will try to update`);
-        let match = namings.enums.locationMatch.none;
-        const url = new URL(navigateEvent?.destination.url ?? location.href);
-        //toDo try opti
-        if(url.pathname.startsWith(this.#url.pathname))
-        {
-            if(url.pathname === this.#url.pathname)
-            {
-                match = namings.enums.locationMatch.exact;
-            }
-            else
-            {
-                match = namings.enums.locationMatch.part;
-            }
-        }
+        let match = this.#getLocationMatch(navigateEvent);
         this.#locationMatch = match;
 
         const composition = await this.composeReady;
@@ -200,24 +187,11 @@ export default class Route extends HTMLElement
 
     }
 
-    async #precommitAction(navigateEvent, precommitData)
+    async #precommitAction(controller, navigateEvent, precommitData)
     {
         //attach callback to navigate
         console.debug(`${this.#url} precommit actions`);
-        let match = namings.enums.locationMatch.none;
-        const url = new URL(navigateEvent?.destination.url ?? location.href);
-        //toDo try opti
-        if(url.pathname.startsWith(this.#url.pathname))
-        {
-            if(url.pathname === this.#url.pathname)
-            {
-                match = namings.enums.locationMatch.exact;
-            }
-            else
-            {
-                match = namings.enums.locationMatch.part;
-            }
-        }
+        let match = this.#getLocationMatch(navigateEvent);
 
         const composition = await this.composeReady;
         const fragmentsNames = composition.fragments;
@@ -233,7 +207,9 @@ export default class Route extends HTMLElement
             
             if(prefetch)
             {
-                precommitData.prefetch[name] = this.fetchFragment(name, navigateEvent);
+                const fetchPromise = this.fetchFragment(name, navigateEvent);
+                precommitData.prefetch[name] = fetchPromise;
+                fragmentsPrefetch.push(fetchPromise);
             }
         }
         await Promise.all(fragmentsPrefetch);  
@@ -269,6 +245,24 @@ export default class Route extends HTMLElement
         await loaded.promise;
     }
 
+    #getLocationMatch(navigateEvent)
+    {
+        let match = namings.enums.locationMatch.none;
+        const url = new URL(navigateEvent?.destination.url ?? location.href);
+        //toDo try opti
+        if(url.pathname.startsWith(this.#url.pathname))
+        {
+            if(url.pathname === this.#url.pathname)
+            {
+                match = namings.enums.locationMatch.exact;
+            }
+            else
+            {
+                match = namings.enums.locationMatch.part;
+            }
+        }
+        return match;
+    }
     async loadFragment(fragmentName, navigateEvent, precommitData)//optionnal param
     {
         const fragmentPromise = precommitData?.prefetch[fragmentName] ?? this.fetchFragment(fragmentName, navigateEvent);
@@ -495,7 +489,7 @@ export default class Route extends HTMLElement
             };
             const precommitHandler = async controller =>
             {
-                await this.#precommitAction(navigateEvent, precommitData);
+                await this.#precommitAction(controller, navigateEvent, precommitData);
             };
             navigateEvent.intercept(
                 {
