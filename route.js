@@ -23,8 +23,8 @@ export default class Route extends HTMLElement
 
     #_locationMatch;
     #_state;
-    #_status;
     #_ok;
+    #_method;
 
     get composeReady()
     {
@@ -69,6 +69,16 @@ export default class Route extends HTMLElement
         }
     }
 
+    get #method()
+    {
+        return this.#_method;
+    }
+    set #method(method) 
+    {
+        this.#replaceCustomStateCSS(this.#_method, method);
+        this.#_method = method;
+    }
+
     //public getters
     get locationMatch()
     {
@@ -78,11 +88,6 @@ export default class Route extends HTMLElement
     get state()
     {
         return this.#_state;
-    }
-
-    get status()
-    {
-        return this.#_status;
     }
 
     get url()
@@ -97,6 +102,11 @@ export default class Route extends HTMLElement
     get router()
     {
         return this.#router;
+    }
+
+    get method()
+    {
+        return this.#_method;
     }
     
     //callbacks
@@ -283,13 +293,13 @@ export default class Route extends HTMLElement
                 this.#ok = fragmentResponse.ok;
                 const url = new URL(navigateEvent?.destination.url ?? location.href);
                 const isMainRoute = this.#url.pathname === url.pathname;
-                if(isMainRoute && navigateEvent?.formData)//toDo detectPost (main + formData) add remove on unload (setmethod)
+                if(isMainRoute)
                 {
-                    //state post
-                }
-                else
-                {
-                    //state get
+                    this.#method = 
+                    (
+                        fragmentName === namings.files.content 
+                        && navigateEvent?.formData
+                    ) ? "post" : "get";
                 }
             }
             if(fragmentName === namings.files.routing)
@@ -318,11 +328,17 @@ export default class Route extends HTMLElement
         const model = composition.models[fragmentName];
 
         const isMainRoute = this.#url.pathname === url.pathname;
+        const method = 
+        (
+            isMainRoute 
+            && navigateEvent?.formData 
+            && fragmentName === namings.files.content
+        ) ? "POST" : "GET";
         const requestInit = 
             {   
                 //toDo try not using data added to navigateEvent.altRouting
                 //info impossible de gérer le cas ou le premier chargement est un post
-                method: (isMainRoute && navigateEvent?.formData) ? "POST" : "GET",
+                method,
                 body: navigateEvent?.formData,
                 referrer,
                 signal: abortSignal,
@@ -373,7 +389,12 @@ export default class Route extends HTMLElement
     async unloadFragment(fragmentName)
     {
         await this.#removeFragment(fragmentName);
-        this.#ok = null;
+
+        if(fragmentName === namings.files.content)
+        {
+            this.#ok = null;
+            this.#method = null;
+        }
     }
     
     //onUnloaded
