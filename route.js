@@ -274,10 +274,25 @@ export default class Route extends HTMLElement
         return match;
     }
     async loadFragment(fragmentName, navigateEvent, precommitData)//optionnal param
-    {
-        const fragmentPromise = precommitData?.prefetch[fragmentName] ?? this.fetchFragment(fragmentName, navigateEvent);
-        //toDo handle post redirect
+    {   const prefetchPromise = precommitData?.prefetch[fragmentName];
+        const fragmentPromise = prefetchPromise ?? this.fetchFragment(fragmentName, navigateEvent);
         const fragmentResponse = await fragmentPromise;
+        
+        const url = new URL(navigateEvent?.destination.url ?? location.href);
+        const isMainRoute = this.#url.pathname === url.pathname;
+
+        if(fragmentName === namings.files.content)
+        {
+            const redirect = isMainRoute && fragmentResponse.redirected && !prefetchPromise;
+            if(redirect)
+            {
+                const contentUrl = new URL(fragmentResponse.url);
+                const contentPathname = contentUrl.pathname;
+                debugger
+
+            }
+            //toDo redirect with responsePromise as info
+        }
         const insert = true;//toDo add 304 simulation handler
         if(insert)
         {
@@ -291,8 +306,7 @@ export default class Route extends HTMLElement
             {
                 //toDo redirect if necessary
                 this.#ok = fragmentResponse.ok;
-                const url = new URL(navigateEvent?.destination.url ?? location.href);
-                const isMainRoute = this.#url.pathname === url.pathname;
+                
                 if(isMainRoute)
                 {
                     this.#method = 
@@ -341,8 +355,7 @@ export default class Route extends HTMLElement
                 method,
                 body: navigateEvent?.formData,
                 referrer,
-                signal: abortSignal,
-                redirect: fragmentName == namings.files.content ? "manual" : "error" //todo check if good idea
+                signal: abortSignal
             };
 
         const contentURL = new URL(fragmentName, this.#url);
