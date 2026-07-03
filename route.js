@@ -158,7 +158,7 @@ export default class Route extends HTMLElement
         this.dispatchEvent(namings.events.disconnectComponent);
     }
 
-    async update(navigateEvent, precommitData)
+    async update(navigateEvent)
     {
         //attach callback to navigate
         console.debug(`${this.#url} will try to update`);
@@ -183,7 +183,7 @@ export default class Route extends HTMLElement
                 const show = isStatic || model.loading.includes(match);
                 if(show)
                 {
-                    fragmentsUpdated.push(this.loadFragment(name, navigateEvent, precommitData));
+                    fragmentsUpdated.push(this.loadFragment(name, navigateEvent));
                 }
                 else
                 {
@@ -197,10 +197,10 @@ export default class Route extends HTMLElement
 
     }
 
-    async #precommitAction(controller, navigateEvent, precommitData)
+    async #precommitAction(controller, navigateEvent)
     {
         const fetchPromise = this.fetchFragment(namings.files.content, navigateEvent);
-        precommitData.contentPromise = fetchPromise;
+        navigateEvent.altRouting.contentPromise = fetchPromise;
         const response = await fetchPromise;
 
         debugger
@@ -263,15 +263,13 @@ export default class Route extends HTMLElement
         }
         return match;
     }
-    async loadFragment(fragmentName, navigateEvent, precommitData)//optionnal param
+    async loadFragment(fragmentName, navigateEvent)//optionnal param
     {
         const url = new URL(navigateEvent?.destination.url ?? location.href);
         const isMainRoute = this.#url.pathname === url.pathname;
         const canPrefetch = isMainRoute && (fragmentName === namings.files.content);
-        const prefetchPromise = canPrefetch ?
-            navigateEvent?.info?.altRouting?.contentPromise ?? precommitData?.contentPromise 
-            : undefined;
-            console.log("preco", (await precommitData), fragmentName)
+        const prefetchPromise = canPrefetch ? navigateEvent?.altRouting.contentPromise : undefined;
+            console.log("preco", (await prefetchPromise), fragmentName)
 debugger
         const fragmentPromise = prefetchPromise ?? this.fetchFragment(fragmentName, navigateEvent);
         const fragmentResponse = await fragmentPromise;
@@ -297,15 +295,18 @@ debugger
                         statusText: fragmentResponse.statusText,
                     }
                 );
+                const altRouting = {...navigateEvent.altRouting};
+                delete altRouting.update;
                 const navigateOptions = 
                 {
                     info: 
                     {
-                        altRouting: 
+                        altRouting
+                        /*altRouting: 
                         {
                             prenavContentPromise: Promise.resolve(cachedResponse),//to avoid main fetch twice
                             viewTransistion: undefined //toDo keep the same view transition alive
-                        }
+                        }*/
                     },
                     history: "replace"
                 };
@@ -543,10 +544,9 @@ debugger
     {
         if(navigateEvent?.altRouting.update)
         {
-            const precommitData = { contentPromise: undefined};
             const handler = async _ =>
             {
-                await this.update(navigateEvent, precommitData);
+                await this.update(navigateEvent);
             };
 
             const url = new URL(navigateEvent?.destination.url);
@@ -555,12 +555,12 @@ debugger
 
             const precommitHandler = prefetch ? async controller =>
             {
-                await this.#precommitAction(controller, navigateEvent, precommitData);
+                await this.#precommitAction(controller, navigateEvent);
             }:
             undefined;
             navigateEvent.intercept(
                 {
-                    precommitHandler,
+                    //precommitHandler,
                     handler
                 }
             );
