@@ -131,7 +131,6 @@ export default class Router extends ParentClass
 
     #attachViewTransition = (navigateEvent) =>
     {
-        //toDo add présnapsot promises
         if(navigateEvent.altRouting.update)
         {
             let precommitHandler;

@@ -203,7 +203,6 @@ export default class Route extends HTMLElement
         navigateEvent.altRouting.contentPromise = fetchPromise;
         const response = await fetchPromise;
 
-        debugger
         if(response.redirected)
         {
             const destinationUrl = this.redirectUrlFromContentUrl(new URL(response.url));
@@ -269,8 +268,7 @@ export default class Route extends HTMLElement
         const isMainRoute = this.#url.pathname === url.pathname;
         const canPrefetch = isMainRoute && (fragmentName === namings.files.content);
         const prefetchPromise = canPrefetch ? navigateEvent?.altRouting.contentPromise : undefined;
-            console.log("preco", (await prefetchPromise), fragmentName)
-debugger
+
         const fragmentPromise = prefetchPromise ?? this.fetchFragment(fragmentName, navigateEvent);
         const fragmentResponse = await fragmentPromise;
         
@@ -286,7 +284,7 @@ debugger
                 const contentUrl = new URL(fragmentResponse.url);
                 const destinationUrl = this.redirectUrlFromContentUrl(contentUrl);
 
-                //create indépendant response
+                //create clone response the do not expire when navigate abort 
                 const buffer = await fragmentResponse.arrayBuffer();
                 const cachedResponse = new Response(buffer, 
                     {
@@ -305,9 +303,8 @@ debugger
                     history: "replace"
                 };
 
-                navigation.navigate(destinationUrl,navigateOptions);
+                navigation.navigate(destinationUrl, navigateOptions);
             }
-            //toDo redirect with responsePromise as info
         }
         const insert = true;//toDo add 304 simulation handler
         if(insert)
@@ -402,7 +399,6 @@ debugger
         }
         const contentRequest = new Request(contentURL, requestInit);
         const response = await fetch(contentRequest);
-        //if(fragmentName == namings.files.content) debugger
 
         return response;
     }
