@@ -199,30 +199,20 @@ export default class Route extends HTMLElement
 
     async #precommitAction(controller, navigateEvent, precommitData)
     {
-        //attach callback to navigate
-        console.debug(`${this.#url} precommit actions`);
-        let match = this.#getLocationMatch(navigateEvent);
+        const fetchPromise = this.fetchFragment(namings.files.content, navigateEvent);
+        precommitData.contentPromise = fetchPromise;
+        const response = await fetchPromise;
 
-        const composition = await this.composeReady;
-        const fragmentsNames = composition.fragments;
-        const fragmentsModels = composition.models;
-
-        const fragmentsPrefetch = [];
-        for(const name of fragmentsNames)
+        debugger
+        if(response.redirected)
         {
-            
-            const model = fragmentsModels[name];
-            const isStatic = model.static;
-            const prefetch = !isStatic && model.prefetch && model.loading.includes(match);
-            
-            if(prefetch)
-            {
-                const fetchPromise = this.fetchFragment(name, navigateEvent);
-                precommitData.prefetch[name] = fetchPromise;
-                fragmentsPrefetch.push(fetchPromise);
-            }
+            const destinationUrl = this.redirectUrlFromContentUrl(new URL(response.url));
+            const redirectOptions = 
+                {
+                    history: "replace"
+                };
+            controller.redirect(destinationUrl, redirectOptions);
         }
-        await Promise.all(fragmentsPrefetch);  
     }
 
     async loaded(navigateEvent)
@@ -277,9 +267,12 @@ export default class Route extends HTMLElement
     {
         const url = new URL(navigateEvent?.destination.url ?? location.href);
         const isMainRoute = this.#url.pathname === url.pathname;
-
-        const prefetchPromise = (isMainRoute ? navigateEvent?.info?.altRouting?.prenavContentPromise : undefined) ?? precommitData?.prefetch[fragmentName];
-
+        const canPrefetch = isMainRoute && (fragmentName === namings.files.content);
+        const prefetchPromise = canPrefetch ?
+            navigateEvent?.info?.altRouting?.contentPromise ?? precommitData?.contentPromise 
+            : undefined;
+            console.log("preco", (await precommitData), fragmentName)
+debugger
         const fragmentPromise = prefetchPromise ?? this.fetchFragment(fragmentName, navigateEvent);
         const fragmentResponse = await fragmentPromise;
         
@@ -550,18 +543,21 @@ export default class Route extends HTMLElement
     {
         if(navigateEvent?.altRouting.update)
         {
-            const precommitData = 
-            {
-                prefetch: {}
-            };
+            const precommitData = { contentPromise: undefined};
             const handler = async _ =>
             {
                 await this.update(navigateEvent, precommitData);
             };
-            const precommitHandler = async controller =>
+
+            const url = new URL(navigateEvent?.destination.url);
+            const isMainRoute = this.#url.pathname === url.pathname;
+            const prefetch = isMainRoute && !navigateEvent?.info?.altRouting?.prenavContentPromise;
+
+            const precommitHandler = prefetch ? async controller =>
             {
                 await this.#precommitAction(controller, navigateEvent, precommitData);
-            };
+            }:
+            undefined;
             navigateEvent.intercept(
                 {
                     precommitHandler,
