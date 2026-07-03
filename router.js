@@ -101,7 +101,6 @@ export default class Router extends ParentClass
         {
             //init
             const oldAltRouting = navigateEvent?.info?.altRouting;
-            delete oldAltRouting.update;//we don't want old update 
             navigateEvent.altRouting ??= {};
             navigateEvent.altRouting = {...oldAltRouting ,...navigateEvent.altRouting}
             const update = navigateEvent.canIntercept 
@@ -135,32 +134,47 @@ export default class Router extends ParentClass
         //toDo add présnapsot promises
         if(navigateEvent.altRouting.update)
         {
-            const precommitHandler = async () =>
+            let precommitHandler;
+            if(!navigateEvent.altRouting.viewTransitionResolve)
             {
-                const snapshot = Promise.withResolvers();
-                
-                const navigationFinished = navigation.transition.finished;
-                const vtWrapper = async  _ => 
-                    {
-                        snapshot.resolve()
-                        await navigationFinished;
-                    }
-                console.debug("start viewTransition");
-                console.debug("ViewTransition snapshot begin");
-                document.startViewTransition(
-                    vtWrapper
-                );
-                console.debug("snapshot current state", snapshot.promise)
-                await snapshot.promise;
-                console.debug("ViewTransition snapshot done");
+                const viewTransitionEnd = Promise.withResolvers();
+                navigateEvent.altRouting.viewTransitionResolve = viewTransitionEnd.resolve;
 
+                precommitHandler = async () =>
+                {
+                    const snapshot = Promise.withResolvers();
+                    
+                    const vtWrapper = async  _ => 
+                        {
+                            snapshot.resolve()
+                            await viewTransitionEnd.promise;
+                        }
+                    console.debug("start viewTransition");
+                    console.debug("ViewTransition snapshot begin");
+                    document.startViewTransition(
+                        vtWrapper
+                    );
+                    console.debug("snapshot current state", snapshot.promise)
+                    await snapshot.promise;
+                    console.debug("ViewTransition snapshot done");
+
+                }
             }
-
+            const handler = async _ =>
+                {
+                    navigation.transition.finished.then(
+                        _ =>
+                        {
+                            navigateEvent.altRouting.viewTransitionResolve();
+                        }
+                    )   
+                }
             navigateEvent.intercept(
                 {
-                    precommitHandler
+                    precommitHandler,
+                    handler
                 }
-            )
+            );
         }
     }
 
