@@ -296,17 +296,11 @@ debugger
                     }
                 );
                 const altRouting = {...navigateEvent.altRouting};
-                delete altRouting.update;
                 const navigateOptions = 
                 {
                     info: 
                     {
                         altRouting
-                        /*altRouting: 
-                        {
-                            prenavContentPromise: Promise.resolve(cachedResponse),//to avoid main fetch twice
-                            viewTransistion: undefined //toDo keep the same view transition alive
-                        }*/
                     },
                     history: "replace"
                 };

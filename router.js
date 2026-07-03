@@ -100,7 +100,10 @@ export default class Router extends ParentClass
         if(new URL(navigateEvent.destination.url).pathname.startsWith(this.#path))
         {
             //init
+            const oldAltRouting = navigateEvent?.info?.altRouting;
+            delete oldAltRouting.update;//we don't want old update 
             navigateEvent.altRouting ??= {};
+            navigateEvent.altRouting = {...oldAltRouting ,...navigateEvent.altRouting}
             const update = navigateEvent.canIntercept 
             && navigateEvent.navigationType !== "reload"
             && !navigateEvent.hashChange 
@@ -135,7 +138,6 @@ export default class Router extends ParentClass
             const precommitHandler = async () =>
             {
                 const snapshot = Promise.withResolvers();
-                console.group("ViewTransition snapshot");
                 
                 const navigationFinished = navigation.transition.finished;
                 const vtWrapper = async  _ => 
@@ -151,7 +153,6 @@ export default class Router extends ParentClass
                 console.debug("snapshot current state", snapshot.promise)
                 await snapshot.promise;
                 console.debug("ViewTransition snapshot done");
-                console.groupEnd();//snapshot
 
             }
 
