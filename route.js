@@ -23,8 +23,8 @@ export default class Route extends HTMLElement
 
     #_locationMatch;
     #_state;
-    #_status;
     #_ok;
+    #_method;
 
     get composeReady()
     {
@@ -69,6 +69,16 @@ export default class Route extends HTMLElement
         }
     }
 
+    get #method()
+    {
+        return this.#_method;
+    }
+    set #method(method) 
+    {
+        this.#replaceCustomStateCSS(this.#_method, method);
+        this.#_method = method;
+    }
+
     //public getters
     get locationMatch()
     {
@@ -78,11 +88,6 @@ export default class Route extends HTMLElement
     get state()
     {
         return this.#_state;
-    }
-
-    get status()
-    {
-        return this.#_status;
     }
 
     get url()
@@ -97,6 +102,11 @@ export default class Route extends HTMLElement
     get router()
     {
         return this.#router;
+    }
+
+    get method()
+    {
+        return this.#_method;
     }
     
     //callbacks
@@ -152,20 +162,7 @@ export default class Route extends HTMLElement
     {
         //attach callback to navigate
         console.debug(`${this.#url} will try to update`);
-        let match = namings.enums.locationMatch.none;
-        const url = new URL(navigateEvent?.destination.url ?? location.href);
-        //toDo try opti
-        if(url.pathname.startsWith(this.#url.pathname))
-        {
-            if(url.pathname === this.#url.pathname)
-            {
-                match = namings.enums.locationMatch.exact;
-            }
-            else
-            {
-                match = namings.enums.locationMatch.part;
-            }
-        }
+        let match = this.#getLocationMatch(navigateEvent);
         this.#locationMatch = match;
 
         const composition = await this.composeReady;
@@ -200,6 +197,23 @@ export default class Route extends HTMLElement
 
     }
 
+    async #precommitAction(controller, navigateEvent)
+    {
+        const fetchPromise = this.fetchFragment(namings.files.content, navigateEvent);
+        navigateEvent.altRouting.contentPromise = fetchPromise;
+        const response = await fetchPromise;
+
+        if(response.redirected)
+        {
+            const destinationUrl = this.redirectUrlFromContentUrl(new URL(response.url));
+            const redirectOptions = 
+                {
+                    history: "replace"
+                };
+            controller.redirect(destinationUrl, redirectOptions);
+        }
+    }
+
     async loaded(navigateEvent)
     {
         
@@ -230,36 +244,92 @@ export default class Route extends HTMLElement
         await loaded.promise;
     }
 
-    async loadFragment(fragmentsName, navigateEvent)//optionnal param
+    #getLocationMatch(navigateEvent)
     {
-        const fragmentPromise = this.fetchFragment(fragmentsName, navigateEvent);
-        //toDo handle post redirect
+        let match = namings.enums.locationMatch.none;
+        const url = new URL(navigateEvent?.destination.url ?? location.href);
+        //toDo try opti
+        if(url.pathname.startsWith(this.#url.pathname))
+        {
+            if(url.pathname === this.#url.pathname)
+            {
+                match = namings.enums.locationMatch.exact;
+            }
+            else
+            {
+                match = namings.enums.locationMatch.part;
+            }
+        }
+        return match;
+    }
+    async loadFragment(fragmentName, navigateEvent)//optionnal param
+    {
+        const url = new URL(navigateEvent?.destination.url ?? location.href);
+        const isMainRoute = this.#url.pathname === url.pathname;
+        const canPrefetch = isMainRoute && (fragmentName === namings.files.content);
+        const prefetchPromise = canPrefetch ? navigateEvent?.altRouting.contentPromise : undefined;
+
+        const fragmentPromise = prefetchPromise ?? this.fetchFragment(fragmentName, navigateEvent);
         const fragmentResponse = await fragmentPromise;
+        
+        
+        
+
+        //redirect post commit if no precommithandler
+        if(fragmentName === namings.files.content)
+        {
+            const redirect = isMainRoute && fragmentResponse.redirected && !prefetchPromise;
+            if(redirect)
+            {
+                const contentUrl = new URL(fragmentResponse.url);
+                const destinationUrl = this.redirectUrlFromContentUrl(contentUrl);
+
+                //create clone response the do not expire when navigate abort 
+                const buffer = await fragmentResponse.arrayBuffer();
+                const cachedResponse = new Response(buffer, 
+                    {
+                        headers: fragmentResponse.headers,
+                        status: fragmentResponse.status,
+                        statusText: fragmentResponse.statusText,
+                    }
+                );
+                const altRouting = {...navigateEvent.altRouting};
+                const navigateOptions = 
+                {
+                    info: 
+                    {
+                        altRouting
+                    },
+                    history: "replace"
+                };
+
+                navigation.navigate(destinationUrl, navigateOptions);
+            }
+        }
         const insert = true;//toDo add 304 simulation handler
         if(insert)
         {
             const html = await fragmentResponse.text();
 
-            const trusted_html = trustedTypesPolicy?.createHTML(html, this.absolutePath, fragmentsName);
+            const trusted_html = trustedTypesPolicy?.createHTML(html, this.absolutePath, fragmentName);
 
-            await this.#insertFragment(fragmentsName, trusted_html ?? html);
+            await this.#insertFragment(fragmentName, trusted_html ?? html);
 
-            if(fragmentsName === namings.files.content)
+            if(fragmentName === namings.files.content)
             {
                 //toDo redirect if necessary
                 this.#ok = fragmentResponse.ok;
-                const url = new URL(navigateEvent?.destination.url ?? location.href);
-                const isMainRoute = this.#url.pathname === url.pathname;
-                if(isMainRoute && navigateEvent?.formData)//toDo detectPost (main + formData) add remove on unload (setmethod)
+                
+                if(isMainRoute)
                 {
-                    //state post
-                }
-                else
-                {
-                    //state get
+                    this.#method = 
+                    (
+                        fragmentName === namings.files.content 
+                        && navigateEvent?.formData
+                    ) ? "post" : "get";
                 }
             }
-            if(fragmentsName === namings.files.routing)
+            if(fragmentName === namings.files.routing)
             {
                 const promises = [];
                 for(const route of this.querySelectorAll(":scope>alt-route"))
@@ -271,7 +341,16 @@ export default class Route extends HTMLElement
         }
     }
 
-    async fetchFragment(fragmentsName, navigateEvent)
+    redirectUrlFromContentUrl(contentUrl)
+    {
+        const contentPathname = contentUrl.pathname;
+        const destinationPathname = contentPathname.replace(new RegExp(RegExp.escape(namings.files.content) + "$"), "");
+        const destinationUrl = contentUrl;
+        destinationUrl.pathname = destinationPathname;
+        return destinationUrl;
+    }
+
+    async fetchFragment(fragmentName, navigateEvent)
     {
         
         //request setup
@@ -282,21 +361,26 @@ export default class Route extends HTMLElement
         const referrer = navigation?.transition?.from.url ?? document.referrer;
         //toDo check if locations is already modified 
         const composition = await this.composeReady;
-        const model = composition.models[fragmentsName];
+        const model = composition.models[fragmentName];
 
         const isMainRoute = this.#url.pathname === url.pathname;
+        const method = 
+        (
+            isMainRoute 
+            && navigateEvent?.formData 
+            && fragmentName === namings.files.content
+        ) ? "POST" : "GET";
         const requestInit = 
             {   
                 //toDo try not using data added to navigateEvent.altRouting
                 //info impossible de gérer le cas ou le premier chargement est un post
-                method: (isMainRoute && navigateEvent?.formData) ? "POST" : "GET",
+                method,
                 body: navigateEvent?.formData,
                 referrer,
-                signal: abortSignal,
-                redirect: fragmentsName == namings.files.content ? "manual" : "error" //todo check if good idea
+                signal: abortSignal
             };
 
-        const contentURL = new URL(fragmentsName, this.#url);
+        const contentURL = new URL(fragmentName, this.#url);
 
         if(!model.static)
         {
@@ -315,7 +399,6 @@ export default class Route extends HTMLElement
         }
         const contentRequest = new Request(contentURL, requestInit);
         const response = await fetch(contentRequest);
-        //if(fragmentsName == namings.files.content) debugger
 
         return response;
     }
@@ -340,7 +423,12 @@ export default class Route extends HTMLElement
     async unloadFragment(fragmentName)
     {
         await this.#removeFragment(fragmentName);
-        this.#ok = null;
+
+        if(fragmentName === namings.files.content)
+        {
+            this.#ok = null;
+            this.#method = null;
+        }
     }
     
     //onUnloaded
@@ -448,15 +536,25 @@ export default class Route extends HTMLElement
         {
             const handler = async _ =>
             {
-                await this.update(navigateEvent)
-            }
+                await this.update(navigateEvent);
+            };
+
+            const url = new URL(navigateEvent?.destination.url);
+            const isMainRoute = this.#url.pathname === url.pathname;
+            const prefetch = isMainRoute && !navigateEvent?.info?.altRouting?.prenavContentPromise;
+
+            const precommitHandler = prefetch ? async controller =>
+            {
+                await this.#precommitAction(controller, navigateEvent);
+            }:
+            undefined;
             navigateEvent.intercept(
                 {
+                    precommitHandler,
                     handler
                 }
             );
         }
-        
     }
     
     #replaceCustomStateCSS(from, to)

@@ -100,7 +100,9 @@ export default class Router extends ParentClass
         if(new URL(navigateEvent.destination.url).pathname.startsWith(this.#path))
         {
             //init
+            const oldAltRouting = navigateEvent?.info?.altRouting;
             navigateEvent.altRouting ??= {};
+            navigateEvent.altRouting = {...oldAltRouting ,...navigateEvent.altRouting}
             const update = navigateEvent.canIntercept 
             && navigateEvent.navigationType !== "reload"
             && !navigateEvent.hashChange 
@@ -129,37 +131,49 @@ export default class Router extends ParentClass
 
     #attachViewTransition = (navigateEvent) =>
     {
-        //toDo add présnapsot promises
         if(navigateEvent.altRouting.update)
         {
-            const precommitHandler = async () =>
+            let precommitHandler;
+            if(!navigateEvent.altRouting.viewTransitionResolve)
             {
-                const snapshot = Promise.withResolvers();
-                console.group("ViewTransition snapshot");
-                
-                const navigationFinished = navigation.transition.finished;
-                const vtWrapper = async  _ => 
-                    {
-                        snapshot.resolve()
-                        await navigationFinished;
-                    }
-                console.debug("start viewTransition");
-                console.debug("ViewTransition snapshot begin");
-                document.startViewTransition(
-                    vtWrapper
-                );
-                console.debug("snapshot current state", snapshot.promise)
-                await snapshot.promise;
-                console.debug("ViewTransition snapshot done");
-                console.groupEnd();//snapshot
+                const viewTransitionEnd = Promise.withResolvers();
+                navigateEvent.altRouting.viewTransitionResolve = viewTransitionEnd.resolve;
 
+                precommitHandler = async () =>
+                {
+                    const snapshot = Promise.withResolvers();
+                    
+                    const vtWrapper = async  _ => 
+                        {
+                            snapshot.resolve()
+                            await viewTransitionEnd.promise;
+                        }
+                    console.debug("start viewTransition");
+                    console.debug("ViewTransition snapshot begin");
+                    document.startViewTransition(
+                        vtWrapper
+                    );
+                    console.debug("snapshot current state", snapshot.promise)
+                    await snapshot.promise;
+                    console.debug("ViewTransition snapshot done");
+
+                }
             }
-
+            const handler = async _ =>
+                {
+                    navigation.transition.finished.then(
+                        _ =>
+                        {
+                            navigateEvent.altRouting.viewTransitionResolve();
+                        }
+                    )   
+                }
             navigateEvent.intercept(
                 {
-                    precommitHandler
+                    precommitHandler,
+                    handler
                 }
-            )
+            );
         }
     }
 
