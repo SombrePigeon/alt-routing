@@ -554,7 +554,7 @@ debugger
             undefined;
             navigateEvent.intercept(
                 {
-                    //precommitHandler,
+                    precommitHandler,
                     handler
                 }
             );
