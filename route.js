@@ -274,22 +274,50 @@ export default class Route extends HTMLElement
         return match;
     }
     async loadFragment(fragmentName, navigateEvent, precommitData)//optionnal param
-    {   const prefetchPromise = precommitData?.prefetch[fragmentName];
-        const fragmentPromise = prefetchPromise ?? this.fetchFragment(fragmentName, navigateEvent);
-        const fragmentResponse = await fragmentPromise;
-        
+    {
         const url = new URL(navigateEvent?.destination.url ?? location.href);
         const isMainRoute = this.#url.pathname === url.pathname;
 
+        const prefetchPromise = (isMainRoute ? navigateEvent?.info?.altRouting?.prenavContentPromise : undefined) ?? precommitData?.prefetch[fragmentName];
+
+        const fragmentPromise = prefetchPromise ?? this.fetchFragment(fragmentName, navigateEvent);
+        const fragmentResponse = await fragmentPromise;
+        
+        
+        
+
+        //redirect post commit if no precommithandler
         if(fragmentName === namings.files.content)
         {
             const redirect = isMainRoute && fragmentResponse.redirected && !prefetchPromise;
             if(redirect)
             {
                 const contentUrl = new URL(fragmentResponse.url);
-                const contentPathname = contentUrl.pathname;
-                debugger
+                const destinationUrl = this.redirectUrlFromContentUrl(contentUrl);
 
+                //create indépendant response
+                const buffer = await fragmentResponse.arrayBuffer();
+                const cachedResponse = new Response(buffer, 
+                    {
+                        headers: fragmentResponse.headers,
+                        status: fragmentResponse.status,
+                        statusText: fragmentResponse.statusText,
+                    }
+                );
+                const navigateOptions = 
+                {
+                    info: 
+                    {
+                        altRouting: 
+                        {
+                            prenavContentPromise: Promise.resolve(cachedResponse),//to avoid main fetch twice
+                            viewTransistion: undefined //toDo keep the same view transition alive
+                        }
+                    },
+                    history: "replace"
+                };
+
+                navigation.navigate(destinationUrl,navigateOptions);
             }
             //toDo redirect with responsePromise as info
         }
@@ -326,6 +354,15 @@ export default class Route extends HTMLElement
                 this.#routingReady.resolve(Promise.all(promises));
             }
         }
+    }
+
+    redirectUrlFromContentUrl(contentUrl)
+    {
+        const contentPathname = contentUrl.pathname;
+        const destinationPathname = contentPathname.replace(new RegExp(RegExp.escape(namings.files.content) + "$"), "");
+        const destinationUrl = contentUrl;
+        destinationUrl.pathname = destinationPathname;
+        return destinationUrl;
     }
 
     async fetchFragment(fragmentName, navigateEvent)
