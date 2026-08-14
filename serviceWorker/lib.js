@@ -20,14 +20,14 @@ const files = [
     "title.js"
 ];
 
-let urls;
 let urlsSet;
 
 export function init(cacheName)
 {
     _cacheName = cacheName ?? "alt-routing";
     _cacheNameVersion = `${_cacheName}/${version}`;
-    console.debug(`${logPrefix} version : `, version);
+    console.info(`${logPrefix} starting ... `);
+    console.info(`${logPrefix} version : `, version);
     console.debug(`${logPrefix} cacheName : `, _cacheNameVersion);
 
     self.addEventListener("install",
@@ -35,41 +35,27 @@ export function init(cacheName)
         {
             console.info(`${logPrefix} install version : ${version}`);
 
-            urls = files.map(file => new URL(file, url).href);
-            urlsSet = new Set(urls);
-            
-            console.debug(`${logPrefix} urls à mettre en cache`, urls);
-
             const install = async _ =>
                 {
                     if(await caches.has(_cacheNameVersion))
                     {
-                        console.debug(`${logPrefix} ${_cacheNameVersion} already in cache`);
+                        console.debug(`${logPrefix} ${_cacheNameVersion} already installed`);
                     }
                     else
                     {
                         console.debug(`${logPrefix} create cache : `, _cacheNameVersion);
                         const cache = await caches.open(_cacheNameVersion);
                         console.debug(`${logPrefix} cache created : `, _cacheNameVersion);
+
+                        const urls = files.map(file => new URL(file, url).href);
+                        console.debug(`${logPrefix} urls à mettre en cache`, urls);
+                        
                         await cache.addAll(urls);
                         console.debug(`${logPrefix} added to cache`);
                     }
                     console.info(`${logPrefix} installed`);
                 };
             e.waitUntil(install());
-        }
-    )
-
-    self.addEventListener("fetch",
-        e =>
-        {
-            const request = e.request;
-            if(urlsSet.has(request.url))
-            {
-                console.debug(`${logPrefix} handle : `, request);
-                const promise = caches.match(request, {cacheName: _cacheNameVersion });
-                e.respondWith(promise);
-            }
         }
     )
 
@@ -85,16 +71,15 @@ export function init(cacheName)
                     {
                         if(key !== _cacheNameVersion)
                         {
-                            caches.delete(key);
+                            await caches.delete(key);
                             console.debug(`${logPrefix} remove old version : `, key);
                         }
                     }
                 }
                 console.debug(`${logPrefix} old versions removed`);
                 console.info(`${logPrefix} ${_cacheNameVersion} activated`);
-            }
-            remove();
+            };
+            e.waitUntil(remove());
         }
     )
-
 }
