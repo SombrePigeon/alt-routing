@@ -1,32 +1,29 @@
+import version from "./version.json" with { type: "json" };
 const logPrefix = "[SW::alt-routing-routing]";
 let _cacheName;
 let _cacheNameVersion;
 const url = new URL("../", import.meta.url);
 
-const routes = [
-    "/"
-];
-
 let urls;
-let urlsSet = new Set();
-
-export function install(routes, config, version, composition, baseUrl = import.meta.url, cacheName, namings)
+//toDo link to version of alt-routing to update  
+export function install(routes, config, routingVersion, composition, baseUrl = import.meta.url, cacheName, namings)
 {
     _cacheName = cacheName ?? "alt-routing-routing";
-    _cacheNameVersion = `${_cacheName}/${version}`;
-    console.debug(`${logPrefix} version : `, version);
+    _cacheNameVersion = `${_cacheName}/${version}/${routingVersion}`;
+    console.info(`${logPrefix} starting ... `);
+    console.info(`${logPrefix} version : `, routingVersion);
     console.debug(`${logPrefix} cacheName : `, _cacheNameVersion);
 
     self.addEventListener("install",
         e =>
         {
-            console.info(`${logPrefix} install version : ${version}`);
+            console.info(`${logPrefix} install version : ${routingVersion}`);
 
             const install = async _ =>
                 {
                     if(await caches.has(_cacheNameVersion))
                     {
-                        console.debug(`${logPrefix} ${_cacheNameVersion} already in cache`);
+                        console.debug(`${logPrefix} ${_cacheNameVersion} already installed`);
                     }
                     else
                     {
@@ -36,19 +33,16 @@ export function install(routes, config, version, composition, baseUrl = import.m
                         const promises = [];
                         //get composition
                         console.debug(`${logPrefix} récupération de la composition `);
-                        const compositionPath = composition ?? "../composition.json";//get from lib caches
-                        console.debug(`${logPrefix} baseurl : `, baseUrl);
-                        const compositionUrl = new URL(compositionPath, baseUrl);
+                        const compositionPath = composition ?? "../composition.json";//get from lib caches 
+                        const compositionUrl = new URL(compositionPath, baseUrl);//toDo use default arg, from lib or base url
                         
-                        console.debug(`${logPrefix} cache composition : `, compositionUrl.href);
-                        await cache.add(compositionUrl);
-                        urlsSet.add(compositionUrl);
-                        const baseComposition = await cache.match(compositionUrl);
+                        console.debug(`${logPrefix} base composition : `, compositionUrl.href);
+                        const baseCompositionPromise =  cache.add(compositionUrl).then( _ => cache.match(compositionUrl));
 
                         console.debug(`${logPrefix} routes à mettre en cache`, routes);
                         for(const route of routes)
                         {
-                            promises.push(installRoute(route, config, compositionUrl, baseUrl));
+                            promises.push(installRoute(route, config, baseCompositionPromise, baseUrl));
                         }
                         await Promise.all(promises);
                         console.debug(`${logPrefix} added to cache`);
@@ -84,7 +78,7 @@ export function install(routes, config, version, composition, baseUrl = import.m
                     {
                         if(key !== _cacheNameVersion)
                         {
-                            caches.delete(key);
+                            await caches.delete(key);
                             console.debug(`${logPrefix} remove old version : `, key);
                         }
                     }
@@ -92,26 +86,34 @@ export function install(routes, config, version, composition, baseUrl = import.m
                 console.debug(`${logPrefix} old versions removed`);
                 console.info(`${logPrefix} ${_cacheNameVersion} activated`);
             }
-            remove();
+            e.waitUntil(remove());
         }
     )
 
 }
 
-async function installRoute(path, config, baseComposition, baseUrl )
+async function installRoute(path, config, baseCompositionPromise, baseUrl )
 {
+    //override logPrefix
     const cache = await caches.open(_cacheNameVersion);
-    let composition =  await (await cache.match(baseComposition)).json();
+    let localComposition;
     const url = new URL(path, baseUrl);
     console.debug(`${logPrefix} mise en cache de l'url : ${url}` );
-    console.debug(`${logPrefix} base composition : `, composition);
-
+    //if local get local
+    //await les deux et après merge si pas null
     if(config.route.localComposition)
     {
-        const compositionUrl = new URL("composition.json", url);
-        urlsSet.add(compositionUrl.href);
-        await cache.add(compositionUrl);
-        const localComposition = await (await cache.match(compositionUrl)).json();
+        const localCompositionUrl = new URL("composition.json", url);
+        await cache.add(localCompositionUrl);
+        localComposition = await (await cache.match(localCompositionUrl)).json();
+    }
+
+    const response = (await baseCompositionPromise).clone();
+    let composition = await response.json();
+    console.debug(`${logPrefix} base composition : `, composition);
+    console.debug(`${logPrefix} composition locale : `, localComposition);
+    if(config.route.localComposition)
+    {
         console.debug(`${logPrefix} composition locale : `, localComposition);
         //merge models
         composition.models = {...composition.models, ...localComposition.models};
@@ -119,6 +121,7 @@ async function installRoute(path, config, baseComposition, baseUrl )
         composition = {...composition, ...localComposition};
     }
     console.debug(`${logPrefix} composition mergée: `, composition);
+
     const staticsFragmentsUrls = [];
     for(const fragment of composition.fragments)
     {
@@ -129,7 +132,6 @@ async function installRoute(path, config, baseComposition, baseUrl )
             const fragmentUrl = new URL(fragment, url);
             console.debug(`${logPrefix} add fragment url: `, fragmentUrl);
             staticsFragmentsUrls.push(fragmentUrl);
-            urlsSet.add(fragmentUrl.href);
         }
     }
     await cache.addAll(staticsFragmentsUrls)
