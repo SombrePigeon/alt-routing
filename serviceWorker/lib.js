@@ -1,6 +1,6 @@
 import version from "./version.json" with { type: "json" };
 
-const logPrefix = "[SW::alt-routing]";
+const logPrefix = "[SW::alt-routing::lib]";
 let _cacheName;
 let _cacheNameVersion;
 const url = new URL("../", import.meta.url);
