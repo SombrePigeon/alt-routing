@@ -36,6 +36,7 @@
     {
         "content": "content.html",
         "routing": "routing.html",
+        "composition": "composition.json",
         "template": "template.html",
         "title": "title.txt",
         "style": "style.css"

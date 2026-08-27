@@ -2,16 +2,14 @@ import libVersion from "./version.json" with { type: "json" };
 import namings from "./namings.json" with { type: "json"};
 
 const logPrefix = "[SW::alt-routing::routing]";
-const baseUrl = new URL("../", import.meta.url);//keep ?
 
 //toDo link to version of alt-routing to update  
-export function install(routes, config, routingVersion, compositionPath = "../composition.json", baseUrl = import.meta.url, cacheName = "alt-routing-routing")
+export function install(routes, config, routingVersion, compositionPath = `../${namings.files.composition}`, baseUrl = new URL("../", import.meta.url), cacheName = "alt-routing-routing")
 {
-    let _cacheName = cacheName;
-    let _cacheNameVersion = `${_cacheName}/${libVersion}/${routingVersion}`;
+    let cacheNameVersion = `${cacheName}/${libVersion}/${routingVersion}`;
     console.info(`${logPrefix} starting ... `);
     console.info(`${logPrefix} version : `, routingVersion);
-    console.debug(`${logPrefix} cacheName : `, _cacheNameVersion);
+    console.debug(`${logPrefix} cacheName : `, cacheNameVersion);
 
     self.addEventListener("install",
         e =>
@@ -20,15 +18,15 @@ export function install(routes, config, routingVersion, compositionPath = "../co
 
             const install = async _ =>
                 {
-                    if(await caches.has(_cacheNameVersion))
+                    if(await caches.has(cacheNameVersion))
                     {
-                        console.debug(`${logPrefix} ${_cacheNameVersion} already installed`);
+                        console.debug(`${logPrefix} ${cacheNameVersion} already installed`);
                     }
                     else
                     {
-                        console.debug(`${logPrefix} create cache : `, _cacheNameVersion);
-                        const cache = await caches.open(_cacheNameVersion);
-                        console.debug(`${logPrefix} cache created : `, _cacheNameVersion);
+                        console.debug(`${logPrefix} create cache : `, cacheNameVersion);
+                        const cache = await caches.open(cacheNameVersion);
+                        console.debug(`${logPrefix} cache created : `, cacheNameVersion);
                         const promises = [];
                         //get composition
                         console.debug(`${logPrefix} récupération de la composition `);
@@ -59,9 +57,9 @@ export function install(routes, config, routingVersion, compositionPath = "../co
                 const cacheKeys = await caches.keys();
                 for(let key of cacheKeys)
                 {
-                    if(key.startsWith(`${_cacheName}/`))
+                    if(key.startsWith(`${cacheName}/`))
                     {
-                        if(key !== _cacheNameVersion)
+                        if(key !== cacheNameVersion)
                         {
                             await caches.delete(key);
                             console.debug(`${logPrefix} remove old version : `, key);
@@ -69,7 +67,7 @@ export function install(routes, config, routingVersion, compositionPath = "../co
                     }
                 }
                 console.debug(`${logPrefix} old versions removed`);
-                console.info(`${logPrefix} ${_cacheNameVersion} activated`);
+                console.info(`${logPrefix} ${cacheNameVersion} activated`);
             }
             e.waitUntil(remove());
         }
@@ -87,7 +85,7 @@ async function installRoute(path, config, baseCompositionPromise, baseUrl, cache
     //await les deux et après merge si pas null
     if(config.route.localComposition)
     {
-        const localCompositionUrl = new URL("composition.json", url);
+        const localCompositionUrl = new URL(namings.files.composition, url);
         await cache.add(localCompositionUrl);
         localComposition = await (await cache.match(localCompositionUrl)).json();
     }
