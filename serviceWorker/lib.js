@@ -48,7 +48,7 @@ export function init(cacheName = namings.caches.lib)
             const remove = async _=>
             {
                 const cacheKeys = await caches.keys();
-                for(let key of cacheKeys)
+                for(const key of cacheKeys)
                 {
                     if(key.startsWith(`${cacheName}/`))
                     {
