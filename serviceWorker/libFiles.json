@@ -1,0 +1,14 @@
+[
+    "version.json",
+    "namings.json",
+    "config.json",
+    "composition.json",
+    "trustedTypes.js",
+    "router.js",
+    "route.js",
+    "anchor.js",
+    "form.js",
+    "button.js",
+    "input.js",
+    "title.js"
+]
