@@ -40,5 +40,10 @@
         "template": "template.html",
         "title": "title.txt",
         "style": "style.css"
+    },
+    "caches":
+    {
+        "lib": "alt-routing-lib",
+        "routing": "alt-routing-routing"
     }
 }

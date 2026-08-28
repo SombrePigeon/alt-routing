@@ -1,34 +1,17 @@
 import version from "./version.json" with { type: "json" };
+import namings from "./namings.json" with { type: "json"};
+import files from "./libFiles.json" with { type: "json"};
 
 const logPrefix = "[SW::alt-routing::lib]";
-let _cacheName;
-let _cacheNameVersion;
-const url = new URL("../", import.meta.url);
 
-const files = [
-    "version.json",
-    "namings.json",
-    "config.json",
-    "composition.json",
-    "trustedTypes.js",
-    "router.js",
-    "route.js",
-    "anchor.js",
-    "form.js",
-    "button.js",
-    "input.js",
-    "title.js"
-];
+const baseUrl = new URL("../", import.meta.url);
 
-let urlsSet;
-
-export function init(cacheName)
+export function init(cacheName = namings.caches.lib)
 {
-    _cacheName = cacheName ?? "alt-routing";
-    _cacheNameVersion = `${_cacheName}/${version}`;
+    const cacheNameVersion = `${cacheName}/${version}`;
     console.info(`${logPrefix} starting ... `);
     console.info(`${logPrefix} version : `, version);
-    console.debug(`${logPrefix} cacheName : `, _cacheNameVersion);
+    console.debug(`${logPrefix} cacheName : `, cacheNameVersion);
 
     self.addEventListener("install",
         e =>
@@ -37,17 +20,17 @@ export function init(cacheName)
 
             const install = async _ =>
                 {
-                    if(await caches.has(_cacheNameVersion))
+                    if(await caches.has(cacheNameVersion))
                     {
-                        console.debug(`${logPrefix} ${_cacheNameVersion} already installed`);
+                        console.debug(`${logPrefix} ${cacheNameVersion} already installed`);
                     }
                     else
                     {
-                        console.debug(`${logPrefix} create cache : `, _cacheNameVersion);
-                        const cache = await caches.open(_cacheNameVersion);
-                        console.debug(`${logPrefix} cache created : `, _cacheNameVersion);
+                        console.debug(`${logPrefix} create cache : `, cacheNameVersion);
+                        const cache = await caches.open(cacheNameVersion);
+                        console.debug(`${logPrefix} cache created : `, cacheNameVersion);
 
-                        const urls = files.map(file => new URL(file, url).href);
+                        const urls = files.map(file => new URL(file, baseUrl).href);
                         console.debug(`${logPrefix} urls à mettre en cache`, urls);
                         
                         await cache.addAll(urls);
@@ -67,9 +50,9 @@ export function init(cacheName)
                 const cacheKeys = await caches.keys();
                 for(let key of cacheKeys)
                 {
-                    if(key.startsWith(`${_cacheName}/`))
+                    if(key.startsWith(`${cacheName}/`))
                     {
-                        if(key !== _cacheNameVersion)
+                        if(key !== cacheNameVersion)
                         {
                             await caches.delete(key);
                             console.debug(`${logPrefix} remove old version : `, key);
@@ -77,7 +60,7 @@ export function init(cacheName)
                     }
                 }
                 console.debug(`${logPrefix} old versions removed`);
-                console.info(`${logPrefix} ${_cacheNameVersion} activated`);
+                console.info(`${logPrefix} ${cacheNameVersion} activated`);
             };
             e.waitUntil(remove());
         }

@@ -4,7 +4,8 @@ import namings from "./namings.json" with { type: "json"};
 const logPrefix = "[SW::alt-routing::routing]";
 
 //toDo link to version of alt-routing to update  
-export function install(routes, config, routingVersion, compositionPath = `../${namings.files.composition}`, baseUrl = new URL("../", import.meta.url), cacheName = "alt-routing-routing")
+export function install(routes, config, routingVersion, compositionPath = `../${namings.files.composition}`,
+     baseUrl = new URL("../", import.meta.url), cacheName = namings.caches.routing)
 {
     let cacheNameVersion = `${cacheName}/${libVersion}/${routingVersion}`;
     console.info(`${logPrefix} starting ... `);
