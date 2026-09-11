@@ -30,16 +30,16 @@ export function install(routes, config, routingVersion, compositionPath = `../${
                         console.debug(`${logPrefix} cache created : `, cacheNameVersion);
                         const promises = [];
                         //get composition
-                        console.debug(`${logPrefix} récupération de la composition `);
-                        const compositionUrl = new URL(compositionPath, baseUrl);//toDo use default arg, from lib or base url
-                        
-                        console.debug(`${logPrefix} base composition : `, compositionUrl.href);
+                        const compositionUrl = new URL(compositionPath, baseUrl);
+                        //toDo use default arg, from lib or base url
+                        console.debug(`${logPrefix} add base composition : `, compositionUrl.href);
                         const baseCompositionPromise =  cache.add(compositionUrl).then( _ => cache.match(compositionUrl));
 
-                        console.debug(`${logPrefix} routes à mettre en cache`, routes);
+                        console.debug(`${logPrefix} install routes : `, routes);
                         for(const route of routes)
                         {
-                            promises.push(installRoute(route, config, baseCompositionPromise, baseUrl, cache));
+                            const absolutePath = new URL(route, baseUrl);
+                            promises.push(installRoute(absolutePath, config, baseCompositionPromise, cache));
                         }
                         await Promise.all(promises);
                         console.debug(`${logPrefix} added to cache`);
@@ -76,44 +76,43 @@ export function install(routes, config, routingVersion, compositionPath = `../${
 
 }
 
-async function installRoute(path, config, baseCompositionPromise, baseUrl, cache)
+async function installRoute(absolutePath, config, baseCompositionPromise, cache)
 {
-    //override logPrefix ?
-    let localComposition;
-    const url = new URL(path, baseUrl);
-    console.debug(`${logPrefix} mise en cache de l'url : ${url}` );
-    //if local get local
-    //await les deux et après merge si pas null
+    const logPrefixRoute = `${logPrefix} "${absolutePath}" :`;
+    let localCompositionPromise;
+    const url = absolutePath;
+    
+    console.debug(`${logPrefixRoute} installing`);
+
     if(config.route.localComposition)
     {
         const localCompositionUrl = new URL(namings.files.composition, url);
-        await cache.add(localCompositionUrl);
-        localComposition = await (await cache.match(localCompositionUrl)).json();
+        localCompositionPromise = cache.add(localCompositionUrl).then(async _ => (await cache.match(localCompositionUrl)).json());
     }
 
-    const response = (await baseCompositionPromise).clone();
-    let composition = await response.json();
-    console.debug(`${logPrefix} base composition : `, composition);
-    console.debug(`${logPrefix} composition locale : `, localComposition);
+    const baseCompositionResponse = (await baseCompositionPromise).clone();
+    let composition = await baseCompositionResponse.json();
     if(config.route.localComposition)
     {
-        console.debug(`${logPrefix} composition locale : `, localComposition);
+        const localComposition = await localCompositionPromise;
+        console.debug(`${logPrefixRoute} baseComposition : `, composition);
+        console.debug(`${logPrefixRoute} localComposition : `, localComposition);
         //merge models
         composition.models = {...composition.models, ...localComposition.models};
         delete localComposition.models;
         composition = {...composition, ...localComposition};
     }
-    console.debug(`${logPrefix} composition mergée: `, composition);
+    console.debug(`${logPrefixRoute} composition : `, composition);
 
     const staticsFragmentsUrls = [];
     for(const fragment of composition.fragments)
     {
         const model = composition.models[fragment];
-        console.debug(`${logPrefix} fragment : `,model);
+        console.debug(`${logPrefixRoute} fragment model : `, model);
         if(model.static)
         {
             const fragmentUrl = new URL(fragment, url);
-            console.debug(`${logPrefix} add fragment url: `, fragmentUrl);
+            console.debug(`${logPrefixRoute} add route fragment : `, fragmentUrl.href);
             staticsFragmentsUrls.push(fragmentUrl);
         }
     }

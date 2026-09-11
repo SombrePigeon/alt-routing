@@ -30,8 +30,7 @@ export function init(cacheName = namings.caches.lib)
                         const cache = await caches.open(cacheNameVersion);
                         console.debug(`${logPrefix} cache created : `, cacheNameVersion);
 
-                        const urls = files.map(file => new URL(file, baseUrl).href);
-                        console.debug(`${logPrefix} urls à mettre en cache`, urls);
+                        console.debug(`${logPrefix} install files : `, urls);
                         
                         await cache.addAll(urls);
                         console.debug(`${logPrefix} added to cache`);
