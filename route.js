@@ -489,15 +489,29 @@ export default class Route extends HTMLElement
             delete localComposition.models;
             composition = {...composition, ...localComposition};
         }
-        if(!composition.fragments.includes(namings.files.content))
+        if(composition.fragments.includes(namings.files.content))
         {
-            throw new Error(`Cannot find "${namings.files.content}" fragment in ${this} composition`);
+            if(composition.models[namings.files.content].static)
+            {
+                throw new Error(`"${namings.files.content}" model must not be static in ${this} composition`);
+            }
+        }
+        else
+        {
+            throw new Error(`Cannot find "${namings.files.content}" (content) fragment in ${this} composition`);
         }
         if(!composition.models[namings.files.content].loading.includes("exact"))
         {
             throw new Error(`"${namings.files.content}" model must load on exact in ${this} composition`);
         }
-        if(!composition.fragments.includes(namings.files.routing))
+        if(composition.fragments.includes(namings.files.routing))
+        {
+            if(!composition.models[namings.files.routing].static)
+            {
+                throw new Error(`"${namings.files.routing}" model must be static if present in ${this} composition`);
+            }
+        }
+        else
         {
             this.#routingReady.resolve();
         }
